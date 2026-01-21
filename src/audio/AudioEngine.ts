@@ -86,8 +86,16 @@ export class AudioEngine {
         await this.loadVoice(settings.voiceId);
 
         console.log('Generating plan...');
-        this.currentPlan = await PlanEngine.generatePlan(docId, tokens, settings);
+        // Create Plan
+        const plan = await PlanEngine.generatePlan(docId, tokens, settings);
+        this.currentPlan = plan;
 
+        // Apply playback rate
+        if (settings.playbackRate) {
+            this.scheduler.setPlaybackRate(settings.playbackRate);
+        }
+
+        // Check if we have a timeline already (or partial) matches this plan?
         console.log('Synthesizing audio...');
         // In MVP, synthesize everything upfront or in batches.
         // For simplicity: Synthesize ALL chunks now.
@@ -99,6 +107,8 @@ export class AudioEngine {
 
         // Fetch durations for timeline building
         const audioAssets = new Map<string, any>();
+
+        if (!this.currentPlan) return;
 
         // Parallel fetch of durations
         await Promise.all(this.currentPlan.chunks.map(async chunk => {
@@ -416,28 +426,25 @@ export class AudioEngine {
 
         console.log(`Updating settings: WPM ${settings.speedWpm}, Voice ${settings.voiceId}`);
 
-        // Check for optimizations
-        const sameVoice = settings.voiceId === this.currentPlan.voiceId;
-        const sameStrategy = settings.strategy === this.currentPlan.strategy;
-        const sameChunkSize = settings.strategy === 'TOKEN' || settings.chunkSize === this.currentPlan.chunkSize;
+        // Check if we need full resynthesis
+        // If only playbackRate changed, just set it on scheduler
+        const sameVoice = this.currentPlan.voiceId === settings.voiceId;
+        const sameSpeed = this.currentPlan.speedWpm === settings.speedWpm; // Base WPM
+        const sameStrategy = this.currentPlan.strategy === settings.strategy;
+        const sameChunkSize = this.currentPlan.chunkSize === settings.chunkSize;
 
-        if (sameVoice && sameStrategy && sameChunkSize) {
-            const baseWpm = this.currentPlan.speedWpm;
-            const targetWpm = settings.speedWpm;
-            const ratio = targetWpm / baseWpm;
-
-            // Hybrid Approach:
-            // If WPM change is within reasonable limits (e.g., 0.75x to 1.25x), 
-            // use playbackRate modification to avoid resynthesis.
-            // This changes pitch slightly but is instant.
-            if (ratio >= 0.75 && ratio <= 1.25) {
-                console.log(`[AudioEngine] Hybrid WPM: Using playbackRate ${ratio.toFixed(2)}x (Base: ${baseWpm}, Target: ${targetWpm})`);
-                this.scheduler.setPlaybackRate(ratio);
-                return;
-            }
+        // Rate change is instant, doesn't affect plan
+        if (settings.playbackRate !== undefined) {
+            this.scheduler.setPlaybackRate(settings.playbackRate);
         }
 
-        // Fallback: Full Resynthesis
+        if (sameVoice && sameSpeed && sameStrategy && sameChunkSize) {
+            // No synthesis needed
+            return;
+        }
+
+        // Otherwise need partial or full replan
+        console.log('[AudioEngine] Settings changed, triggering resynthesis...');
         // Reset playback rate to 1.0 since we are generating audio at the new target WPM
         this.scheduler.setPlaybackRate(1.0);
 

@@ -160,19 +160,16 @@ export class ReaderShell {
                 } else if (type === 'paragraph') {
                     controller.skipParagraph(direction, tokens);
                 }
-            },
-            onSpeedChange: async (wpm) => {
-                this.settings.speedWpm = wpm;
-                settingsStore.saveSettings({ speedWpm: wpm });
 
-                this.loadingOverlay.show('Updating Speed...');
-                await this.audioEngine.updateSettings(this.settings, (p, msg) => {
-                    this.loadingOverlay.setProgress(p);
-                    if (msg) this.loadingOverlay.setText(msg);
-                });
-                this.loadingOverlay.hide();
-            }
-        }, this.settings.speedWpm);
+                // Resume if was playing, or just update view? 
+                // Skip logic usually updates view via onTokenChanged.
+                // If we want to ensure playback continues or pauses:
+                if (controller.getState() === 'PLAYING') {
+                    // already playing
+                }
+            },
+            onSpeedChange: (rate) => this.handleRateChange(rate)
+        }, this.settings.playbackRate || 1.0);
 
         // Settings
         const settingsMount = this.container.querySelector('#settings-mount') as HTMLElement;
@@ -201,7 +198,6 @@ export class ReaderShell {
                         if (msg) this.loadingOverlay.setText(msg);
                     });
                     this.loadingOverlay.hide();
-                    this.controls.setSpeed(wpm);
                 },
                 onStrategyChange: async (strategy) => {
                     this.settings.strategy = strategy;
@@ -319,19 +315,6 @@ export class ReaderShell {
         this.switchView(this.settings.mode);
 
         const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
-        if (toggleBtn) toggleBtn.style.display = 'inline-block';
-
-        if (this.currentView) {
-            this.currentView.update(doc.progressTokenIndex, tokens);
-        }
-
-        const controller = this.audioEngine.getController();
-        controller.onTokenChanged = (index) => {
-            if (this.currentView) {
-                this.currentView.update(index, tokens);
-            }
-            documentStore.updateProgress(docId, index);
-        };
     }
 
     private switchView(mode: 'RSVP' | 'PARAGRAPH') {
@@ -374,5 +357,11 @@ export class ReaderShell {
             requestAnimationFrame(loop);
         };
         requestAnimationFrame(loop);
+    }
+    private async handleRateChange(rate: number) {
+        this.settings.playbackRate = rate;
+        await settingsStore.saveSettings({ playbackRate: rate });
+        // This is instant
+        this.audioEngine.updateSettings(this.settings);
     }
 }

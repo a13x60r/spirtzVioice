@@ -3,11 +3,13 @@ export class Controls {
     private onPlayPause: () => void;
     private onSeek: (offset: number) => void;
     private onSkip: (type: 'word' | 'sentence' | 'paragraph', direction: 1 | -1) => void;
-    private onSpeedChange: (wpm: number) => void;
+    private onSpeedChange: (rate: number) => void;
 
     private playBtn!: HTMLButtonElement;
     private progressBar!: HTMLDivElement;
     private speedInput!: HTMLInputElement;
+    private speedDisplay!: HTMLSpanElement; // Added this based on usage in bindEvents
+    private timeDisplay!: HTMLDivElement; // Added this based on usage in setTime
 
     constructor(
         container: HTMLElement,
@@ -15,9 +17,9 @@ export class Controls {
             onPlayPause: () => void;
             onSeek: (offset: number) => void;
             onSkip: (type: 'word' | 'sentence' | 'paragraph', direction: 1 | -1) => void;
-            onSpeedChange: (wpm: number) => void;
+            onSpeedChange: (rate: number) => void;
         },
-        initialWpm?: number
+        initialRate: number = 1.0
     ) {
         this.container = container;
         this.onPlayPause = callbacks.onPlayPause;
@@ -25,11 +27,11 @@ export class Controls {
         this.onSkip = callbacks.onSkip;
         this.onSpeedChange = callbacks.onSpeedChange;
 
-        this.render(initialWpm || 250);
+        this.render(initialRate);
         this.bindEvents();
     }
 
-    private render(initialWpm: number) {
+    private render(initialRate: number) {
         this.container.innerHTML = `
             <div class="controls-layout">
                 <div class="progress-bar-container" id="progress-container">
@@ -38,9 +40,9 @@ export class Controls {
                 
                 <div class="controls-row">
                     <div class="speed-control">
-                        <label for="speed-input">WPM</label>
-                        <input type="range" id="speed-input" min="100" max="800" step="10" value="${initialWpm}" style="width: 120px">
-                        <span id="speed-val-display" style="min-width: 32px; font-weight: 600; color: var(--color-primary);">${initialWpm}</span>
+                        <label for="speed-input">Rate</label>
+                        <input type="range" id="speed-input" min="0.5" max="2.0" step="0.1" value="${initialRate}" style="width: 100px">
+                        <span id="speed-val-display" style="min-width: 32px; font-weight: 600; color: var(--color-primary);">${initialRate.toFixed(1)}x</span>
                     </div>
 
                     <div class="playback-buttons">
@@ -65,6 +67,8 @@ export class Controls {
         this.playBtn = this.container.querySelector('#play-pause')!;
         this.speedInput = this.container.querySelector('#speed-input')!;
         this.progressBar = this.container.querySelector('#progress-fill')!;
+        this.timeDisplay = this.container.querySelector('#time-display')!;
+        this.speedDisplay = this.container.querySelector('#speed-val-display')!;
     }
 
     private bindEvents() {
@@ -81,10 +85,9 @@ export class Controls {
         this.container.querySelector('#skip-para-fwd')?.addEventListener('click', () => this.onSkip('paragraph', 1));
 
         this.speedInput.addEventListener('input', (e) => {
-            const val = parseInt((e.target as HTMLInputElement).value, 10);
-            const display = this.container.querySelector('#speed-val-display');
-            if (display) display.textContent = val.toString();
-            if (!isNaN(val)) this.onSpeedChange(val);
+            const val = parseFloat((e.target as HTMLInputElement).value);
+            this.speedDisplay.textContent = `${val.toFixed(1)}x`;
+            this.onSpeedChange(val); // passes rate (0.5-2.0)
         });
     }
 
@@ -99,15 +102,16 @@ export class Controls {
     }
 
     setTime(current: string, total: string) {
-        const el = this.container.querySelector('#time-display');
-        if (el) el.textContent = `${current} / ${total}`;
+        this.timeDisplay.textContent = `${current} / ${total}`;
     }
 
-    setSpeed(wpm: number) {
-        if (this.speedInput) {
-            this.speedInput.value = wpm.toString();
-            const display = this.container.querySelector('#speed-val-display');
-            if (display) display.textContent = wpm.toString();
-        }
+    setPlaybackRate(rate: number) {
+        // Find slider and label
+        const slider = this.container.querySelector('#speed-input') as HTMLInputElement;
+        const label = this.container.querySelector('#speed-val-display');
+        if (slider) slider.value = rate.toString();
+        if (label) label.textContent = `${rate.toFixed(1)}x`;
     }
+
+
 }

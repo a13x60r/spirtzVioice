@@ -37,6 +37,7 @@ export interface Settings {
     tokenizerVersion: "1";
     useWebGPU?: boolean;  // Enable WebGPU acceleration (experimental)
     gpuPreference?: GpuPreference;  // GPU selection hint: 'high-performance' (discrete) or 'low-power' (integrated)
+    playbackRate?: number; // 0.5x to 2.0x (default 1.0)
 }
 
 export interface VoicePackage {

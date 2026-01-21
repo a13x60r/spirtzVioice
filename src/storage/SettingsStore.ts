@@ -14,7 +14,8 @@ const DEFAULT_SETTINGS: Settings = {
         punctPauseMs: 400,
         paragraphPauseMs: 600
     },
-    tokenizerVersion: '1'
+    tokenizerVersion: '1',
+    playbackRate: 1.0
 };
 
 export class SettingsStore {

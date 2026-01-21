@@ -18,6 +18,7 @@ export interface DocumentEntity {
 
 export interface SettingsEntity extends Settings {
     id: string; // 'user_settings' (singleton)
+    playbackRate?: number; // Persisted playback rate
 }
 
 export interface AudioAssetEntity extends AudioAsset {

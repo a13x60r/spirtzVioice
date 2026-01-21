@@ -149,7 +149,7 @@ export class DocumentList {
 
     private renderDocumentItem(doc: DocumentEntity): string {
         const lastRead = this.formatRelativeTime(doc.lastReadAt);
-        const wordCount = doc.originalText.split(/\s+/).length;
+        const wordCount = doc.totalTokens || doc.originalText.split(/\s+/).length;
         const progress = doc.progressTokenIndex > 0
             ? Math.min(100, Math.round((doc.progressTokenIndex / wordCount) * 100))
             : 0;
@@ -163,7 +163,7 @@ export class DocumentList {
                 <div class="document-info">
                     <h3 class="document-title">${this.escapeHtml(doc.title)}</h3>
                     <div class="document-meta">
-                        <span>${wordCount.toLocaleString()} words</span>
+                        <span>${wordCount.toLocaleString()} tokens</span>
                         <span>•</span>
                         <span>Last read ${lastRead}</span>
                         ${progress > 0 ? `<span>•</span><span>${progress}% complete</span>` : ''}

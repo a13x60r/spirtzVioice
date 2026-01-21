@@ -247,11 +247,11 @@ export class ReaderShell {
     private async handleNewDocument(title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown') {
         this.loadingOverlay.show('Processing Document...');
 
-        const doc = await documentStore.createDocument(title, originalText, ttsText, contentType);
-        this.currentDocId = doc.id;
-
         const tokens = TextPipeline.tokenize(ttsText);
         this.currentTokens = tokens;
+
+        const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length);
+        this.currentDocId = doc.id;
 
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p, msg) => {
             this.loadingOverlay.setProgress(p);

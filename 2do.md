@@ -1,9 +1,9 @@
 # High Priority / Bugs
 - [x] fix reading progress bar (in main view)
-    - [ ] Create implementation plan
-    - [ ] Update ReaderShell.ts to use token index
-    - [ ] Verify progress calculation
-- [ ] fix progress bar in library view
+    - [x] Create implementation plan
+    - [x] Update ReaderShell.ts to use token index
+    - [x] Verify progress calculation
+- [x] fix progress bar in library view
     - *Note: Ensure it reflects accurate completion percentage.*
 - [ ] fix: separate wpm (synthesis speed) and playback speed (0.5x-2x)
     - *Note: Add playback rate slider (instant). Keep WPM for synthesis (slow).*

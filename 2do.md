@@ -1,22 +1,31 @@
+# High Priority / Bugs
+- [x] fix reading progress bar (in main view)
+    - [ ] Create implementation plan
+    - [ ] Update ReaderShell.ts to use token index
+    - [ ] Verify progress calculation
+- [ ] fix progress bar in library view
+    - *Note: Ensure it reflects accurate completion percentage.*
+- [ ] fix: separate wpm (synthesis speed) and playback speed (0.5x-2x)
+    - *Note: Add playback rate slider (instant). Keep WPM for synthesis (slow).*
+- [ ] fix: save wpm setting for each stored text (via `updateProgress`)
+
+# UX / UI Improvements
+- [ ] make it use whole screen dynamically (responsive layout)
+    - *Note: Remove hardcoded max-width.*
+- [ ] rename buttons to use icons instead of text (Play, Pause, Library, etc.)
+- [ ] add abort "Synthesizing chunk" button
+- [ ] add audio level (volume) control
+- [ ] make it use multimedia keys for controls (play/pause, skip)
+
 # Features (Todo)
 - [ ] add language selection in settings
 - [ ] add language detection
-- [ ] add playback speed controll(x0.5, x0.75, x1, x1.25, x1.5, x2) separate from wpm
-- [ ] fix reading progress bar 
-- [ ] add audio level control
-- [ ] make it use whole screen dynamically
-- [ ] add abbort Synthesizing chunk button
-- [ ] fix progress bar for text processing in library view
-- [ ] rename buttons to use icons instead of text
-- [ ] make it use multimedia keys for controls (play/pause, skip forward/backward, stop)
-
-## Settings Persistence (per document)
-- [ ] save wpm setting for each stored text (via `updateProgress`)
-- [ ] save mode setting for each stored text (via `updateProgress`)
+- [ ] save mode setting for each stored text
 - [ ] sync settings wpm to main screen wpm
 
 # Done
 - [x] display rendered md or html in text view
+- [x] **Multimedia**: Multiselect and Bulk Delete in Library (Implemented in `DocumentList`)
 - [x] **PWA**: Verify offline capability and installability ✅ Fixed config, verified caching
 - [x] **File Support**: Import .html, .md, .txt files directly (Implemented in `TextInput`)
 - [x] add overview of stored texts ✅ Implemented Library view

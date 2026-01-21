@@ -366,7 +366,10 @@ export class ReaderShell {
             const totalTime = controller.getDuration();
             this.controls.setTime(currentTime.toFixed(1), totalTime > 0 ? totalTime.toFixed(1) : "--:--");
 
-            this.controls.setProgress((currentTime / totalTime) * 100);
+            const currentIndex = controller.getCurrentTokenIndex();
+            const totalTokens = this.currentTokens.length;
+            const percentage = totalTokens > 0 ? (currentIndex / totalTokens) * 100 : 0;
+            this.controls.setProgress(percentage);
 
             requestAnimationFrame(loop);
         };

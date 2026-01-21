@@ -7,6 +7,20 @@ const BASE_URL = '/piper/';
 export class OfflineVoice {
     private currentModelUrl: string = BASE_URL + 'en_US-amy-medium.onnx';
     private currentConfigUrl: string = BASE_URL + 'en_US-amy-medium.onnx.json';
+    private originUrl: string;
+
+    constructor(originUrl: string = '') {
+        this.originUrl = originUrl || '';
+    }
+
+    // Helper to convert relative path to absolute URL
+    private toAbsoluteUrl(relativePath: string): string {
+        if (this.originUrl) {
+            return this.originUrl + relativePath;
+        }
+        // Fallback for local development
+        return relativePath;
+    }
 
     async init(): Promise<void> {
         console.log('OfflineVoice (Piper) initializing...');
@@ -52,19 +66,20 @@ export class OfflineVoice {
         const lengthScale = BASE_WPM / Math.max(50, _speedWpm); // Avoid div/0
 
         try {
+            // Convert all paths to absolute URLs for Worker context
             const result = await piperGenerate(
-                BASE_URL + 'piper_phonemize.js',
-                BASE_URL + 'piper_phonemize.wasm',
-                BASE_URL + 'piper_phonemize.data',
-                BASE_URL + 'piper_worker.js',
-                this.currentModelUrl,
-                this.currentConfigUrl,
+                this.toAbsoluteUrl(BASE_URL + 'piper_phonemize.js'),
+                this.toAbsoluteUrl(BASE_URL + 'piper_phonemize.wasm'),
+                this.toAbsoluteUrl(BASE_URL + 'piper_phonemize.data'),
+                this.toAbsoluteUrl(BASE_URL + 'piper_worker.js'),
+                this.toAbsoluteUrl(this.currentModelUrl),
+                this.toAbsoluteUrl(this.currentConfigUrl),
                 null, // speakerId
                 text,
                 (_p) => { /* Silenced internal logs */ },
                 null, // phonemeIds
                 false, // inferEmotion
-                BASE_URL, // onnxruntimeUrl (folder)
+                this.toAbsoluteUrl(BASE_URL), // onnxruntimeUrl (folder)
                 lengthScale,
                 useWebGPU,
                 gpuPreference

@@ -29,20 +29,36 @@ export default defineConfig({
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp',
-            'Cross-Origin-Resource-Policy': 'cross-origin',
+            'Cross-Origin-Resource-Policy': 'same-origin',
         },
     },
     preview: {
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp',
-            'Cross-Origin-Resource-Policy': 'cross-origin',
+            'Cross-Origin-Resource-Policy': 'same-origin',
         },
     },
     worker: {
         format: 'es',
     },
     plugins: [
+        // Custom plugin to ensure CORP headers on ALL responses (including static files)
+        {
+            name: 'add-corp-headers',
+            configureServer(server) {
+                server.middlewares.use((_req, res, next) => {
+                    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+                    next();
+                });
+            },
+            configurePreviewServer(server) {
+                server.middlewares.use((_req, res, next) => {
+                    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+                    next();
+                });
+            },
+        },
         VitePWA({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png'],

@@ -225,8 +225,8 @@ export class ReaderShell {
 
         // TextInput
         // We'll mount it immediately if no document.
-        this.textInput = new TextInput(this.viewContainer, async (title, text) => {
-            await this.handleNewDocument(title, text);
+        this.textInput = new TextInput(this.viewContainer, async (title, originalText, ttsText) => {
+            await this.handleNewDocument(title, originalText, ttsText);
         });
 
         // DocumentList
@@ -246,18 +246,18 @@ export class ReaderShell {
         this.showDocumentList();
     }
 
-    private async handleNewDocument(title: string, text: string) {
+    private async handleNewDocument(title: string, originalText: string, ttsText: string) {
         console.log('Processing new document:', title);
 
         this.loadingOverlay.show('Processing Document...');
 
-        // 1. Save to DB
-        const doc = await documentStore.createDocument(title, text);
+        // 1. Save to DB (store both original and TTS-ready text)
+        const doc = await documentStore.createDocument(title, originalText, ttsText);
         this.currentDocId = doc.id;
 
-        // 2. Tokenize
+        // 2. Tokenize using TTS-ready text
         // Ideally offload to worker or domain. TextPipeline is sync for now.
-        const tokens = TextPipeline.tokenize(text);
+        const tokens = TextPipeline.tokenize(ttsText);
 
         // 3. Load into Engine
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p, msg) => {
@@ -330,8 +330,9 @@ export class ReaderShell {
         this.currentDocId = docId;
         this.loadingOverlay.show('Loading Document...');
 
-        // Tokenize
-        const tokens = TextPipeline.tokenize(doc.originalText);
+        // Tokenize using TTS-ready text (fallback to original if not available)
+        const textForTts = doc.ttsText || doc.originalText;
+        const tokens = TextPipeline.tokenize(textForTts);
 
         // Load into Engine with saved progress
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, doc.progressTokenIndex, (p, msg) => {

@@ -69,6 +69,7 @@ export class ReaderShell {
                 <header class="header">
                     <h1>Spritz Voice</h1>
                     <div>
+                        <button class="btn btn-secondary" id="btn-new-text" style="margin-right: 10px">New</button>
                         <button class="btn btn-secondary" id="btn-toggle-view" style="margin-right: 10px">Switch View</button>
                         <button class="btn btn-secondary" id="btn-settings">Settings</button>
                     </div>
@@ -86,6 +87,11 @@ export class ReaderShell {
         `;
 
         this.viewContainer = this.container.querySelector('#view-container') as HTMLElement;
+
+        // New Text
+        this.container.querySelector('#btn-new-text')?.addEventListener('click', () => {
+            this.showTextInput();
+        });
 
         // Settings toggle
         this.container.querySelector('#btn-settings')?.addEventListener('click', () => {
@@ -214,7 +220,8 @@ export class ReaderShell {
             await this.handleNewDocument(title, text);
         });
 
-        this.textInput.mount();
+        // Initially mount input and hide switch view
+        this.showTextInput();
     }
 
     private async handleNewDocument(title: string, text: string) {
@@ -240,6 +247,10 @@ export class ReaderShell {
         // 4. Switch to reading view
         this.switchView(this.settings.mode);
 
+        // Show toggle view button
+        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
+        if (toggleBtn) toggleBtn.style.display = 'inline-block';
+
         // Hack: update view with tokens immediately
         if (this.currentView) {
             this.currentView.update(0, tokens);
@@ -252,6 +263,21 @@ export class ReaderShell {
                 this.currentView.update(index, tokens);
             }
         };
+    }
+
+    private showTextInput() {
+        // Pause if playing
+        this.audioEngine.getController().pause();
+
+        // Unmount current view
+        if (this.currentView) this.currentView.unmount();
+
+        // Mount Text Input
+        this.textInput.mount();
+
+        // Hide switch view button (irrelevant in input mode)
+        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
+        if (toggleBtn) toggleBtn.style.display = 'none';
     }
 
     private switchView(mode: 'RSVP' | 'PARAGRAPH') {

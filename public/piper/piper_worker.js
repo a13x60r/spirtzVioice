@@ -78,7 +78,7 @@ async function init(data, phonemizeOnly = false) {
   }
   const onnxruntimeJs = URL.createObjectURL(await getBlob(`${onnxruntimeBase}ort.min.js`, blobs));
   importScripts(onnxruntimeJs);
-  ort.env.wasm.numThreads = navigator.hardwareConcurrency;
+  ort.env.wasm.numThreads = data.numThreads ?? navigator.hardwareConcurrency;
   ort.env.wasm.wasmPaths = onnxruntimeBase;
   const sampleRate = modelConfig.audio.sample_rate;
   const numChannels = 1;

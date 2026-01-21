@@ -58,11 +58,82 @@ export class AudioScheduler {
         audioBuffer: AudioBuffer,
         startTimeSec: number // Relative to timeline 0
     ) {
-        // Just store it, we schedule actual audio nodes on play()
-        this.playbackQueue.push({
+        // Check if already in queue to prevent duplicates
+        if (this.playbackQueue.some(q => q.id === chunkHash)) {
+            return;
+        }
+
+        const item = {
             id: chunkHash,
             buffer: audioBuffer,
             startTimeSec
+        };
+        this.playbackQueue.push(item);
+
+        if (this.isPlaying) {
+            this.scheduleItem(item, this.offsetTime);
+        }
+    }
+
+    /**
+     * Check if a chunk is currently in the playback queue
+     */
+    hasChunk(chunkHash: string): boolean {
+        return this.playbackQueue.some(q => q.id === chunkHash);
+    }
+
+    private scheduleItem(item: { id: string, buffer: AudioBuffer, startTimeSec: number }, startOffsetSec: number) {
+        const now = this.ctx.currentTime;
+        const absoluteStartTime = this.startTime + item.startTimeSec;
+        const itemEndSec = item.startTimeSec + item.buffer.duration;
+
+        // 1. If chunk finished in the past relative to startOffset, skip
+        // Note: we use strict past check, maybe keep 1s?
+        if (itemEndSec <= startOffsetSec) {
+            return;
+        }
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = item.buffer;
+        source.connect(this.ctx.destination);
+
+        // 2. If chunk starts in future (relative to now)
+        if (absoluteStartTime >= now) {
+            source.start(absoluteStartTime);
+        }
+        // 3. If chunk should have started in past (overlap with current playhead)
+        else {
+            const offsetInChunk = now - absoluteStartTime;
+
+            // Tolerance: If we are only slightly late (<80ms), play from start 
+            // to avoid clipping the attack of the word (e.g. "The", "It").
+            // This shifts the chunk slightly late, but prevents "missing words".
+            const JITTER_TOLERANCE = 0.08;
+
+            if (offsetInChunk < item.buffer.duration) {
+                if (offsetInChunk < JITTER_TOLERANCE) {
+                    // Play immediately from start
+                    source.start(now, 0);
+                } else {
+                    // We are really late, seek into it
+                    source.start(now, offsetInChunk);
+                }
+            }
+        }
+
+        this.sources.push(source);
+        source.onended = () => {
+            this.sources = this.sources.filter(s => s !== source);
+        };
+    }
+
+    /**
+     * Prune chunks that finished before time
+     */
+    pruneBefore(time: number) {
+        this.playbackQueue = this.playbackQueue.filter(item => {
+            const end = item.startTimeSec + item.buffer.duration;
+            return end > time;
         });
     }
 
@@ -82,39 +153,8 @@ export class AudioScheduler {
     }
 
     private scheduleQueue(startOffsetSec: number) {
-        const now = this.ctx.currentTime;
-
         for (const item of this.playbackQueue) {
-            // Helper: Absolute time this chunk should start
-            const absoluteStartTime = this.startTime + item.startTimeSec;
-            // Helper: Relative end time
-            const itemEndSec = item.startTimeSec + item.buffer.duration;
-
-            // 1. If chunk finished in the past relative to startOffset, skip
-            if (itemEndSec <= startOffsetSec) {
-                continue;
-            }
-
-            const source = this.ctx.createBufferSource();
-            source.buffer = item.buffer;
-            source.connect(this.ctx.destination);
-
-            // 2. If chunk starts in future (relative to now)
-            if (absoluteStartTime >= now) {
-                source.start(absoluteStartTime);
-            }
-            // 3. If chunk should have started in past (overlap with current playhead)
-            else {
-                // We are jumping into the middle of this chunk
-                // How much time has passed since it 'started'?
-                const offsetInChunk = now - absoluteStartTime;
-                source.start(now, offsetInChunk);
-            }
-
-            this.sources.push(source);
-            source.onended = () => {
-                this.sources = this.sources.filter(s => s !== source);
-            };
+            this.scheduleItem(item, startOffsetSec);
         }
     }
 

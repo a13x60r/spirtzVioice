@@ -80,9 +80,9 @@ export class TextInput {
         try {
             const content = await file.text();
             if (file.name.endsWith('.html')) {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(content, 'text/html');
-                textTextArea.value = doc.body.innerText || doc.body.textContent || '';
+                // Use the utility to extract clean text
+                const { extractTextFromHtml } = await import('../utils/htmlUtils');
+                textTextArea.value = extractTextFromHtml(content);
             } else {
                 textTextArea.value = content;
             }

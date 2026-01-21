@@ -12,10 +12,12 @@ export class PlaybackController {
     onTimeUpdate?: (time: number) => void;
     onTokenChanged?: (tokenIndex: number) => void;
     onStateChanged?: (isPlaying: boolean) => void;
+    onBufferingRequest?: (time: number) => void;
 
     private updateInterval: number | null = null;
     private lastTokenIndex: number = -1;
     private isPlaying: boolean = false;
+    private lastBufferingTime: number = -1;
 
     constructor() {
         this.scheduler = new AudioScheduler();
@@ -51,6 +53,9 @@ export class PlaybackController {
         await this.scheduler.play(startOffset);
         this.startLoop();
         this.setIsPlaying(true);
+
+        // Initial buffer check
+        this.onBufferingRequest?.(startOffset);
     }
 
     async pause() {
@@ -75,6 +80,7 @@ export class PlaybackController {
         if (wasPlaying) {
             // Stop, seek, play
             this.scheduler.play(target).catch(console.error);
+            this.onBufferingRequest?.(target);
         } else {
             // Just update UI? 
             // We can't really "seek" the scheduler without playing usually, unless we track a manual offset.
@@ -95,6 +101,7 @@ export class PlaybackController {
             this.lastTokenIndex = tokenIndex;
             this.onTokenChanged?.(tokenIndex);
             this.onTimeUpdate?.(time);
+            this.onBufferingRequest?.(time);
         }
     }
 
@@ -136,6 +143,14 @@ export class PlaybackController {
         if (tokenIndex !== this.lastTokenIndex) {
             this.lastTokenIndex = tokenIndex;
             this.onTokenChanged?.(tokenIndex);
+        }
+
+        // Buffer check every 1s
+        // The buffer window is 30s, so we just need to request at current time
+        // The window already buffers ahead
+        if (Math.abs(time - this.lastBufferingTime) > 1.0) {
+            this.lastBufferingTime = time;
+            this.onBufferingRequest?.(time);
         }
 
         // Check for end

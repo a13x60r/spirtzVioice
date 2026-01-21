@@ -11,6 +11,47 @@ interface PiperGenerateResult {
 }
 
 
+const MAX_WORKERS = 3;
+
+class WorkerPool {
+    private workers: Worker[] = [];
+    private activeWorkers: Set<Worker> = new Set();
+
+    getWorker(url: string): Worker {
+
+        // Try to find an idle worker
+        const idleWorker = this.workers.find(w => !this.activeWorkers.has(w));
+        if (idleWorker) {
+            this.activeWorkers.add(idleWorker);
+            return idleWorker;
+        }
+
+        // Create new if limit not reached
+        if (this.workers.length < MAX_WORKERS) {
+            const newWorker = new Worker(url);
+            this.workers.push(newWorker);
+            this.activeWorkers.add(newWorker);
+            return newWorker;
+        }
+
+        // Fallback: This shouldn't happen if AudioEngine concurrency matches pool size.
+        // But if it does, just spawn a temporary one (or we could wait, but simple is better for now)
+        console.warn("Worker pool exhausted, spawning temporary worker");
+        return new Worker(url);
+    }
+
+    releaseWorker(worker: Worker) {
+        if (this.workers.includes(worker)) {
+            this.activeWorkers.delete(worker);
+        } else {
+            // It was a temp worker
+            worker.terminate();
+        }
+    }
+}
+
+const pool = new WorkerPool();
+
 export const piperGenerate = async (
     piperPhonemizeJsUrl: string,
     piperPhonemizeWasmUrl: string,
@@ -32,35 +73,17 @@ export const piperGenerate = async (
         console.warn("Emotion inference is not supported in this local adaptation of piper-wasm.");
     }
 
-    const piperPromise = new Promise<PiperGenerateResult>(async (resolve, reject) => {
-        const worker = new Worker(workerUrl);
+    return new Promise<PiperGenerateResult>(async (resolve, reject) => {
+        const worker = pool.getWorker(workerUrl);
 
-        worker.postMessage({
-            kind: "init",
-            input,
-            speakerId,
-            blobs,
-            piperPhonemizeJsUrl,
-            piperPhonemizeWasmUrl,
-            piperPhonemizeDataUrl,
-            modelUrl,
-            modelConfigUrl,
-            phonemeIds,
-            onnxruntimeUrl,
-            lengthScale,
-        });
-
-        worker.addEventListener("message", (event: MessageEvent) => {
+        const messageHandler = (event: MessageEvent) => {
             const data = event.data;
             switch (data.kind) {
                 case "output": {
-                    // const rawIpa = (data.phonemes as string[]).join(" ");
-                    // const ipa = normalizeIpa(rawIpa); // unused
-
                     piperProgress = Math.round(100);
                     if (onProgress) onProgress(piperProgress);
 
-                    worker.terminate();
+                    cleanup();
                     resolve({
                         file: data.file,
                         duration: data.duration,
@@ -71,7 +94,7 @@ export const piperGenerate = async (
                 }
                 case "stderr": {
                     console.error(data.message);
-                    worker.terminate();
+                    cleanup();
                     reject(new Error(data.message));
                     break;
                 }
@@ -87,10 +110,37 @@ export const piperGenerate = async (
                     break;
                 }
             }
+        };
+
+        const cleanup = () => {
+            worker.removeEventListener("message", messageHandler);
+            pool.releaseWorker(worker);
+        };
+
+        worker.addEventListener("message", messageHandler);
+
+        // Optimizing CPU usage:
+        // If we have 3 workers, we shouldn't let each consume all cores.
+        // We split available cores among workers.
+        const totalCores = navigator.hardwareConcurrency || 4;
+        const threadsPerWorker = Math.max(1, Math.floor(totalCores / MAX_WORKERS));
+
+        worker.postMessage({
+            kind: "init",
+            input,
+            speakerId,
+            blobs,
+            piperPhonemizeJsUrl,
+            piperPhonemizeWasmUrl,
+            piperPhonemizeDataUrl,
+            modelUrl,
+            modelConfigUrl,
+            phonemeIds,
+            onnxruntimeUrl,
+            lengthScale,
+            numThreads: threadsPerWorker,
         });
     });
-
-    return piperPromise;
 };
 
 // Unused without Expressions

@@ -22,6 +22,12 @@ export interface AudioAssetEntity extends AudioAsset {
     id: string; // chunkHash
 }
 
+export interface AudioChunkEntity {
+    id: string; // chunkHash
+    data: Blob; // WAV data
+    duration: number; // seconds
+}
+
 export interface PlanEntity extends RenderPlan {
     // planId is key
 }
@@ -34,6 +40,7 @@ export class AppDatabase extends Dexie {
     documents!: Table<DocumentEntity, string>;
     settings!: Table<SettingsEntity, string>;
     audioCache!: Table<AudioAssetEntity, string>;
+    audioChunks!: Table<AudioChunkEntity, string>;
     plans!: Table<PlanEntity, string>;
     timelines!: Table<TimelineEntity, string>;
     voicePackages!: Table<VoicePackage, string>;
@@ -50,6 +57,15 @@ export class AppDatabase extends Dexie {
             timelines: 'planId',
             voicePackages: 'voiceId, lang',
             voiceAssets: 'id, voiceId'
+        });
+
+        this.version(2).stores({
+            audioChunks: 'id' // chunkHash
+        });
+
+        // Version 3: Clear corrupted cache (reset audio)
+        this.version(3).stores({}).upgrade(tx => {
+            return tx.table('audioChunks').clear();
         });
     }
 }

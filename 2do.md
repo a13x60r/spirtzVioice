@@ -4,8 +4,8 @@
 - [x] **PWA**: Verify offline capability and installability ✅ Fixed config, verified caching
 
 ## Document Management (via `DocumentStore`)
-- [ ] add overview of stored texts
-- [ ] add delete stored texts
+- [x] add overview of stored texts ✅ Implemented Library view
+- [x] add delete stored texts ✅ Delete with confirmation
 
 ## Settings Persistence (per document)
 - [ ] save wpm setting for each stored text (via `updateProgress`)

@@ -29,14 +29,14 @@ export default defineConfig({
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp',
-            'Cross-Origin-Resource-Policy': 'same-origin',
+            'Cross-Origin-Resource-Policy': 'cross-origin',
         },
     },
     preview: {
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp',
-            'Cross-Origin-Resource-Policy': 'same-origin',
+            'Cross-Origin-Resource-Policy': 'cross-origin',
         },
     },
     worker: {
@@ -48,13 +48,13 @@ export default defineConfig({
             name: 'add-corp-headers',
             configureServer(server) {
                 server.middlewares.use((_req, res, next) => {
-                    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+                    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
                     next();
                 });
             },
             configurePreviewServer(server) {
                 server.middlewares.use((_req, res, next) => {
-                    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+                    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
                     next();
                 });
             },
@@ -93,7 +93,7 @@ export default defineConfig({
                 enabled: true
             },
             workbox: {
-                globPatterns: ['**/*.{js,css,html,ico,png,svg,json,wasm}'],
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,json,wasm,data,onnx}'],
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

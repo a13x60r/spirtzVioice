@@ -160,6 +160,11 @@ export class AudioEngine {
 
         console.log(`Buffering initial window from ${startTime}s...`);
         await this.bufferWindow(startTime);
+
+        // Ensure controller and UI are synced to the saved position
+        if (_startTokenIndex > 0) {
+            this.controller.seekByToken(_startTokenIndex);
+        }
     }
 
     /**

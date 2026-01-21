@@ -1,7 +1,7 @@
 import { AudioScheduler } from './AudioScheduler';
 import { PlaybackCursor } from './PlaybackCursor';
 import { TimelineEngine } from '@domain/TimelineEngine';
-import type { Timeline } from '@spec/types';
+import type { Timeline, Token } from '@spec/types';
 
 export class PlaybackController {
     private scheduler: AudioScheduler;
@@ -82,11 +82,15 @@ export class PlaybackController {
             this.scheduler.play(target).catch(console.error);
             this.onBufferingRequest?.(target);
         } else {
-            // Just update UI? 
-            // We can't really "seek" the scheduler without playing usually, unless we track a manual offset.
-            // For MVP: Just start playing from there? Or implement updateTime manually.
+            this.scheduler.seek(target);
+            this.onTimeUpdate?.(target);
+            const tokenIndex = this.cursor.getCurrentTokenIndex(target);
+            if (tokenIndex !== this.lastTokenIndex) {
+                this.lastTokenIndex = tokenIndex;
+                this.onTokenChanged?.(tokenIndex);
+            }
+            this.onBufferingRequest?.(target);
         }
-        // Minimal implementation
     }
 
     seekByToken(tokenIndex: number) {
@@ -98,10 +102,71 @@ export class PlaybackController {
         if (wasPlaying) {
             this.play(tokenIndex); // Replay from new position
         } else {
+            this.scheduler.seek(time);
             this.lastTokenIndex = tokenIndex;
             this.onTokenChanged?.(tokenIndex);
             this.onTimeUpdate?.(time);
             this.onBufferingRequest?.(time);
+        }
+    }
+
+    skipWord(direction: 1 | -1, tokens: Token[]) {
+        if (!this.timeline) return;
+        const currentIndex = this.getCurrentTokenIndex();
+
+        // Find next/prev word token
+        let targetIndex = currentIndex + direction;
+        while (targetIndex >= 0 && targetIndex < tokens.length) {
+            if (tokens[targetIndex].type === 'word') {
+                break;
+            }
+            targetIndex += direction;
+        }
+
+        if (targetIndex >= 0 && targetIndex < tokens.length) {
+            this.seekByToken(targetIndex);
+        }
+    }
+
+    skipSentence(direction: 1 | -1, tokens: Token[]) {
+        if (!this.timeline) return;
+        const currentIndex = this.getCurrentTokenIndex();
+        const currentToken = tokens[currentIndex];
+        if (!currentToken) return;
+
+        const currentSentenceId = currentToken.sentenceId;
+        let targetSentenceId = currentSentenceId + direction;
+
+        // Find the first token of the target sentence
+        const targetToken = tokens.find(t => t.sentenceId === targetSentenceId);
+        if (targetToken) {
+            this.seekByToken(targetToken.index);
+        }
+    }
+
+    skipParagraph(direction: 1 | -1, tokens: Token[]) {
+        if (!this.timeline) return;
+        const currentIndex = this.getCurrentTokenIndex();
+
+        // A paragraph break is usually a newline token with length > 1 (or multiple newlines)
+        let targetIndex = currentIndex + direction;
+        let foundNewline = false;
+
+        while (targetIndex >= 0 && targetIndex < tokens.length) {
+            const token = tokens[targetIndex];
+            if (token.type === 'newline') {
+                foundNewline = true;
+            } else if (foundNewline && token.type === 'word') {
+                // Found a word after a newline, this is the start of a paragraph
+                break;
+            }
+            targetIndex += direction;
+        }
+
+        if (targetIndex >= 0 && targetIndex < tokens.length) {
+            this.seekByToken(targetIndex);
+        } else if (direction === -1) {
+            this.seekByToken(0); // Go to start if skipping back from first para
         }
     }
 
@@ -146,8 +211,6 @@ export class PlaybackController {
         }
 
         // Buffer check every 1s
-        // The buffer window is 30s, so we just need to request at current time
-        // The window already buffers ahead
         if (Math.abs(time - this.lastBufferingTime) > 1.0) {
             this.lastBufferingTime = time;
             this.onBufferingRequest?.(time);

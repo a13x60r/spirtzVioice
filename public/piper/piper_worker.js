@@ -7,23 +7,37 @@ var getBlob = async (url, blobs) => {
   const id = new Date().getTime();
   self.postMessage({ kind: "fetch", id, url });
 
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${url}: status ${response.status}`);
-    }
+  let error;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      // Use no-cache to avoid getting a corrupted partial result from disk cache
+      // if previous fetch failed midway.
+      const response = await fetch(url, { cache: 'no-cache' });
+      if (!response.ok) {
+        throw new Error(`status ${response.status} ${response.statusText}`);
+      }
 
-    const blob = await response.blob();
-    if (!(blob instanceof Blob)) {
-      throw new Error(`Response is not a Blob for ${url}`);
-    }
+      const blob = await response.blob();
+      if (!(blob instanceof Blob)) {
+        throw new Error(`Response is not a Blob`);
+      }
 
-    blobs[url] = blob;
-    self.postMessage({ kind: "fetch", id, url, blob });
-    return blob;
-  } catch (error) {
-    throw new Error(`Failed to fetch ${url}: ${error.message}`);
+      // Check for extremely small blobs that might indicate an error page being returned as 200 (common on some servers)
+      if (blob.size < 100 && url.includes('.data')) {
+        console.warn(`[getBlob] Small blob (${blob.size} bytes) for ${url}, might be corrupted.`);
+      }
+
+      blobs[url] = blob;
+      self.postMessage({ kind: "fetch", id, url, blob });
+      return blob;
+    } catch (e) {
+      error = e;
+      console.error(`[getBlob] Attempt ${attempt} failed for ${url}: ${e.message}`);
+      if (attempt < 2) await new Promise(r => setTimeout(r, 500));
+    }
   }
+
+  throw new Error(`Failed to fetch ${url} after 2 attempts. Error: ${error.message}. Is the server running and accessible?`);
 };
 
 // piper_worker.js

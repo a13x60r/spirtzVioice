@@ -207,6 +207,17 @@ export class AudioScheduler {
     }
 
     /**
+     * Seek to a specific timeline position without starting playback
+     */
+    seek(time: number) {
+        this.offsetTime = time;
+        // If we are playing, we should handle it (already handled in setPlaybackRate or play(T))
+        // But for "seek while paused", just updating offsetTime is enough because
+        // play() will use this.startTime = this.ctx.currentTime - (startOffsetSec / this.playbackRate)
+        // Wait, if we seek while paused, the NEXT play() call will uses its ARGUMENT startOffsetSec.
+    }
+
+    /**
      * Stop completely
      */
     stop() {

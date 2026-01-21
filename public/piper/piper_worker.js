@@ -12,7 +12,8 @@ var getBlob = async (url, blobs) => {
     try {
       // Use no-cache to avoid getting a corrupted partial result from disk cache
       // if previous fetch failed midway.
-      const response = await fetch(url, { cache: 'no-cache' });
+      const fetchUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+      const response = await fetch(fetchUrl, { cache: 'no-cache' });
       if (!response.ok) {
         throw new Error(`status ${response.status} ${response.statusText}`);
       }

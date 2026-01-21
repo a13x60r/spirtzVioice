@@ -5,11 +5,12 @@ export class DocumentStore {
     /**
      * Create a new document
      */
-    async createDocument(title: string, originalText: string, ttsText?: string): Promise<DocumentEntity> {
+    async createDocument(title: string, originalText: string, ttsText?: string, contentType: 'text' | 'html' | 'markdown' = 'text'): Promise<DocumentEntity> {
         const doc: DocumentEntity = {
             id: uuidv4(),
             title,
             originalText,
+            contentType,
             ttsText: ttsText || originalText, // Fallback to originalText if no ttsText provided
             createdAt: Date.now(),
             lastReadAt: Date.now(),

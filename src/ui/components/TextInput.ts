@@ -1,8 +1,8 @@
 export class TextInput {
     private container: HTMLElement;
-    private onSubmit: (title: string, originalText: string, ttsText: string) => void;
+    private onSubmit: (title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown') => void;
 
-    constructor(container: HTMLElement, onSubmit: (title: string, originalText: string, ttsText: string) => void) {
+    constructor(container: HTMLElement, onSubmit: (title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown') => void) {
         this.container = container;
         this.onSubmit = onSubmit;
     }
@@ -66,7 +66,8 @@ export class TextInput {
                 // Check if we have stored original content from file import
                 const originalContent = (textTextArea as any)._originalContent || text;
                 const ttsContent = (textTextArea as any)._ttsContent || text;
-                this.onSubmit(title, originalContent, ttsContent);
+                const contentType = (textTextArea as any)._contentType || 'text';
+                this.onSubmit(title, originalContent, ttsContent, contentType);
             }
         });
     }
@@ -83,16 +84,20 @@ export class TextInput {
         try {
             const content = await file.text();
             let ttsText: string;
+            let contentType: 'text' | 'html' | 'markdown' = 'text';
 
             if (file.name.endsWith('.html')) {
                 const { extractTextFromHtml } = await import('../utils/htmlUtils');
                 ttsText = extractTextFromHtml(content);
+                contentType = 'html';
             } else if (file.name.endsWith('.md')) {
                 const { stripMarkdown } = await import('../utils/markdownUtils');
                 ttsText = stripMarkdown(content);
+                contentType = 'markdown';
             } else {
                 // Plain text
                 ttsText = content;
+                contentType = 'text';
             }
 
             // Display raw content in textarea for user to see/edit
@@ -100,6 +105,7 @@ export class TextInput {
             // Store both: original (raw) and TTS-ready versions
             (textTextArea as any)._originalContent = content;
             (textTextArea as any)._ttsContent = ttsText;
+            (textTextArea as any)._contentType = contentType;
         } catch (error) {
             console.error('Error reading file:', error);
             alert('Failed to read file.');

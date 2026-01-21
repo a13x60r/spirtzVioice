@@ -90,9 +90,10 @@ export default defineConfig({
                 ]
             },
             devOptions: {
-                enabled: true
+                enabled: false // Temporarily disable SW in dev to debug fetch issues
             },
             workbox: {
+                maximumFileSizeToCacheInBytes: 100000000, // 100MB to support large Voice Models
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,json,wasm,data,onnx}'],
                 runtimeCaching: [
                     {

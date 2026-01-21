@@ -14,10 +14,12 @@
   },
   "dependencies": {
     "dexie": "^3.2.4",
+    "marked": "^17.0.1",
     "piper-wasm": "^0.1.4",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/marked": "^5.0.2",
     "@types/node": "^20.11.5",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.19.1",

@@ -224,8 +224,8 @@ export class ReaderShell {
         }).catch(err => console.error("Failed to fetch voices", err));
 
         // TextInput
-        this.textInput = new TextInput(this.viewContainer, async (title, originalText, ttsText) => {
-            await this.handleNewDocument(title, originalText, ttsText);
+        this.textInput = new TextInput(this.viewContainer, async (title, originalText, ttsText, contentType) => {
+            await this.handleNewDocument(title, originalText, ttsText, contentType);
         });
 
         // DocumentList
@@ -244,10 +244,10 @@ export class ReaderShell {
         this.showDocumentList();
     }
 
-    private async handleNewDocument(title: string, originalText: string, ttsText: string) {
+    private async handleNewDocument(title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown') {
         this.loadingOverlay.show('Processing Document...');
 
-        const doc = await documentStore.createDocument(title, originalText, ttsText);
+        const doc = await documentStore.createDocument(title, originalText, ttsText, contentType);
         this.currentDocId = doc.id;
 
         const tokens = TextPipeline.tokenize(ttsText);
@@ -257,6 +257,8 @@ export class ReaderShell {
             this.loadingOverlay.setProgress(p);
             if (msg) this.loadingOverlay.setText(msg);
         });
+
+        this.paragraphView.setDocumentContext(originalText, contentType);
 
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
@@ -301,6 +303,7 @@ export class ReaderShell {
         if (!doc) return;
 
         this.currentDocId = docId;
+        this.paragraphView.setDocumentContext(doc.originalText, doc.contentType || 'text');
         this.loadingOverlay.show('Loading Document...');
 
         const textForTts = doc.ttsText || doc.originalText;

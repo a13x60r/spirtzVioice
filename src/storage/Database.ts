@@ -12,6 +12,7 @@ export interface DocumentEntity {
     progressTokenIndex: number;
     voiceId: string; // Last used voice
     speedWpm: number; // Last used speed
+    contentType: 'text' | 'html' | 'markdown';
 }
 
 export interface SettingsEntity extends Settings {

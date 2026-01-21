@@ -1,0 +1,46 @@
+{
+  "name": "spirtz-voice",
+  "version": "0.1.0",
+  "description": "Offline-first reader with exact text-to-speech synchronization",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dexie": "^3.2.4",
+    "piper-wasm": "^0.1.4",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
+    "@vitest/coverage-v8": "^1.2.1",
+    "eslint": "^8.56.0",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^27.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vite-plugin-pwa": "^0.17.5",
+    "vitest": "^1.2.1",
+    "workbox-window": "^7.0.0"
+  },
+  "keywords": [
+    "reader",
+    "tts",
+    "text-to-speech",
+    "offline",
+    "pwa",
+    "rsvp",
+    "speed-reading"
+  ],
+  "author": "",
+  "license": "MIT"
+}

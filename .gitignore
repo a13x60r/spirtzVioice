@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+test_output.txt
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+dist/
+build/
+.vite/
+
+# Development
+.DS_Store
+*.log
+*.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# PWA assets (if generated)
+dev-dist/
+sw.js
+workbox-*.js
+
+# Voice packages (if large)
+public/voices/*.bin
+public/voices/*.dat

@@ -6,6 +6,7 @@ export interface DocumentEntity {
     id: string; // uuid
     title: string;
     originalText: string;
+    ttsText?: string; // Cleaned text for TTS (markdown/HTML stripped)
     createdAt: number;
     lastReadAt: number;
     progressTokenIndex: number;

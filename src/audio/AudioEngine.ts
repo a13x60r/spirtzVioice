@@ -50,8 +50,8 @@ export class AudioEngine {
 
         this.worker.onmessage = this.handleWorkerMessage.bind(this);
 
-        // Init worker
-        this.worker.postMessage({ type: 'INIT' });
+        // Init worker with origin URL for proper resource resolution
+        this.worker.postMessage({ type: 'INIT', payload: { originUrl: window.location.origin } });
 
         // JIT Buffering Hook
         this.controller.onBufferingRequest = (time) => {
@@ -410,6 +410,31 @@ export class AudioEngine {
         const currentTokenIndex = this.controller.getCurrentTokenIndex();
 
         console.log(`Updating settings: WPM ${settings.speedWpm}, Voice ${settings.voiceId}`);
+
+        // Check for optimizations
+        const sameVoice = settings.voiceId === this.currentPlan.voiceId;
+        const sameStrategy = settings.strategy === this.currentPlan.strategy;
+        const sameChunkSize = settings.strategy === 'TOKEN' || settings.chunkSize === this.currentPlan.chunkSize;
+
+        if (sameVoice && sameStrategy && sameChunkSize) {
+            const baseWpm = this.currentPlan.speedWpm;
+            const targetWpm = settings.speedWpm;
+            const ratio = targetWpm / baseWpm;
+
+            // Hybrid Approach:
+            // If WPM change is within reasonable limits (e.g., 0.75x to 1.25x), 
+            // use playbackRate modification to avoid resynthesis.
+            // This changes pitch slightly but is instant.
+            if (ratio >= 0.75 && ratio <= 1.25) {
+                console.log(`[AudioEngine] Hybrid WPM: Using playbackRate ${ratio.toFixed(2)}x (Base: ${baseWpm}, Target: ${targetWpm})`);
+                this.scheduler.setPlaybackRate(ratio);
+                return;
+            }
+        }
+
+        // Fallback: Full Resynthesis
+        // Reset playback rate to 1.0 since we are generating audio at the new target WPM
+        this.scheduler.setPlaybackRate(1.0);
 
         // Re-load document with new settings
         // This triggers re-planning and re-synthesis (differential via cache)

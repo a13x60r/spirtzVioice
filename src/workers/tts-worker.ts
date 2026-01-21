@@ -3,7 +3,8 @@ import { pcmToWav } from './tts/AudioConverter';
 import type { WorkerMessage, WorkerResponse, SynthesizeRequest, ChunkCompleteResponse } from './tts-protocol';
 
 const ctx: Worker = self as any;
-const ttsEngine = new OfflineVoice();
+let ttsEngine: OfflineVoice;
+let originUrl: string = '';
 
 ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
     const { type, payload } = event.data;
@@ -11,6 +12,8 @@ ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
     try {
         switch (type) {
             case 'INIT':
+                originUrl = payload?.originUrl || '';
+                ttsEngine = new OfflineVoice(originUrl);
                 await ttsEngine.init();
                 sendResponse('INIT_COMPLETE');
                 break;

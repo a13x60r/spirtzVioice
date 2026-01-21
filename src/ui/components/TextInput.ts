@@ -1,8 +1,8 @@
 export class TextInput {
     private container: HTMLElement;
-    private onSubmit: (title: string, text: string) => void;
+    private onSubmit: (title: string, originalText: string, ttsText: string) => void;
 
-    constructor(container: HTMLElement, onSubmit: (title: string, text: string) => void) {
+    constructor(container: HTMLElement, onSubmit: (title: string, originalText: string, ttsText: string) => void) {
         this.container = container;
         this.onSubmit = onSubmit;
     }
@@ -63,7 +63,10 @@ export class TextInput {
             const title = titleInput.value;
             const text = textTextArea.value;
             if (title && text) {
-                this.onSubmit(title, text);
+                // Check if we have stored original content from file import
+                const originalContent = (textTextArea as any)._originalContent || text;
+                const ttsContent = (textTextArea as any)._ttsContent || text;
+                this.onSubmit(title, originalContent, ttsContent);
             }
         });
     }
@@ -79,13 +82,24 @@ export class TextInput {
 
         try {
             const content = await file.text();
+            let ttsText: string;
+
             if (file.name.endsWith('.html')) {
-                // Use the utility to extract clean text
                 const { extractTextFromHtml } = await import('../utils/htmlUtils');
-                textTextArea.value = extractTextFromHtml(content);
+                ttsText = extractTextFromHtml(content);
+            } else if (file.name.endsWith('.md')) {
+                const { stripMarkdown } = await import('../utils/markdownUtils');
+                ttsText = stripMarkdown(content);
             } else {
-                textTextArea.value = content;
+                // Plain text
+                ttsText = content;
             }
+
+            // Display raw content in textarea for user to see/edit
+            textTextArea.value = content;
+            // Store both: original (raw) and TTS-ready versions
+            (textTextArea as any)._originalContent = content;
+            (textTextArea as any)._ttsContent = ttsText;
         } catch (error) {
             console.error('Error reading file:', error);
             alert('Failed to read file.');

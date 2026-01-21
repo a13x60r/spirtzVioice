@@ -2,7 +2,6 @@
 // Local version of piper-wasm/api.js adapted to remove missing 'expressions.js' dependency
 
 const blobs: Record<string, Blob> = {};
-let worker: Worker | null = null;
 
 interface PiperGenerateResult {
     file: Blob;
@@ -12,9 +11,6 @@ interface PiperGenerateResult {
 }
 
 
-/**
- * Generates audio using the Piper model.
- */
 export const piperGenerate = async (
     piperPhonemizeJsUrl: string,
     piperPhonemizeWasmUrl: string,
@@ -37,33 +33,7 @@ export const piperGenerate = async (
     }
 
     const piperPromise = new Promise<PiperGenerateResult>(async (resolve, reject) => {
-        if (worker) {
-            const alivePromise = new Promise<boolean>((resolveAlive) => {
-                const aliveChecker = (event: MessageEvent) => {
-                    if (event.data.kind === "isAlive") {
-                        const { isAlive } = event.data;
-                        if (isAlive) {
-                            resolveAlive(true);
-                            worker?.removeEventListener("message", aliveChecker);
-                        } else {
-                            worker?.terminate();
-                            worker = new Worker(workerUrl);
-                            resolveAlive(false);
-                        }
-                    }
-                };
-                worker?.addEventListener("message", aliveChecker);
-            });
-            worker.postMessage({
-                kind: "isAlive",
-                modelUrl,
-            });
-            await alivePromise;
-        } else {
-            worker = new Worker(workerUrl);
-        }
-
-        if (!worker) throw new Error("Worker failed to initialize");
+        const worker = new Worker(workerUrl);
 
         worker.postMessage({
             kind: "init",
@@ -90,6 +60,7 @@ export const piperGenerate = async (
                     piperProgress = Math.round(100);
                     if (onProgress) onProgress(piperProgress);
 
+                    worker.terminate();
                     resolve({
                         file: data.file,
                         duration: data.duration,
@@ -100,6 +71,7 @@ export const piperGenerate = async (
                 }
                 case "stderr": {
                     console.error(data.message);
+                    worker.terminate();
                     reject(new Error(data.message));
                     break;
                 }

@@ -61,7 +61,7 @@ export class OfflineVoice {
                 this.currentConfigUrl,
                 null, // speakerId
                 text,
-                (_progress) => { /* console.log('Piper Progress', progress) */ },
+                (_p) => { /* Silenced internal logs */ },
                 null, // phonemeIds
                 false, // inferEmotion
                 BASE_URL, // onnxruntimeUrl (folder)

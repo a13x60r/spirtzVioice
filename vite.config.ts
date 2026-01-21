@@ -25,15 +25,29 @@ export default defineConfig({
             },
         },
     },
+    server: {
+        headers: {
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Embedder-Policy': 'require-corp',
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+        },
+    },
+    preview: {
+        headers: {
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Embedder-Policy': 'require-corp',
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+        },
+    },
     worker: {
         format: 'es',
     },
     plugins: [
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+            includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
             manifest: {
-                name: 'Spirtz Voice',
+                name: 'Spritz Voice',
                 short_name: 'Spirtz',
                 description: 'Offline High-Performance Speed Reader',
                 theme_color: '#3b82f6',
@@ -58,6 +72,9 @@ export default defineConfig({
                         purpose: 'any maskable'
                     }
                 ]
+            },
+            devOptions: {
+                enabled: true
             },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,json,wasm}'],

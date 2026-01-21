@@ -67,7 +67,7 @@ export class ReaderShell {
         this.container.innerHTML = `
             <div class="shell-container">
                 <header class="header">
-                    <h1>Spritiz Voice</h1>
+                    <h1>Spritz Voice</h1>
                     <div>
                         <button class="btn btn-secondary" id="btn-toggle-view" style="margin-right: 10px">Switch View</button>
                         <button class="btn btn-secondary" id="btn-settings">Settings</button>
@@ -147,7 +147,10 @@ export class ReaderShell {
                 settingsStore.saveSettings({ speedWpm: wpm });
 
                 this.loadingOverlay.show('Updating Speed...');
-                await this.audioEngine.updateSettings(this.settings, (p) => this.loadingOverlay.setProgress(p));
+                await this.audioEngine.updateSettings(this.settings, (p, msg) => {
+                    this.loadingOverlay.setProgress(p);
+                    if (msg) this.loadingOverlay.setText(msg);
+                });
                 this.loadingOverlay.hide();
             }
         });
@@ -165,7 +168,10 @@ export class ReaderShell {
 
                     // Update engine (load voice + re-synth)
                     this.loadingOverlay.show('Loading Voice...');
-                    await this.audioEngine.updateSettings(this.settings, (p) => this.loadingOverlay.setProgress(p));
+                    await this.audioEngine.updateSettings(this.settings, (p, msg) => {
+                        this.loadingOverlay.setProgress(p);
+                        if (msg) this.loadingOverlay.setText(msg);
+                    });
                     this.loadingOverlay.hide();
                 },
                 onSpeedChange: async (wpm) => {
@@ -173,7 +179,10 @@ export class ReaderShell {
                     settingsStore.saveSettings({ speedWpm: wpm });
 
                     this.loadingOverlay.show('Updating Speed...');
-                    await this.audioEngine.updateSettings(this.settings, (p) => this.loadingOverlay.setProgress(p));
+                    await this.audioEngine.updateSettings(this.settings, (p, msg) => {
+                        this.loadingOverlay.setProgress(p);
+                        if (msg) this.loadingOverlay.setText(msg);
+                    });
                     this.loadingOverlay.hide();
                 },
                 onStrategyChange: async (strategy) => {
@@ -181,7 +190,10 @@ export class ReaderShell {
                     settingsStore.saveSettings({ strategy });
 
                     this.loadingOverlay.show('Updating Strategy...');
-                    await this.audioEngine.updateSettings(this.settings, (p) => this.loadingOverlay.setProgress(p));
+                    await this.audioEngine.updateSettings(this.settings, (p, msg) => {
+                        this.loadingOverlay.setProgress(p);
+                        if (msg) this.loadingOverlay.setText(msg);
+                    });
                     this.loadingOverlay.hide();
                 }
             },
@@ -218,8 +230,9 @@ export class ReaderShell {
         const tokens = TextPipeline.tokenize(text);
 
         // 3. Load into Engine
-        await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p) => {
+        await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p, msg) => {
             this.loadingOverlay.setProgress(p);
+            if (msg) this.loadingOverlay.setText(msg);
         });
 
         this.loadingOverlay.hide();

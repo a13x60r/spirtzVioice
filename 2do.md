@@ -1,12 +1,14 @@
- [x] wpm setting doesnt work
- [ ] progress bar for text proccessing
- [ ] file support, html, markdown, plain text
- [ ] store recived and proccesed texts localy
- [ ] way to create new text
- [ ] store processed texts localy
- [ ] pwa
- [x] calculate total time and display it
- [x] fix app name to SpritzVoice
- [ ] manifest.webmanifest:1  Manifest: Line: 1, column: 1, Syntax error.
- [ ] 5895b81f-5138-4dc7-98bb-8ad6d8b4e89c:1805  env.wasm.numThreads is set to 16, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.
- [ ] save reading position for each stored text
+# Features (Todo)
+- [x] **File Support**: Import .html, .md, .txt files directly (Implemented in `TextInput`)
+- [ ] **PWA**: Verify offline capability and installability (Initial check passed, fixed missing icon in config)
+
+# Done
+- [x] Fix `manifest.webmanifest` syntax error. (Enabled PWA dev options)
+- [x] Fix `env.wasm.numThreads` warning. (Added COOP/COEP headers)
+- [x] wpm setting doesnt work (Fixed)
+- [x] progress bar for text processing (Implemented in `LoadingOverlay` / `ReaderShell`)
+- [x] calculate total time and display it (Implemented in `Controls`)
+- [x] fix app name to SpritzVoice (Done in `index.html` / `vite.config.ts`)
+- [x] way to create new text (via `TextInput`)
+- [x] store processed texts locally (via `DocumentStore` / Dexie)
+- [x] save reading position for each stored text (via `DocumentStore` `updateProgress`)

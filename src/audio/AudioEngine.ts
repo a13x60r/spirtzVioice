@@ -57,7 +57,7 @@ export class AudioEngine {
         tokens: Token[],
         settings: Settings,
         _startTokenIndex: number = 0,
-        onProgress?: (percent: number) => void
+        onProgress?: (percent: number, message?: string) => void
     ) {
         this.currentTokens = tokens;
 
@@ -138,16 +138,30 @@ export class AudioEngine {
         });
     }
 
-    private async synthesizeAllChunks(plan: RenderPlan, onProgress?: (percent: number) => void) {
+    private async synthesizeAllChunks(plan: RenderPlan, onProgress?: (percent: number, message?: string) => void) {
         const chunksToSynth = plan.chunks.filter(chunk => !this.audioBufferCache.has(chunk.chunkHash));
         const total = chunksToSynth.length;
 
-        // Process chunks SEQUENTIALLY because piper-api uses a shared worker
-        // and parallel requests cause message conflicts
-        for (let i = 0; i < total; i++) {
-            const chunk = chunksToSynth[i];
+        if (total === 0) {
+            onProgress?.(100, 'All chunks cached');
+            return;
+        }
+
+        onProgress?.(0, `Synthesizing 0/${total} chunks...`);
+
+        const CONCURRENCY = 3;
+        let completed = 0;
+
+        const processChunk = async (chunk: any) => {
             await this.synthesizeChunk(chunk, plan);
-            onProgress?.(Math.round(((i + 1) / total) * 100));
+            completed++;
+            onProgress?.(Math.round((completed / total) * 100), `Synthesizing chunk ${completed}/${total}...`);
+        };
+
+        // Process in batches
+        for (let i = 0; i < total; i += CONCURRENCY) {
+            const batch = chunksToSynth.slice(i, i + CONCURRENCY);
+            await Promise.all(batch.map((chunk, idx) => processChunk(chunk, i + idx)));
         }
     }
 
@@ -250,7 +264,7 @@ export class AudioEngine {
         });
     }
 
-    async updateSettings(settings: Settings, onProgress?: (percent: number) => void) {
+    async updateSettings(settings: Settings, onProgress?: (percent: number, message?: string) => void) {
         if (!this.currentPlan || !this.currentTokens.length) return;
 
         const wasPlaying = this.controller.getState() === 'PLAYING';

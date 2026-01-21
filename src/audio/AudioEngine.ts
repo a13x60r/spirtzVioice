@@ -22,6 +22,8 @@ export class AudioEngine {
     private currentPlan: RenderPlan | null = null;
     private currentTimeline: Timeline | null = null;
     private currentTokens: Token[] = [];
+    private useWebGPU: boolean = false;
+    private gpuPreference?: 'high-performance' | 'low-power' | 'default';
 
     // Pending resolver map for chunks
     private pendingChunks = new Map<string, { resolve: (response: ChunkCompleteResponse) => void, reject: (err: any) => void }>();
@@ -72,6 +74,8 @@ export class AudioEngine {
         onProgress?: (percent: number, message?: string) => void
     ) {
         this.currentTokens = tokens;
+        this.useWebGPU = settings.useWebGPU ?? false;
+        this.gpuPreference = settings.gpuPreference;
         this.bufferedChunks.clear();
 
         // Clear previous schedule
@@ -325,7 +329,9 @@ export class AudioEngine {
                     chunkText: chunk.chunkText,
                     chunkHash: chunk.chunkHash,
                     voiceId: plan.voiceId,
-                    speedWpm: plan.speedWpm
+                    speedWpm: plan.speedWpm,
+                    useWebGPU: this.useWebGPU,
+                    gpuPreference: this.gpuPreference
                 }
             });
         });

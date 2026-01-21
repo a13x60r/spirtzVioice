@@ -34,6 +34,8 @@ export interface SynthesizeRequest {
     chunkHash: string;
     voiceId: string;
     speedWpm: number;
+    useWebGPU?: boolean;
+    gpuPreference?: 'high-performance' | 'low-power' | 'default';
 }
 
 export interface ChunkCompleteResponse {

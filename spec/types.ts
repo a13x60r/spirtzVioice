@@ -24,6 +24,8 @@ export interface PauseRules {
     paragraphPauseMs: number;
 }
 
+export type GpuPreference = 'high-performance' | 'low-power' | 'default';
+
 export interface Settings {
     voiceId: string;
     speedWpm: number;
@@ -33,6 +35,8 @@ export interface Settings {
     mode: ReaderMode;
     pauseRules: PauseRules;
     tokenizerVersion: "1";
+    useWebGPU?: boolean;  // Enable WebGPU acceleration (experimental)
+    gpuPreference?: GpuPreference;  // GPU selection hint: 'high-performance' (discrete) or 'low-power' (integrated)
 }
 
 export interface VoicePackage {

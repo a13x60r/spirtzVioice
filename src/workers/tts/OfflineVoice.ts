@@ -35,7 +35,7 @@ export class OfflineVoice {
         console.log(`Configured voice: ${voiceId} -> ${actualVoiceFile}`);
     }
 
-    async synthesize(text: string, _speedWpm: number): Promise<{
+    async synthesize(text: string, _speedWpm: number, useWebGPU: boolean = false, gpuPreference?: 'high-performance' | 'low-power' | 'default'): Promise<{
         audioData: Float32Array,
         sampleRate: number,
         durationSec: number,
@@ -65,7 +65,9 @@ export class OfflineVoice {
                 null, // phonemeIds
                 false, // inferEmotion
                 BASE_URL, // onnxruntimeUrl (folder)
-                lengthScale
+                lengthScale,
+                useWebGPU,
+                gpuPreference
             );
 
             // result.file is a Blob (wav)

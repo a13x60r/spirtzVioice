@@ -34,6 +34,7 @@ export interface SynthesizeRequest {
     chunkHash: string;
     voiceId: string;
     speedWpm: number;
+    useWebGPU?: boolean;
 }
 
 export interface ChunkCompleteResponse {

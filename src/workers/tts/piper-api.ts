@@ -65,7 +65,8 @@ export const piperGenerate = async (
     phonemeIds?: number[] | null,
     inferEmotion: boolean = false,
     onnxruntimeUrl: string = "https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.17.1/",
-    lengthScale?: number
+    lengthScale?: number,
+    useWebGPU: boolean = false
 ): Promise<PiperGenerateResult> => {
     let piperProgress = 0;
 
@@ -139,6 +140,7 @@ export const piperGenerate = async (
             onnxruntimeUrl,
             lengthScale,
             numThreads: threadsPerWorker,
+            useWebGPU,
         });
     });
 };

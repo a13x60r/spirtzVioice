@@ -33,6 +33,7 @@ export interface Settings {
     mode: ReaderMode;
     pauseRules: PauseRules;
     tokenizerVersion: "1";
+    useWebGPU?: boolean;  // Enable WebGPU acceleration (experimental)
 }
 
 export interface VoicePackage {

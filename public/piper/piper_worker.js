@@ -86,7 +86,19 @@ async function init(data, phonemizeOnly = false) {
   const lengthScale = data.lengthScale ?? modelConfig.inference.length_scale;
   const noiseW = modelConfig.inference.noise_w;
   const modelBlob = await getBlob(modelUrl, blobs);
-  const session = cachedSession[modelUrl] ?? await ort.InferenceSession.create(URL.createObjectURL(modelBlob));
+  const modelBlobUrl = URL.createObjectURL(modelBlob);
+
+  // Configure execution providers based on useWebGPU flag
+  let sessionOptions = {};
+  if (data.useWebGPU) {
+    // Try WebGPU first, fall back to WASM if unavailable
+    sessionOptions = { executionProviders: ['webgpu', 'wasm'] };
+    console.log('[Piper] Attempting WebGPU execution provider');
+  } else {
+    sessionOptions = { executionProviders: ['wasm'] };
+  }
+
+  const session = cachedSession[modelUrl] ?? await ort.InferenceSession.create(modelBlobUrl, sessionOptions);
   if (Object.keys(cachedSession).length && !cachedSession[modelUrl])
     cachedSession = {};
   cachedSession[modelUrl] = session;

@@ -48,9 +48,9 @@ export default defineConfig({
             includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
             manifest: {
                 name: 'Spritz Voice',
-                short_name: 'Spirtz',
+                short_name: 'SpritzVoice',
                 description: 'Offline High-Performance Speed Reader',
-                theme_color: '#3b82f6',
+                theme_color: '#1e40af',
                 background_color: '#ffffff',
                 display: 'standalone',
                 orientation: 'portrait',

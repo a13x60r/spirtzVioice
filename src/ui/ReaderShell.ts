@@ -7,6 +7,7 @@ import { settingsStore } from '../storage/SettingsStore';
 import { Controls } from './components/Controls';
 import { SettingsPanel } from './components/Settings';
 import { TextInput } from './components/TextInput';
+import { DocumentList } from './components/DocumentList';
 import { RSVPView } from './views/RSVPView';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { ParagraphView } from './views/ParagraphView';
@@ -31,6 +32,8 @@ export class ReaderShell {
     private settingsPanel!: SettingsPanel;
     private textInput!: TextInput;
     private loadingOverlay!: LoadingOverlay;
+    private documentList!: DocumentList;
+    private currentDocId: string | null = null;
 
     constructor(containerId: string) {
         const el = document.getElementById(containerId);
@@ -69,6 +72,7 @@ export class ReaderShell {
                 <header class="header">
                     <h1>Spritz Voice</h1>
                     <div>
+                        <button class="btn btn-secondary" id="btn-library" style="margin-right: 10px">Library</button>
                         <button class="btn btn-secondary" id="btn-new-text" style="margin-right: 10px">New</button>
                         <button class="btn btn-secondary" id="btn-toggle-view" style="margin-right: 10px">Switch View</button>
                         <button class="btn btn-secondary" id="btn-settings">Settings</button>
@@ -91,6 +95,11 @@ export class ReaderShell {
         // New Text
         this.container.querySelector('#btn-new-text')?.addEventListener('click', () => {
             this.showTextInput();
+        });
+
+        // Library
+        this.container.querySelector('#btn-library')?.addEventListener('click', () => {
+            this.showDocumentList();
         });
 
         // Settings toggle
@@ -220,8 +229,21 @@ export class ReaderShell {
             await this.handleNewDocument(title, text);
         });
 
-        // Initially mount input and hide switch view
-        this.showTextInput();
+        // DocumentList
+        this.documentList = new DocumentList(this.viewContainer, {
+            onResume: (docId) => this.resumeDocument(docId),
+            onDelete: (docId) => {
+                // If currently viewing deleted doc, go back to library
+                if (this.currentDocId === docId) {
+                    this.currentDocId = null;
+                    this.showDocumentList();
+                }
+            },
+            onNewDocument: () => this.showTextInput()
+        });
+
+        // Initially show library if docs exist, otherwise show text input
+        this.showDocumentList();
     }
 
     private async handleNewDocument(title: string, text: string) {
@@ -231,6 +253,7 @@ export class ReaderShell {
 
         // 1. Save to DB
         const doc = await documentStore.createDocument(title, text);
+        this.currentDocId = doc.id;
 
         // 2. Tokenize
         // Ideally offload to worker or domain. TextPipeline is sync for now.
@@ -271,6 +294,7 @@ export class ReaderShell {
 
         // Unmount current view
         if (this.currentView) this.currentView.unmount();
+        this.documentList.unmount();
 
         // Mount Text Input
         this.textInput.mount();
@@ -280,10 +304,71 @@ export class ReaderShell {
         if (toggleBtn) toggleBtn.style.display = 'none';
     }
 
+    private async showDocumentList() {
+        // Pause if playing
+        this.audioEngine.getController().pause();
+
+        // Unmount current views
+        if (this.currentView) this.currentView.unmount();
+        this.textInput.unmount();
+
+        // Mount document list
+        await this.documentList.mount();
+
+        // Hide switch view button
+        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
+        if (toggleBtn) toggleBtn.style.display = 'none';
+    }
+
+    private async resumeDocument(docId: string) {
+        const doc = await documentStore.getDocument(docId);
+        if (!doc) {
+            console.error('Document not found:', docId);
+            return;
+        }
+
+        this.currentDocId = docId;
+        this.loadingOverlay.show('Loading Document...');
+
+        // Tokenize
+        const tokens = TextPipeline.tokenize(doc.originalText);
+
+        // Load into Engine with saved progress
+        await this.audioEngine.loadDocument(doc.id, tokens, this.settings, doc.progressTokenIndex, (p, msg) => {
+            this.loadingOverlay.setProgress(p);
+            if (msg) this.loadingOverlay.setText(msg);
+        });
+
+        this.loadingOverlay.hide();
+
+        // Switch to reading view
+        this.switchView(this.settings.mode);
+
+        // Show toggle view button
+        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
+        if (toggleBtn) toggleBtn.style.display = 'inline-block';
+
+        // Update view with tokens
+        if (this.currentView) {
+            this.currentView.update(doc.progressTokenIndex, tokens);
+        }
+
+        // Hook up controller listener
+        const controller = this.audioEngine.getController();
+        controller.onTokenChanged = (index) => {
+            if (this.currentView) {
+                this.currentView.update(index, tokens);
+            }
+            // Save progress periodically
+            documentStore.updateProgress(docId, index);
+        };
+    }
+
     private switchView(mode: 'RSVP' | 'PARAGRAPH') {
         // Unmount current (either View or TextInput)
         if (this.currentView) this.currentView.unmount();
         this.textInput.unmount(); // Unmount just in case
+        this.documentList.unmount();
 
         this.settings.mode = mode;
         settingsStore.saveSettings({ mode });

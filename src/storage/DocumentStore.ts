@@ -57,25 +57,22 @@ export class DocumentStore {
     }
 
     /**
-     * Delete document and related data
+     * Delete multiple documents and related data
      */
-    async deleteDocument(id: string) {
-        await db.transaction('rw', db.documents, db.plans, db.timelines, async () => {
-            // Cleanup related plans/timelines
-            await db.plans.where('docId').equals(id).delete();
-            // Timelines are keyed by planId, but we don't have a direct docId index on timelines in the schema
-            // Actually schema says: timelines: 'planId'
-            // We can iterate plans before deleting to get planIds?
-            // Or just leave them orphaned? Better to clean up.
+    async bulkDeleteDocuments(ids: string[]) {
+        if (ids.length === 0) return;
 
-            // Since plans table has docId, we can find planIds first
-            const plans = await db.plans.where('docId').equals(id).toArray();
+        await db.transaction('rw', db.documents, db.plans, db.timelines, async () => {
+            // Find all planIds for all documents
+            const plans = await db.plans.where('docId').anyOf(ids).toArray();
             const planIds = plans.map(p => p.planId);
 
+            // Cleanup related plans/timelines
+            await db.plans.where('docId').anyOf(ids).delete();
             await db.timelines.bulkDelete(planIds);
 
-            // Finally delete document
-            await db.documents.delete(id);
+            // Finally delete documents
+            await db.documents.bulkDelete(ids);
         });
     }
 }

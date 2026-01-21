@@ -69,4 +69,46 @@ describe('TimelineEngine', () => {
         expect(TimelineEngine.getCurrentTokenIndex(timeline, 0)).toBe(0);
         expect(TimelineEngine.getCurrentTokenIndex(timeline, 0.6)).toBe(0); // Clamped to last
     });
+
+    it('should distribute duration for CHUNK strategy', () => {
+        const chunkPlan: RenderPlan = {
+            ...mockPlan,
+            strategy: 'CHUNK',
+            chunks: [
+                {
+                    chunkId: 'h1',
+                    chunkHash: 'h1',
+                    startTokenIndex: 0,
+                    endTokenIndex: 2,
+                    chunkText: 'hello world',
+                    tokenIds: ['t1', 't2']
+                }
+            ]
+        };
+
+        const chunkTokens: Token[] = [
+            { ...mockTokens[0], index: 0 },
+            {
+                tokenId: 't2',
+                index: 1,
+                text: 'World',
+                normText: 'world',
+                type: 'word',
+                sentenceId: 0
+            }
+        ];
+
+        const assets = new Map<string, AudioAsset>([['h1', mockAudio]]); // 0.5s duration
+        const timeline = TimelineEngine.buildTimeline(chunkPlan, assets, chunkTokens);
+
+        expect(timeline.entries).toHaveLength(2);
+        // 2 words, so 0.5s / 2 = 0.25s per token
+        expect(timeline.entries[0].tokenId).toBe('t1');
+        expect(timeline.entries[0].tStartSec).toBe(0);
+        expect(timeline.entries[0].tEndSec).toBe(0.25);
+
+        expect(timeline.entries[1].tokenId).toBe('t2');
+        expect(timeline.entries[1].tStartSec).toBe(0.25);
+        expect(timeline.entries[1].tEndSec).toBe(0.5);
+    });
 });

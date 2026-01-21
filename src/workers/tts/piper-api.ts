@@ -11,10 +11,6 @@ interface PiperGenerateResult {
     phonemeIds: number[];
 }
 
-interface PiperWorkerMessage {
-    kind: string;
-    [key: string]: any;
-}
 
 /**
  * Generates audio using the Piper model.
@@ -31,7 +27,8 @@ export const piperGenerate = async (
     onProgress?: (progress: number) => void,
     phonemeIds?: number[] | null,
     inferEmotion: boolean = false,
-    onnxruntimeUrl: string = "https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.17.1/"
+    onnxruntimeUrl: string = "https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.17.1/",
+    lengthScale?: number
 ): Promise<PiperGenerateResult> => {
     let piperProgress = 0;
 
@@ -80,13 +77,14 @@ export const piperGenerate = async (
             modelConfigUrl,
             phonemeIds,
             onnxruntimeUrl,
+            lengthScale,
         });
 
         worker.addEventListener("message", (event: MessageEvent) => {
             const data = event.data;
             switch (data.kind) {
                 case "output": {
-                    const rawIpa = (data.phonemes as string[]).join(" ");
+                    // const rawIpa = (data.phonemes as string[]).join(" ");
                     // const ipa = normalizeIpa(rawIpa); // unused
 
                     piperProgress = Math.round(100);

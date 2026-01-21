@@ -66,5 +66,9 @@ This makes UI-to-audio mapping deterministic and reproducible across devices.
 Pause is implemented by inserting silent duration in timeline:
 - punctPauseMs added after tokens matching punctuation set [.,!?;:]
 - paragraphPauseMs after newline boundaries (if configured)
+
+> [!NOTE]
+> Pause insertion is currently disabled/postponed in the implementation to avoid sync issues.
+
 Pause is accounted by adding synthetic "pause" entries OR by extending token tEnd.
 MVP: extend prior token tEnd by pause duration.

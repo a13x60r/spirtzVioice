@@ -27,6 +27,10 @@ export class PlaybackController {
         this.cursor.setTimeline(timeline);
     }
 
+    getDuration(): number {
+        return this.timeline?.durationSec ?? 0;
+    }
+
     async play(startFromTokenIndex: number = -1) {
         if (!this.timeline) {
             console.warn("No timeline set");
@@ -96,6 +100,11 @@ export class PlaybackController {
 
     getScheduler() {
         return this.scheduler;
+    }
+
+    getCurrentTokenIndex(): number {
+        const time = this.scheduler.getCurrentTime();
+        return this.cursor.getCurrentTokenIndex(time);
     }
 
     private startLoop() {

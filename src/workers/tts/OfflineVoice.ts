@@ -5,7 +5,6 @@ import { piperGenerate } from './piper-api';
 const BASE_URL = '/piper/';
 
 export class OfflineVoice {
-    private currentVoiceId: string = 'en_US-amy-medium.onnx';
     private currentModelUrl: string = BASE_URL + 'en_US-amy-medium.onnx';
     private currentConfigUrl: string = BASE_URL + 'en_US-amy-medium.onnx.json';
 
@@ -31,13 +30,12 @@ export class OfflineVoice {
         };
 
         const actualVoiceFile = voiceMap[voiceId] || 'en_US-amy-medium.onnx';
-        this.currentVoiceId = voiceId;
         this.currentModelUrl = BASE_URL + actualVoiceFile;
         this.currentConfigUrl = BASE_URL + actualVoiceFile + '.json';
         console.log(`Configured voice: ${voiceId} -> ${actualVoiceFile}`);
     }
 
-    async synthesize(text: string, speedWpm: number): Promise<{
+    async synthesize(text: string, _speedWpm: number): Promise<{
         audioData: Float32Array,
         sampleRate: number,
         durationSec: number,
@@ -45,6 +43,13 @@ export class OfflineVoice {
     }> {
         // Piper uses on-disk models.
         // We need to pass the URLs.
+
+        // Calculate length scale to adjust speed
+        // Default WPM is approx 200? Amy is quite slow, maybe 150-180 default.
+        // Let's assume baseline 1.0 is ~175 WPM.
+        // speedWpm = 350 -> lengthScale = 0.5 (faster)
+        const BASE_WPM = 175;
+        const lengthScale = BASE_WPM / Math.max(50, _speedWpm); // Avoid div/0
 
         try {
             const result = await piperGenerate(
@@ -56,10 +61,11 @@ export class OfflineVoice {
                 this.currentConfigUrl,
                 null, // speakerId
                 text,
-                (progress) => { /* console.log('Piper Progress', progress) */ },
+                (_progress) => { /* console.log('Piper Progress', progress) */ },
                 null, // phonemeIds
                 false, // inferEmotion
-                BASE_URL // onnxruntimeUrl (folder)
+                BASE_URL, // onnxruntimeUrl (folder)
+                lengthScale
             );
 
             // result.file is a Blob (wav)

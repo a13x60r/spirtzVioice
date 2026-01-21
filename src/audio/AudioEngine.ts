@@ -20,6 +20,7 @@ export class AudioEngine {
 
     private currentPlan: RenderPlan | null = null;
     private currentTimeline: Timeline | null = null;
+    private currentTokens: Token[] = [];
 
     // Cache of decoded AudioBuffers
     private audioBufferCache = new Map<string, AudioBuffer>();
@@ -55,8 +56,11 @@ export class AudioEngine {
         docId: string,
         tokens: Token[],
         settings: Settings,
-        _startTokenIndex: number = 0
+        _startTokenIndex: number = 0,
+        onProgress?: (percent: number) => void
     ) {
+        this.currentTokens = tokens;
+
         // Clear previous schedule
         this.scheduler.clear();
 
@@ -72,7 +76,7 @@ export class AudioEngine {
         // For simplicity: Synthesize ALL chunks now.
         // In real app: buffer window.
 
-        await this.synthesizeAllChunks(this.currentPlan);
+        await this.synthesizeAllChunks(this.currentPlan, onProgress);
 
         console.log('Building timeline...');
         // Create map of AudioAssets (mocking AudioAsset structure using buffers)
@@ -134,13 +138,16 @@ export class AudioEngine {
         });
     }
 
-    private async synthesizeAllChunks(plan: RenderPlan) {
+    private async synthesizeAllChunks(plan: RenderPlan, onProgress?: (percent: number) => void) {
         const chunksToSynth = plan.chunks.filter(chunk => !this.audioBufferCache.has(chunk.chunkHash));
+        const total = chunksToSynth.length;
 
         // Process chunks SEQUENTIALLY because piper-api uses a shared worker
         // and parallel requests cause message conflicts
-        for (const chunk of chunksToSynth) {
+        for (let i = 0; i < total; i++) {
+            const chunk = chunksToSynth[i];
             await this.synthesizeChunk(chunk, plan);
+            onProgress?.(Math.round(((i + 1) / total) * 100));
         }
     }
 
@@ -241,5 +248,26 @@ export class AudioEngine {
             this.pendingVoiceList = { resolve, reject };
             this.worker.postMessage({ type: 'GET_VOICES' });
         });
+    }
+
+    async updateSettings(settings: Settings, onProgress?: (percent: number) => void) {
+        if (!this.currentPlan || !this.currentTokens.length) return;
+
+        const wasPlaying = this.controller.getState() === 'PLAYING';
+        const currentTokenIndex = this.controller.getCurrentTokenIndex();
+
+        console.log(`Updating settings: WPM ${settings.speedWpm}, Voice ${settings.voiceId}`);
+
+        // Re-load document with new settings
+        // This triggers re-planning and re-synthesis (differential via cache)
+        await this.loadDocument(this.currentPlan.docId, this.currentTokens, settings, 0, onProgress);
+
+        // Restore playback state
+        if (wasPlaying) {
+            this.controller.play(currentTokenIndex).catch(console.error);
+        } else {
+            // Explicitly update cursor and UI without playing
+            this.controller.seekByToken(currentTokenIndex);
+        }
     }
 }

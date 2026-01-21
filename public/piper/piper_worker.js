@@ -83,7 +83,7 @@ async function init(data, phonemizeOnly = false) {
   const sampleRate = modelConfig.audio.sample_rate;
   const numChannels = 1;
   const noiseScale = modelConfig.inference.noise_scale;
-  const lengthScale = modelConfig.inference.length_scale;
+  const lengthScale = data.lengthScale ?? modelConfig.inference.length_scale;
   const noiseW = modelConfig.inference.noise_w;
   const modelBlob = await getBlob(modelUrl, blobs);
   const session = cachedSession[modelUrl] ?? await ort.InferenceSession.create(URL.createObjectURL(modelBlob));
@@ -118,7 +118,7 @@ async function init(data, phonemizeOnly = false) {
     view.setUint32(36, 1635017060, true);
     view.setUint32(40, 2 * bufferLength, true);
     let p = headerLength;
-    for (let i = 0;i < bufferLength; i++) {
+    for (let i = 0; i < bufferLength; i++) {
       const v = buffer[i];
       if (v >= 1)
         view.setInt16(p, 32767, true);

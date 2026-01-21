@@ -8,6 +8,7 @@ import { Controls } from './components/Controls';
 import { SettingsPanel } from './components/Settings';
 import { TextInput } from './components/TextInput';
 import { RSVPView } from './views/RSVPView';
+import { LoadingOverlay } from './components/LoadingOverlay';
 import { ParagraphView } from './views/ParagraphView';
 import type { ReaderView } from './views/ViewInterface';
 import type { Settings } from '@spec/types';
@@ -29,6 +30,7 @@ export class ReaderShell {
     // Components
     private settingsPanel!: SettingsPanel;
     private textInput!: TextInput;
+    private loadingOverlay!: LoadingOverlay;
 
     constructor(containerId: string) {
         const el = document.getElementById(containerId);
@@ -47,7 +49,17 @@ export class ReaderShell {
         // Seed voices if needed
         await seedMockVoices();
 
+        // Seed voices if needed
+        await seedMockVoices();
+
         this.setupComponents();
+
+        // Initialize loading overlay
+        this.loadingOverlay = new LoadingOverlay();
+        // Hide initial loading screen if present
+        const initialLoader = document.querySelector('.loading');
+        if (initialLoader) initialLoader.remove();
+
         this.startUiLoop();
     }
 
@@ -130,9 +142,13 @@ export class ReaderShell {
             onSeek: (offset) => {
                 controller.seek(offset);
             },
-            onSpeedChange: (wpm) => {
+            onSpeedChange: async (wpm) => {
                 this.settings.speedWpm = wpm;
                 settingsStore.saveSettings({ speedWpm: wpm });
+
+                this.loadingOverlay.show('Updating Speed...');
+                await this.audioEngine.updateSettings(this.settings, (p) => this.loadingOverlay.setProgress(p));
+                this.loadingOverlay.hide();
             }
         });
 
@@ -147,16 +163,26 @@ export class ReaderShell {
                     this.settings.voiceId = voiceId;
                     await settingsStore.saveSettings({ voiceId });
 
-                    // Pre-load the voice to ensure responsiveness
-                    this.audioEngine.loadVoice(voiceId).catch(console.error);
+                    // Update engine (load voice + re-synth)
+                    this.loadingOverlay.show('Loading Voice...');
+                    await this.audioEngine.updateSettings(this.settings, (p) => this.loadingOverlay.setProgress(p));
+                    this.loadingOverlay.hide();
                 },
-                onSpeedChange: (wpm) => {
+                onSpeedChange: async (wpm) => {
                     this.settings.speedWpm = wpm;
                     settingsStore.saveSettings({ speedWpm: wpm });
+
+                    this.loadingOverlay.show('Updating Speed...');
+                    await this.audioEngine.updateSettings(this.settings, (p) => this.loadingOverlay.setProgress(p));
+                    this.loadingOverlay.hide();
                 },
-                onStrategyChange: (strategy) => {
+                onStrategyChange: async (strategy) => {
                     this.settings.strategy = strategy;
                     settingsStore.saveSettings({ strategy });
+
+                    this.loadingOverlay.show('Updating Strategy...');
+                    await this.audioEngine.updateSettings(this.settings, (p) => this.loadingOverlay.setProgress(p));
+                    this.loadingOverlay.hide();
                 }
             },
             this.settings
@@ -182,6 +208,8 @@ export class ReaderShell {
     private async handleNewDocument(title: string, text: string) {
         console.log('Processing new document:', title);
 
+        this.loadingOverlay.show('Processing Document...');
+
         // 1. Save to DB
         const doc = await documentStore.createDocument(title, text);
 
@@ -190,7 +218,11 @@ export class ReaderShell {
         const tokens = TextPipeline.tokenize(text);
 
         // 3. Load into Engine
-        await this.audioEngine.loadDocument(doc.id, tokens, this.settings);
+        await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p) => {
+            this.loadingOverlay.setProgress(p);
+        });
+
+        this.loadingOverlay.hide();
 
         // 4. Switch to reading view
         this.switchView(this.settings.mode);
@@ -240,8 +272,8 @@ export class ReaderShell {
 
             // Update Progress
             const currentTime = scheduler.getCurrentTime();
-            // TODO: Get total duration from timeline
-            this.controls.setTime(currentTime.toFixed(1), "--:--");
+            const totalTime = controller.getDuration();
+            this.controls.setTime(currentTime.toFixed(1), totalTime > 0 ? totalTime.toFixed(1) : "--:--");
 
             requestAnimationFrame(loop);
         };

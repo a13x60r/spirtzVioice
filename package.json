@@ -1,5 +1,5 @@
 {
-  "name": "spirtz-voice",
+  "name": "spritz-voice",
   "version": "0.1.0",
   "description": "Offline-first reader with exact text-to-speech synchronization",
   "type": "module",

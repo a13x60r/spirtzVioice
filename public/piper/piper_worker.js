@@ -91,6 +91,12 @@ async function init(data, phonemizeOnly = false) {
   // Configure execution providers based on useWebGPU flag
   let sessionOptions = {};
   if (data.useWebGPU) {
+    // Configure GPU preference for multi-GPU systems
+    if (data.gpuPreference && data.gpuPreference !== 'default') {
+      ort.env.webgpu = ort.env.webgpu || {};
+      ort.env.webgpu.powerPreference = data.gpuPreference;
+      console.log('[Piper] GPU preference:', data.gpuPreference);
+    }
     // Try WebGPU first, fall back to WASM if unavailable
     sessionOptions = { executionProviders: ['webgpu', 'wasm'] };
     console.log('[Piper] Attempting WebGPU execution provider');

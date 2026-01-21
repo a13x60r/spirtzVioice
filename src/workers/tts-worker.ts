@@ -46,10 +46,10 @@ ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 };
 
 async function handleSynthesize(request: SynthesizeRequest) {
-    const { chunkText, chunkHash, speedWpm, useWebGPU } = request;
+    const { chunkText, chunkHash, speedWpm, useWebGPU, gpuPreference } = request;
 
     // Synthesize using the engine
-    const { audioData, sampleRate, durationSec, wavBuffer: preGeneratedWav } = await ttsEngine.synthesize(chunkText, speedWpm, useWebGPU ?? false);
+    const { audioData, sampleRate, durationSec, wavBuffer: preGeneratedWav } = await ttsEngine.synthesize(chunkText, speedWpm, useWebGPU ?? false, gpuPreference);
 
     // Convert Float32Array to WAV ArrayBuffer
     // Note: We might want to pass Float32Array directly if AudioBuffer decoding supports it, 

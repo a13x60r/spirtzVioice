@@ -66,7 +66,8 @@ export const piperGenerate = async (
     inferEmotion: boolean = false,
     onnxruntimeUrl: string = "https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.17.1/",
     lengthScale?: number,
-    useWebGPU: boolean = false
+    useWebGPU: boolean = false,
+    gpuPreference?: 'high-performance' | 'low-power' | 'default'
 ): Promise<PiperGenerateResult> => {
     let piperProgress = 0;
 
@@ -141,6 +142,7 @@ export const piperGenerate = async (
             lengthScale,
             numThreads: threadsPerWorker,
             useWebGPU,
+            gpuPreference,
         });
     });
 };

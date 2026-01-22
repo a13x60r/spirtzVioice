@@ -27,17 +27,18 @@ describe('DocumentStore', () => {
         expect(retrieved?.id).toBe(doc.id);
     });
 
-    it('should update progress', async () => {
+    it('should update progress and wpm', async () => {
         const doc = await store.createDocument('Test', 'Content');
-        await store.updateProgress(doc.id, 50);
+        await store.updateProgress(doc.id, 50, 400);
 
         const retrieved = await store.getDocument(doc.id);
         expect(retrieved?.progressTokenIndex).toBe(50);
+        expect(retrieved?.speedWpm).toBe(400);
     });
 
-    it('should delete document', async () => {
+    it('should delete document via bulkDelete', async () => {
         const doc = await store.createDocument('Test', 'Content');
-        await store.deleteDocument(doc.id);
+        await store.bulkDeleteDocuments([doc.id]);
 
         const retrieved = await store.getDocument(doc.id);
         expect(retrieved).toBeUndefined();

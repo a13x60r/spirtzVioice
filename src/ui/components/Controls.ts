@@ -141,4 +141,9 @@ export class Controls {
         if (this.wpmInput) this.wpmInput.value = wpm.toString();
         if (this.wpmDisplay) this.wpmDisplay.textContent = wpm.toString();
     }
+
+    updateSpeed(rate: number, wpm: number) {
+        this.setPlaybackRate(rate);
+        this.setWpm(wpm);
+    }
 }

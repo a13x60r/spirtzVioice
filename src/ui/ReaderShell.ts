@@ -53,7 +53,7 @@ export class ReaderShell {
         // Seed voices if needed
         await seedMockVoices();
 
-        this.setupComponents();
+        await this.setupComponents();
 
         // Initialize loading overlay
         this.loadingOverlay = new LoadingOverlay();
@@ -130,7 +130,7 @@ export class ReaderShell {
         }
     }
 
-    private setupComponents() {
+    private async setupComponents() {
         // Controls
         const controlsMount = this.container.querySelector('#controls-mount') as HTMLElement;
         const controller = this.audioEngine.getController();
@@ -170,17 +170,26 @@ export class ReaderShell {
             },
             onSpeedChange: (rate) => this.handleRateChange(rate),
             onWpmChange: (wpm) => this.handleWpmChange(wpm)
-        }, this.settings.playbackRate || 1.0, this.settings.speedWpm || 300);
+        }, this.settings.playbackRate || 1.0, this.settings.speedWpm || 250);
 
         // Settings
         const settingsMount = this.container.querySelector('#settings-mount') as HTMLElement;
+
+        // Load fresh defaults for the settings panel, separate from active settings
+        let defaultSettings = await settingsStore.loadSettings();
+
         this.settingsPanel = new SettingsPanel(
             settingsMount,
             {
                 onClose: () => this.settingsPanel.unmount(),
                 onVoiceChange: async (voiceId) => {
-                    this.settings.voiceId = voiceId;
+                    // Update default
+                    defaultSettings.voiceId = voiceId;
                     await settingsStore.saveSettings({ voiceId });
+
+                    // Also update active session if desired, OR just defaults?
+                    // User probably expects voice change to be immediate.
+                    this.settings.voiceId = voiceId;
 
                     this.loadingOverlay.show('Loading Voice...');
                     await this.audioEngine.updateSettings(this.settings, (p, msg) => {
@@ -190,19 +199,25 @@ export class ReaderShell {
                     this.loadingOverlay.hide();
                 },
                 onSpeedChange: async (wpm) => {
-                    this.settings.speedWpm = wpm;
+                    // STRICT SEPARATION:
+                    // Settings Panel WPM is GLOBAL DEFAULT only.
+                    // It does NOT affect the current active document.
+                    defaultSettings.speedWpm = wpm;
                     settingsStore.saveSettings({ speedWpm: wpm });
 
-                    this.loadingOverlay.show('Updating Speed...');
-                    await this.audioEngine.updateSettings(this.settings, (p, msg) => {
-                        this.loadingOverlay.setProgress(p);
-                        if (msg) this.loadingOverlay.setText(msg);
-                    });
-                    this.loadingOverlay.hide();
+                    // Do NOT update this.settings.speedWpm
+                    // Do NOT call audioEngine.updateSettings
+                    console.log(`[Settings] Updated global default WPM to ${wpm}. Active doc remains at ${this.settings.speedWpm}`);
                 },
                 onStrategyChange: async (strategy) => {
                     this.settings.strategy = strategy;
                     settingsStore.saveSettings({ strategy });
+
+                    // Strategy changes likely should apply immediately too?
+                    // For consistency with WPM, maybe strict separate? 
+                    // But strategy is "how to read". WPM is "how fast".
+                    // Let's keep strategy immediate for now as per user request focused on WPM.
+                    this.settings.strategy = strategy;
 
                     this.loadingOverlay.show('Updating Strategy...');
                     await this.audioEngine.updateSettings(this.settings, (p, msg) => {
@@ -212,7 +227,7 @@ export class ReaderShell {
                     this.loadingOverlay.hide();
                 }
             },
-            this.settings
+            defaultSettings // Pass defaults, not active settings
         );
 
         // Fetch available voices
@@ -300,6 +315,12 @@ export class ReaderShell {
         const tokens = TextPipeline.tokenize(textForTts);
         this.currentTokens = tokens;
 
+        if (doc.speedWpm) {
+            this.settings.speedWpm = doc.speedWpm;
+            // Update controls to reflect new WPM
+            this.controls.updateSpeed(this.settings.playbackRate || 1.0, this.settings.speedWpm);
+        }
+
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, doc.progressTokenIndex, (p, msg) => {
             this.loadingOverlay.setProgress(p);
             if (msg) this.loadingOverlay.setText(msg);
@@ -370,7 +391,12 @@ export class ReaderShell {
 
     private async handleWpmChange(wpm: number) {
         this.settings.speedWpm = wpm;
-        await settingsStore.saveSettings({ speedWpm: wpm });
+        // Do NOT save to settingsStore here. That is for global defaults only.
+        // settingsStore.saveSettings({ speedWpm: wpm });
+
+        if (this.currentDocId) {
+            await documentStore.updateProgress(this.currentDocId, this.audioEngine.getController().getCurrentTokenIndex(), wpm);
+        }
 
         // This triggers re-synthesis
         this.loadingOverlay.show('Synthesizing...');
@@ -382,9 +408,23 @@ export class ReaderShell {
 
     private setupPlaybackListeners() {
         const controller = this.audioEngine.getController();
+
+        // Throttled save function
+        let lastSaveTime = 0;
+        const SAVE_INTERVAL = 2000; // Save every 2 seconds max
+
         controller.onTokenChanged = (index) => {
             if (this.currentView) {
                 this.currentView.update(index, this.currentTokens);
+            }
+
+            // Auto-save progress
+            if (this.currentDocId) {
+                const now = Date.now();
+                if (now - lastSaveTime > SAVE_INTERVAL) {
+                    documentStore.updateProgress(this.currentDocId, index, this.settings.speedWpm);
+                    lastSaveTime = now;
+                }
             }
         };
     }

@@ -51,6 +51,16 @@ export class OfflineVoice {
         this.currentModelUrl = BASE_URL + actualVoiceFile;
         this.currentConfigUrl = BASE_URL + actualVoiceFile + '.json';
         console.log(`Configured voice: ${voiceId} -> ${actualVoiceFile}`);
+
+        // Warmup: Synthesize a tiny snippet to force download & cache of the model
+        // This prevents race conditions when multiple workers try to fetch the 60MB file at once.
+        console.log(`[OfflineVoice] Warming up voice ${voiceId}...`);
+        try {
+            await this.synthesize("Ready", 300);
+            console.log(`[OfflineVoice] Warmup complete.`);
+        } catch (e) {
+            console.warn(`[OfflineVoice] Warmup failed (non-fatal if network issue persists, but likely to fail later):`, e);
+        }
     }
 
     async synthesize(text: string, _speedWpm: number, useWebGPU: boolean = false, gpuPreference?: 'high-performance' | 'low-power' | 'default'): Promise<{

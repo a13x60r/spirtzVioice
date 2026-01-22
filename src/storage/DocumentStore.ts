@@ -41,11 +41,17 @@ export class DocumentStore {
     /**
      * Update reading progress
      */
-    async updateProgress(id: string, tokenIndex: number) {
-        await db.documents.update(id, {
+    async updateProgress(id: string, tokenIndex: number, speedWpm?: number) {
+        const updateData: Partial<DocumentEntity> = {
             progressTokenIndex: tokenIndex,
             lastReadAt: Date.now()
-        });
+        };
+
+        if (speedWpm !== undefined) {
+            updateData.speedWpm = speedWpm;
+        }
+
+        await db.documents.update(id, updateData);
     }
 
     /**

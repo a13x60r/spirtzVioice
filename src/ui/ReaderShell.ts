@@ -260,19 +260,12 @@ export class ReaderShell {
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
 
-        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
-        if (toggleBtn) toggleBtn.style.display = 'inline-block';
 
         if (this.currentView) {
             this.currentView.update(0, tokens);
         }
 
-        const controller = this.audioEngine.getController();
-        controller.onTokenChanged = (index) => {
-            if (this.currentView) {
-                this.currentView.update(index, tokens);
-            }
-        };
+        this.setupPlaybackListeners();
     }
 
     private showTextInput() {
@@ -314,6 +307,7 @@ export class ReaderShell {
 
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
+        this.setupPlaybackListeners();
     }
 
     private switchView(mode: 'RSVP' | 'PARAGRAPH') {
@@ -331,6 +325,16 @@ export class ReaderShell {
         }
 
         this.currentView.mount(this.viewContainer);
+
+        // Force update to render content
+        const controller = this.audioEngine.getController();
+        // If we have tokens, make sure we render them
+        if (this.currentTokens.length > 0 || (this.currentView instanceof ParagraphView)) {
+            this.currentView.update(controller.getCurrentTokenIndex(), this.currentTokens);
+        }
+
+        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
+        if (toggleBtn) toggleBtn.style.display = 'inline-block';
     }
 
     private startUiLoop() {
@@ -374,6 +378,14 @@ export class ReaderShell {
             this.loadingOverlay.setProgress(p);
             if (msg) this.loadingOverlay.setText(msg);
         });
-        this.loadingOverlay.hide();
+    }
+
+    private setupPlaybackListeners() {
+        const controller = this.audioEngine.getController();
+        controller.onTokenChanged = (index) => {
+            if (this.currentView) {
+                this.currentView.update(index, this.currentTokens);
+            }
+        };
     }
 }

@@ -25,6 +25,7 @@ export class RSVPView implements ReaderView {
             this.container.innerHTML = '';
             this.container = null;
             this.wordEl = null;
+            this.currentTokenIndex = -1;
         }
     }
 

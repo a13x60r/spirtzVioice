@@ -18,6 +18,7 @@ export class PlaybackController {
     private lastTokenIndex: number = -1;
     private isPlaying: boolean = false;
     private lastBufferingTime: number = -1;
+    private opCounter: number = 0;
 
     constructor() {
         this.scheduler = new AudioScheduler();
@@ -50,18 +51,35 @@ export class PlaybackController {
             startOffset = 0;
         }
 
-        await this.scheduler.play(startOffset);
-        this.startLoop();
-        this.setIsPlaying(true);
+        const opId = ++this.opCounter;
+        this.setIsPlaying(true); // Optimistic update
 
-        // Initial buffer check
-        this.onBufferingRequest?.(startOffset);
+        try {
+            await this.scheduler.play(startOffset, opId);
+
+            if (this.opCounter !== opId) return; // Race detected
+
+            this.startLoop();
+
+            // Initial buffer check
+            this.onBufferingRequest?.(startOffset);
+        } catch (e) {
+            if (this.opCounter === opId) this.setIsPlaying(false); // Revert on error
+            throw e;
+        }
     }
 
     async pause() {
-        await this.scheduler.pause();
+        const opId = ++this.opCounter;
+        this.setIsPlaying(false); // Optimistic update
         this.stopLoop();
-        this.setIsPlaying(false);
+
+        try {
+            await this.scheduler.pause(opId);
+        } catch (e) {
+            if (this.opCounter === opId) this.setIsPlaying(true); // Revert on error
+            throw e;
+        }
     }
 
     getState(): 'PLAYING' | 'PAUSED' | 'IDLE' {
@@ -78,10 +96,16 @@ export class PlaybackController {
 
         const wasPlaying = this.isPlaying;
         if (wasPlaying) {
+            const opId = ++this.opCounter;
             // Stop, seek, play
-            this.scheduler.play(target).catch(console.error);
+            // We pass opId to ensure this seek-play is respected
+            this.scheduler.play(target, opId).catch(console.error);
             this.onBufferingRequest?.(target);
         } else {
+            // seek when paused shouldn't interfere with opCounter generally, 
+            // but if we want to be safe we could increment it.
+            // Actually, seeking sets offsetTime. If pending play is running, it might overwrite?
+            // Safer to just let synchronous seek handle offsetTime.
             this.scheduler.seek(target);
             this.onTimeUpdate?.(target);
             const tokenIndex = this.cursor.getCurrentTokenIndex(target);

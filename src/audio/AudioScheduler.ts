@@ -11,6 +11,7 @@
 export class AudioScheduler {
     private ctx: AudioContext;
     private sources: AudioBufferSourceNode[] = [];
+    private masterGain: GainNode;
 
     private playbackRate: number = 1.0;
 
@@ -26,10 +27,16 @@ export class AudioScheduler {
     private offsetTime: number = 0; // How far into the timeline (buffer offset) we are
 
     private isPlaying: boolean = false;
+    private lastOpId: number = 0;
 
     constructor() {
         const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
         this.ctx = new AudioContextClass();
+
+        // Create Master Gain Node for volume control
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.connect(this.ctx.destination);
+        this.masterGain.gain.value = 1.0; // Default volume
 
         // Suspend by default until explicit play
         this.suspended();
@@ -47,6 +54,12 @@ export class AudioScheduler {
         }
     }
 
+    setVolume(volume: number) {
+        // Clamp 0-1
+        const v = Math.max(0, Math.min(1, volume));
+        this.masterGain.gain.value = v;
+    }
+
     clear() {
         this.stopAll();
         this.playbackQueue = [];
@@ -55,16 +68,6 @@ export class AudioScheduler {
     setPlaybackRate(rate: number) {
         if (rate <= 0) return;
         this.playbackRate = rate;
-
-        // If currently playing, we should ideally seamlessly transition
-        // But for MVP, we might need to flush/seek to ensure timing consistency
-        // Simpler: Just update active sources. BUT that desyncs the scheduler's future plan
-        // because scheduled start times were calculated with old Rate?
-        // Actually, scheduleItem calc happens at schedule time.
-        // Wait, current logic calls scheduleItem repeatedly or one-shot? 
-        // scheduleQueue calls scheduleItem for ALL items. 
-        // AudioBufferSourceNode.start(T) sets the start time. We can't change T after start().
-        // So we MUST stop and restart everything to change rate correctly.
 
         if (this.isPlaying) {
             const currentTime = this.getCurrentTime(); // Get current Timeline time
@@ -106,12 +109,6 @@ export class AudioScheduler {
 
     private scheduleItem(item: { id: string, buffer: AudioBuffer, startTimeSec: number }, startOffsetSec: number) {
         const now = this.ctx.currentTime;
-
-        // Calculate effective start time and duration based on rate
-        // Start Time in AC = BaseStart + (TimelinePos / Rate)
-        // Wait, this.startTime is AC time when Timeline=0
-        // So AbsoluteStart = this.startTime + (item.startTimeSec / this.playbackRate)
-
         const absoluteStartTime = this.startTime + (item.startTimeSec / this.playbackRate);
         const itemEndSec = item.startTimeSec + item.buffer.duration; // Timeline end
 
@@ -123,7 +120,8 @@ export class AudioScheduler {
         const source = this.ctx.createBufferSource();
         source.buffer = item.buffer;
         source.playbackRate.value = this.playbackRate;
-        source.connect(this.ctx.destination);
+        // Connect to Master Gain instead of destination
+        source.connect(this.masterGain);
 
         // 2. If chunk starts in future (relative to now)
         if (absoluteStartTime >= now) {
@@ -131,23 +129,13 @@ export class AudioScheduler {
         }
         // 3. If chunk should have started in past (overlap with current playhead)
         else {
-            // How much time has passed in AC domain?
             const timePassedInAc = now - absoluteStartTime;
-
-            // Convert to Buffer domain
-            // offsetInChunk = timePassedInAc * Rate
             const offsetInChunk = timePassedInAc * this.playbackRate;
 
-            // Tolerance: If we are only slightly late (<80ms), play from start 
-            // to avoid clipping the attack of the word (e.g. "The", "It").
-            // This shifts the chunk slightly late, but prevents "missing words".
-
             if (offsetInChunk < item.buffer.duration) {
-                if (offsetInChunk < 0.08) { // Keep fixed tolerance for internal jitter
-                    // Play immediately from start
+                if (offsetInChunk < 0.08) {
                     source.start(now, 0);
                 } else {
-                    // We are really late, seek into it
                     source.start(now, offsetInChunk);
                 }
             }
@@ -169,20 +157,21 @@ export class AudioScheduler {
         });
     }
 
-    async play(startOffsetSec: number = 0) {
+    async play(startOffsetSec: number = 0, opId?: number) {
+        if (opId !== undefined) {
+            if (opId < this.lastOpId) return; // Stale request
+            this.lastOpId = opId;
+        }
+
         await this.resumeContext();
 
-        // Stop any currently running sources
+        // Check again after await
+        if (opId !== undefined && opId < this.lastOpId) return;
+
         this.stopAll();
-
-        // Reset reference time
-        // We want Timeline=startOffsetSec to equal AC=now
-        // Timeline=0 is at AC = now - (startOffsetSec / Rate)
         this.startTime = this.ctx.currentTime - (startOffsetSec / this.playbackRate);
-
         this.offsetTime = startOffsetSec;
         this.isPlaying = true;
-
         this.scheduleQueue(startOffsetSec);
     }
 
@@ -192,34 +181,28 @@ export class AudioScheduler {
         }
     }
 
-    /**
-     * Pause playback
-     */
-    async pause() {
-        if (!this.isPlaying) return;
+    async pause(opId?: number) {
+        if (opId !== undefined) {
+            if (opId < this.lastOpId) return;
+            this.lastOpId = opId;
+        }
 
-        // Capture where we are
+        if (!this.isPlaying) return;
         this.offsetTime = this.getCurrentTime();
 
         await this.ctx.suspend();
+
+        // Check again after wait
+        if (opId !== undefined && opId < this.lastOpId) return;
+
         this.stopAll();
         this.isPlaying = false;
     }
 
-    /**
-     * Seek to a specific timeline position without starting playback
-     */
     seek(time: number) {
         this.offsetTime = time;
-        // If we are playing, we should handle it (already handled in setPlaybackRate or play(T))
-        // But for "seek while paused", just updating offsetTime is enough because
-        // play() will use this.startTime = this.ctx.currentTime - (startOffsetSec / this.playbackRate)
-        // Wait, if we seek while paused, the NEXT play() call will uses its ARGUMENT startOffsetSec.
     }
 
-    /**
-     * Stop completely
-     */
     stop() {
         this.stopAll();
         this.isPlaying = false;
@@ -234,26 +217,15 @@ export class AudioScheduler {
         this.sources = [];
     }
 
-    /**
-     * Get current playback time in seconds (relative to timeline 0)
-     */
     getCurrentTime(): number {
         if (!this.isPlaying) return this.offsetTime;
-
-        // If context is running:
-        // elapsedAc = now - startTime
-        // elapsedTimeline = elapsedAc * Rate
 
         const rawAcTime = this.ctx.currentTime - this.startTime;
         const timelineTime = rawAcTime * this.playbackRate;
 
-        // Compensate for audio output latency
-        // Latency is time in AC domain.
-        // We want to subtract equivalent Timeline time.
         const latencyAc = (this.ctx.baseLatency || 0) + ((this.ctx as any).outputLatency || 0);
         const latencyTimeline = latencyAc * this.playbackRate;
 
-        // Subtract latency so cursor stays behind the actual audio output
         return Math.max(0, timelineTime - latencyTimeline);
     }
 

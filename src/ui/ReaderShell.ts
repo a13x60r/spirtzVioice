@@ -62,6 +62,7 @@ export class ReaderShell {
         if (initialLoader) initialLoader.remove();
 
         this.startUiLoop();
+        this.setupMediaSession();
     }
 
     private renderShell() {
@@ -136,11 +137,14 @@ export class ReaderShell {
         const controller = this.audioEngine.getController();
 
         this.controls = new Controls(controlsMount, {
-            onPlayPause: async () => {
-                // Ensure context is resumed on user gesture
-                await this.audioEngine.getController().getScheduler().resumeContext();
+            onPlayPause: () => {
+                // Ensure context is resumed (fire and forget for responsiveness)
+                this.audioEngine.getController().getScheduler().resumeContext();
 
-                if (controller.getState() === 'PLAYING') {
+                const controller = this.audioEngine.getController();
+                const state = controller.getState();
+
+                if (state === 'PLAYING') {
                     controller.pause();
                 } else {
                     controller.play().catch(err => console.error("Play failed", err));
@@ -169,8 +173,9 @@ export class ReaderShell {
                 }
             },
             onSpeedChange: (rate) => this.handleRateChange(rate),
-            onWpmChange: (wpm) => this.handleWpmChange(wpm)
-        }, this.settings.playbackRate || 1.0, this.settings.speedWpm || 250);
+            onWpmChange: (wpm) => this.handleWpmChange(wpm),
+            onVolumeChange: (vol) => this.audioEngine.setVolume(vol)
+        }, this.settings.playbackRate || 1.0, this.settings.speedWpm || 250, 1.0);
 
         // Settings
         const settingsMount = this.container.querySelector('#settings-mount') as HTMLElement;
@@ -191,7 +196,7 @@ export class ReaderShell {
                     // User probably expects voice change to be immediate.
                     this.settings.voiceId = voiceId;
 
-                    this.loadingOverlay.show('Loading Voice...');
+                    this.loadingOverlay.show('Loading Voice...', () => this.audioEngine.cancelSynthesis());
                     await this.audioEngine.updateSettings(this.settings, (p, msg) => {
                         this.loadingOverlay.setProgress(p);
                         if (msg) this.loadingOverlay.setText(msg);
@@ -219,7 +224,7 @@ export class ReaderShell {
                     // Let's keep strategy immediate for now as per user request focused on WPM.
                     this.settings.strategy = strategy;
 
-                    this.loadingOverlay.show('Updating Strategy...');
+                    this.loadingOverlay.show('Updating Strategy...', () => this.audioEngine.cancelSynthesis());
                     await this.audioEngine.updateSettings(this.settings, (p, msg) => {
                         this.loadingOverlay.setProgress(p);
                         if (msg) this.loadingOverlay.setText(msg);
@@ -257,7 +262,7 @@ export class ReaderShell {
     }
 
     private async handleNewDocument(title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown') {
-        this.loadingOverlay.show('Processing Document...');
+        this.loadingOverlay.show('Processing Document...', () => this.audioEngine.cancelSynthesis());
 
         const tokens = TextPipeline.tokenize(ttsText);
         this.currentTokens = tokens;
@@ -309,7 +314,7 @@ export class ReaderShell {
 
         this.currentDocId = docId;
         this.paragraphView.setDocumentContext(doc.originalText, doc.contentType || 'text');
-        this.loadingOverlay.show('Loading Document...');
+        this.loadingOverlay.show('Loading Document...', () => this.audioEngine.cancelSynthesis());
 
         const textForTts = doc.ttsText || doc.originalText;
         const tokens = TextPipeline.tokenize(textForTts);
@@ -399,7 +404,7 @@ export class ReaderShell {
         }
 
         // This triggers re-synthesis
-        this.loadingOverlay.show('Synthesizing...');
+        this.loadingOverlay.show('Synthesizing...', () => this.audioEngine.cancelSynthesis());
         await this.audioEngine.updateSettings(this.settings, (p, msg) => {
             this.loadingOverlay.setProgress(p);
             if (msg) this.loadingOverlay.setText(msg);
@@ -427,5 +432,29 @@ export class ReaderShell {
                 }
             }
         };
+    }
+    private setupMediaSession() {
+        if ('mediaSession' in navigator) {
+            const controller = this.audioEngine.getController();
+
+            const togglePlay = () => {
+                controller.getScheduler().resumeContext();
+                if (controller.getState() === 'PLAYING') controller.pause();
+                else controller.play().catch(e => console.error(e));
+            };
+
+            const skipPara = (direction: 1 | -1) => {
+                if (this.currentTokens.length) controller.skipParagraph(direction, this.currentTokens);
+            };
+
+            navigator.mediaSession.setActionHandler('play', togglePlay);
+            navigator.mediaSession.setActionHandler('pause', togglePlay);
+            navigator.mediaSession.setActionHandler('previoustrack', () => skipPara(-1));
+            navigator.mediaSession.setActionHandler('nexttrack', () => skipPara(1));
+
+            // Optional: Seek
+            navigator.mediaSession.setActionHandler('seekbackward', () => controller.seek(-10));
+            navigator.mediaSession.setActionHandler('seekforward', () => controller.seek(10));
+        }
     }
 }

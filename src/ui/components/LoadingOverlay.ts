@@ -23,10 +23,28 @@ export class LoadingOverlay {
         document.body.appendChild(this.element);
     }
 
-    show(message: string = 'Processing...') {
+    show(message: string = 'Processing...', onCancel?: () => void) {
         this.textElement.textContent = message;
         this.setProgress(0);
         this.element.classList.add('visible');
+
+        const existingBtn = this.element.querySelector('#loading-cancel-btn');
+        if (existingBtn) existingBtn.remove();
+
+        if (onCancel) {
+            const btn = document.createElement('button');
+            btn.id = 'loading-cancel-btn';
+            btn.className = 'btn btn-secondary';
+            btn.textContent = 'Cancel';
+            btn.style.marginTop = '20px';
+            btn.onclick = () => {
+                onCancel();
+                this.hide();
+            };
+
+            const content = this.element.querySelector('.loading-content');
+            if (content) content.appendChild(btn);
+        }
     }
 
     hide() {

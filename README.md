@@ -10,6 +10,8 @@ An offline-first reader app with exact text-to-speech synchronization supporting
 - 📱 **Offline-First PWA**: Works completely offline after initial install
 - 🎨 **Modern UI**: Responsive design with dark mode support
 - ⚡ **Web Worker TTS**: Non-blocking synthesis for smooth UI
+- 🔊 **Enhanced Controls**: Volume control, media key support, and responsive playback
+- ⌨️ **Multimedia Keys**: Control playback via keyboard or headset buttons
 
 ## Quick Start
 

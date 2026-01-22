@@ -39,6 +39,8 @@ export class AudioEngine {
     // Shared context for metadata decoding (lightweight)
     private metadataCtx = new OfflineAudioContext(1, 1, new AudioContext().sampleRate);
 
+    private isSynthesisCancelled: boolean = false;
+
     constructor() {
         this.controller = new PlaybackController();
         this.scheduler = this.controller.getScheduler();
@@ -63,6 +65,14 @@ export class AudioEngine {
         return this.controller;
     }
 
+    setVolume(volume: number) {
+        this.scheduler.setVolume(volume);
+    }
+
+    cancelSynthesis() {
+        this.isSynthesisCancelled = true;
+    }
+
     /**
      * Load a document and prepare for playback
      */
@@ -77,6 +87,7 @@ export class AudioEngine {
         this.useWebGPU = settings.useWebGPU ?? false;
         this.gpuPreference = settings.gpuPreference;
         this.bufferedChunks.clear();
+        this.isSynthesisCancelled = false;
 
         // Clear previous schedule
         this.scheduler.clear();
@@ -95,13 +106,14 @@ export class AudioEngine {
             this.scheduler.setPlaybackRate(settings.playbackRate);
         }
 
-        // Check if we have a timeline already (or partial) matches this plan?
         console.log('Synthesizing audio...');
-        // In MVP, synthesize everything upfront or in batches.
-        // For simplicity: Synthesize ALL chunks now.
-        // In real app: buffer window.
-
         await this.synthesizeAllChunks(this.currentPlan, onProgress);
+
+        if (this.isSynthesisCancelled) {
+            console.log('Synthesis cancelled');
+            onProgress?.(0, 'Cancelled');
+            return;
+        }
 
         console.log('Building timeline...');
 
@@ -141,8 +153,7 @@ export class AudioEngine {
                     endSec: entry.tStartSec + duration
                 });
             } else {
-                // Fallback: Use cumulative time if entry not found
-                console.warn(`[ChunkTimeline] No entry for chunk ${chunk.chunkHash.substring(0, 6)}, tokenId=${firstTokenId}, using cumulative time ${cumulativeTime.toFixed(2)}s`);
+                // Fallback
                 this.chunkTimeline.push({
                     chunkHash: chunk.chunkHash,
                     startSec: cumulativeTime,
@@ -153,15 +164,10 @@ export class AudioEngine {
             cumulativeTime += duration;
         }
 
-        // Sort just in case (though plan order should preserve it)
         this.chunkTimeline.sort((a, b) => a.startSec - b.startSec);
-
-        console.log(`[ChunkTimeline] Built: ${this.chunkTimeline.length} chunks from ${this.currentPlan.chunks.length} plan chunks. Missing entries: ${missingEntries}`);
-
         this.controller.setTimeline(this.currentTimeline);
 
         // Initial buffering for start (or startTokenIndex time)
-        // Find start time for token
         let startTime = 0;
         if (_startTokenIndex > 0) {
             const entry = this.currentTimeline.entries.find(e => e.tokenIndex === _startTokenIndex);
@@ -176,6 +182,8 @@ export class AudioEngine {
             this.controller.seekByToken(_startTokenIndex);
         }
     }
+
+    // ... (bufferWindow, scheduleChunkFromStore, loadVoice unchanged) ...
 
     /**
      * JIT Buffering: Ensure audio is scheduled for [time, time + window]
@@ -240,15 +248,12 @@ export class AudioEngine {
         }
 
         // Decode
-        // Optimization: Browser checks cache for decodeAudioData of same ArrayBuffer? Not guaranteed.
-        // We strictly relay on JIT. 
         try {
             const arrayBuffer = await chunkEntity.data.arrayBuffer();
             const ctx = this.scheduler.getAudioContext();
 
             // Decode
             const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-            console.log(`[JIT] Sched ${chunkHash.substring(0, 6)} @ ${startTime.toFixed(2)}s dur=${audioBuffer.duration.toFixed(2)}s`);
             this.scheduler.scheduleChunk(chunkHash, audioBuffer, startTime);
         } catch (e) {
             console.warn(`Failed to decode chunk ${chunkHash}`, e);
@@ -288,6 +293,7 @@ export class AudioEngine {
         let completed = 0;
 
         const processChunk = async (chunk: any) => {
+            if (this.isSynthesisCancelled) return; // Cancel check
             await this.synthesizeChunk(chunk, plan);
             completed++;
             onProgress?.(Math.round((completed / total) * 100), `Synthesizing chunk ${completed}/${total}...`);
@@ -295,37 +301,30 @@ export class AudioEngine {
 
         // Process in batches
         for (let i = 0; i < total; i += CONCURRENCY) {
+            if (this.isSynthesisCancelled) break; // Cancel check loop
             const batch = chunksToSynth.slice(i, i + CONCURRENCY);
             await Promise.all(batch.map((chunk) => processChunk(chunk)));
         }
     }
 
     private async synthesizeChunk(chunk: any, plan: RenderPlan): Promise<void> {
+        if (this.isSynthesisCancelled) return; // Immediate bailout
+
         // Double check cache
         if (await audioStore.hasChunk(chunk.chunkHash)) return;
 
         return new Promise((resolve, reject) => {
             this.pendingChunks.set(chunk.chunkHash, {
                 resolve: async (response) => {
+                    if (this.isSynthesisCancelled) {
+                        // Even if finished, if cancelled, maybe don't save? Or save anyway since work is done.
+                        // Saving is fine.
+                    }
                     try {
-                        // Store Blob in DB
-                        // We need the duration for the timeline. 
-                        // Protocol sends audioData as ArrayBuffer.
-                        // We decode it to get duration, then save Blob + Duration.
-
-                        // Note: decodeAudioData detaches the buffer, so we might need to slice it if we want to save it too.
-                        // Actually, we can just save the specific wav buffer if protocol provides it, 
-                        // or create blob from response.audioData.
-
-                        // Decode to get accurate duration
-                        // We use the shared OfflineAudioContext to avoid creating many contexts
-                        // decodeAudioData detaches the buffer, so we slice it
                         const audioBuffer = await this.metadataCtx.decodeAudioData(response.audioData.slice(0));
                         const duration = audioBuffer.duration;
-
                         const blob = new Blob([response.audioData], { type: 'audio/wav' });
                         await audioStore.saveChunk(chunk.chunkHash, blob, duration);
-
                         resolve();
                     } catch (e) {
                         console.error("Save/Decode error", e);

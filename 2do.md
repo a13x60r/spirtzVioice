@@ -1,26 +1,32 @@
 # High Priority
-- [ ] fix: save wpm setting for each stored text (via `updateProgress`)
+- [ ] feature: can we start reading before synthesizing chunks is done?
 - [ ] make it use whole screen dynamically (responsive layout)
     - *Note: Remove hardcoded max-width.*
+- [ ] save mode setting for each stored text
+- [ ] add multifile upload
 
 # UX / UI Improvements
-- [ ] rename buttons to use icons instead of text (Play, Pause, Library, etc.)
-- [ ] add abort "Synthesizing chunk" button
-- [ ] add audio level (volume) control
-- [ ] make it use multimedia keys for controls (play/pause, skip)
+
 
 # Features (Todo)
 - [ ] add language selection in settings
 - [ ] add language detection
-- [ ] save mode setting for each stored text
-- [ ] sync settings wpm to main screen wpm
-- [ ] add multifile upload
+
+# Rejected / Obsolete
+- [x] sync settings wpm to main screen wpm (Decided: Strict separation of default vs active WPM)
 
 # Done
+- [x] Debug Play/Pause and Seek issues.
+- [x] Fix responsiveness of Play/Pause button (removed await on resume context).
+- [x] rename buttons to use icons instead of text (Play, Pause, Library, etc.)
+- [x] add abort "Synthesizing chunk" button (Added in loading overlay)
+- [x] add audio level (volume) control
+- [x] make it use multimedia keys for controls (play/pause, skip)
+- [x] fix: save wpm setting for each stored text (via `updateProgress`)
+- [x] display rendered md or html in text view
 - [x] fix reading progress bar (in main view)
 - [x] fix progress bar in library view
 - [x] fix: separate wpm (synthesis speed) and playback speed
-- [x] display rendered md or html in text view
 - [x] Multimedia: Multiselect and Bulk Delete in Library
 - [x] PWA: Verify offline capability and installability
 - [x] File Support: Import .html, .md, .txt files directly

@@ -1,9 +1,10 @@
 # High Priority
-- [ ] feature: can we start reading before synthesizing chunks is done?
+
 - [ ] make it use whole screen dynamically (responsive layout)
     - *Note: Remove hardcoded max-width.*
 - [ ] save mode setting for each stored text
 - [ ] add multifile upload
+- [ ] feature: can we start reading while synthesizing chunks?
 
 # UX / UI Improvements
 
@@ -33,3 +34,4 @@
 - [x] add overview of stored texts
 - [x] add delete stored texts
 - [x] Fix `manifest.webmanifest` syntax error.
+- [x] feature: add Optimal Recognition Point (ORP) display

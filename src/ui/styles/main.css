@@ -147,14 +147,55 @@ body {
     width: 100%;
 }
 
-.rsvp-word {
+.rsvp-word-layout {
+    display: grid;
+    /* 
+     * 3 columns:
+     * 1) Prefix (right aligned, expands to push ORP to center)
+     * 2) ORP char (fixed width, centered in viewport)
+     * 3) Suffix (left aligned)
+     */
+    grid-template-columns: 1fr auto 1fr;
+    align-items: baseline;
+    width: 100%;
+    margin-bottom: var(--spacing-md);
+
     font-size: var(--rsvp-font-size);
     font-weight: var(--rsvp-font-weight);
     color: var(--color-text);
-    margin-bottom: var(--spacing-md);
-    text-align: center;
     min-height: 1.2em;
     /* Prevent layout jump */
+}
+
+/* 
+ * The prefix should be right-aligned so it ends exactly next to the ORP.
+ */
+.rsvp-prefix {
+    text-align: right;
+    white-space: pre;
+    /* preserve spaces if any */
+}
+
+/*
+ * The ORP character should be centered. 
+ * We can give it a specific color (red) and ensure it aligns with guides.
+ */
+.rsvp-orp {
+    color: var(--color-error);
+    /* Traditional RSVP red highlight */
+    text-align: center;
+    min-width: 0.6em;
+    /* Ensure enough space for wide chars */
+    font-weight: 800;
+    /* Extra bold for the pivot point */
+}
+
+/*
+ * The suffix is left-aligned, starting right after the ORP.
+ */
+.rsvp-suffix {
+    text-align: left;
+    white-space: pre;
 }
 
 .rsvp-guides {

@@ -43,17 +43,21 @@ export default defineConfig({
         format: 'es',
     },
     plugins: [
-        // Custom plugin to ensure CORP headers on ALL responses (including static files)
         {
             name: 'add-corp-headers',
+            enforce: 'pre',
             configureServer(server) {
                 server.middlewares.use((_req, res, next) => {
+                    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+                    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
                     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
                     next();
                 });
             },
             configurePreviewServer(server) {
                 server.middlewares.use((_req, res, next) => {
+                    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+                    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
                     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
                     next();
                 });
@@ -90,7 +94,7 @@ export default defineConfig({
                 ]
             },
             devOptions: {
-                enabled: false // Temporarily disable SW in dev to debug fetch issues
+                enabled: false // Disable SW in dev to eliminate it as a variable for fetch errors
             },
             workbox: {
                 maximumFileSizeToCacheInBytes: 100000000, // 100MB to support large Voice Models

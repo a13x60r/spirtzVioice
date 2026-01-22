@@ -1,3 +1,4 @@
+- [ ] fix: manifest.webmanifest:1  Manifest: Line: 1, column: 1, Syntax error.
 # High Priority / Bugs
 - [x] fix reading progress bar (in main view)
     - [x] Create implementation plan
@@ -22,6 +23,7 @@
 - [ ] add language detection
 - [ ] save mode setting for each stored text
 - [ ] sync settings wpm to main screen wpm
+- [ ] add multifile upload
 
 # Done
 - [x] display rendered md or html in text view

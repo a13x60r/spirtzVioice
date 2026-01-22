@@ -15,10 +15,14 @@ export class OfflineVoice {
 
     // Helper to convert relative path to absolute URL
     private toAbsoluteUrl(relativePath: string): string {
-        if (this.originUrl) {
-            return this.originUrl + relativePath;
+        // If we are in a worker, sometimes relative paths work better if they are base-absolute (starting with /)
+        // But if originUrl is provided, we use it to ensure it's fully qualified for multi-worker contexts.
+        if (this.originUrl && !relativePath.startsWith('http')) {
+            // Ensure no double slashes if originUrl ends with / and relativePath starts with /
+            const origin = this.originUrl.replace(/\/$/, '');
+            const path = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
+            return origin + path;
         }
-        // Fallback for local development
         return relativePath;
     }
 

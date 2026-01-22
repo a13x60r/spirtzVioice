@@ -168,8 +168,9 @@ export class ReaderShell {
                     // already playing
                 }
             },
-            onSpeedChange: (rate) => this.handleRateChange(rate)
-        }, this.settings.playbackRate || 1.0);
+            onSpeedChange: (rate) => this.handleRateChange(rate),
+            onWpmChange: (wpm) => this.handleWpmChange(wpm)
+        }, this.settings.playbackRate || 1.0, this.settings.speedWpm || 300);
 
         // Settings
         const settingsMount = this.container.querySelector('#settings-mount') as HTMLElement;
@@ -313,8 +314,6 @@ export class ReaderShell {
 
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
-
-        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
     }
 
     private switchView(mode: 'RSVP' | 'PARAGRAPH') {
@@ -363,5 +362,18 @@ export class ReaderShell {
         await settingsStore.saveSettings({ playbackRate: rate });
         // This is instant
         this.audioEngine.updateSettings(this.settings);
+    }
+
+    private async handleWpmChange(wpm: number) {
+        this.settings.speedWpm = wpm;
+        await settingsStore.saveSettings({ speedWpm: wpm });
+
+        // This triggers re-synthesis
+        this.loadingOverlay.show('Synthesizing...');
+        await this.audioEngine.updateSettings(this.settings, (p, msg) => {
+            this.loadingOverlay.setProgress(p);
+            if (msg) this.loadingOverlay.setText(msg);
+        });
+        this.loadingOverlay.hide();
     }
 }

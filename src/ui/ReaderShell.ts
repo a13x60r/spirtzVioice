@@ -129,6 +129,11 @@ export class ReaderShell {
                 tokenizerVersion: '1'
             };
         }
+
+        // Apply display settings
+        // Apply display settings
+        if (this.settings.darkMode) document.documentElement.classList.add('dark-mode');
+        if (this.settings.textSize) document.documentElement.style.setProperty('--font-size-base', `${16 * this.settings.textSize}px`);
     }
 
     private async setupComponents() {
@@ -165,9 +170,6 @@ export class ReaderShell {
                     controller.skipParagraph(direction, tokens);
                 }
 
-                // Resume if was playing, or just update view? 
-                // Skip logic usually updates view via onTokenChanged.
-                // If we want to ensure playback continues or pauses:
                 if (controller.getState() === 'PLAYING') {
                     // already playing
                 }
@@ -192,8 +194,6 @@ export class ReaderShell {
                     defaultSettings.voiceId = voiceId;
                     await settingsStore.saveSettings({ voiceId });
 
-                    // Also update active session if desired, OR just defaults?
-                    // User probably expects voice change to be immediate.
                     this.settings.voiceId = voiceId;
 
                     this.loadingOverlay.show('Loading Voice...', () => this.audioEngine.cancelSynthesis());
@@ -204,25 +204,13 @@ export class ReaderShell {
                     this.loadingOverlay.hide();
                 },
                 onSpeedChange: async (wpm) => {
-                    // STRICT SEPARATION:
-                    // Settings Panel WPM is GLOBAL DEFAULT only.
-                    // It does NOT affect the current active document.
                     defaultSettings.speedWpm = wpm;
                     settingsStore.saveSettings({ speedWpm: wpm });
-
-                    // Do NOT update this.settings.speedWpm
-                    // Do NOT call audioEngine.updateSettings
                     console.log(`[Settings] Updated global default WPM to ${wpm}. Active doc remains at ${this.settings.speedWpm}`);
                 },
                 onStrategyChange: async (strategy) => {
                     this.settings.strategy = strategy;
                     settingsStore.saveSettings({ strategy });
-
-                    // Strategy changes likely should apply immediately too?
-                    // For consistency with WPM, maybe strict separate? 
-                    // But strategy is "how to read". WPM is "how fast".
-                    // Let's keep strategy immediate for now as per user request focused on WPM.
-                    this.settings.strategy = strategy;
 
                     this.loadingOverlay.show('Updating Strategy...', () => this.audioEngine.cancelSynthesis());
                     await this.audioEngine.updateSettings(this.settings, (p, msg) => {
@@ -230,9 +218,22 @@ export class ReaderShell {
                         if (msg) this.loadingOverlay.setText(msg);
                     });
                     this.loadingOverlay.hide();
+                },
+                onTextSizeChange: async (scale) => {
+                    defaultSettings.textSize = scale;
+                    this.settings.textSize = scale;
+                    settingsStore.saveSettings({ textSize: scale });
+                    document.documentElement.style.setProperty('--font-size-base', `${16 * scale}px`);
+                },
+                onDarkModeChange: async (enabled) => {
+                    defaultSettings.darkMode = enabled;
+                    this.settings.darkMode = enabled;
+                    settingsStore.saveSettings({ darkMode: enabled });
+                    if (enabled) document.documentElement.classList.add('dark-mode');
+                    else document.documentElement.classList.remove('dark-mode');
                 }
             },
-            defaultSettings // Pass defaults, not active settings
+            defaultSettings
         );
 
         // Fetch available voices

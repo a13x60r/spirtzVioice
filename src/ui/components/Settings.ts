@@ -3,18 +3,20 @@ export interface SettingsCallbacks {
     onVoiceChange: (voiceId: string) => void;
     onSpeedChange: (wpm: number) => void;
     onStrategyChange: (strategy: 'TOKEN' | 'CHUNK') => void;
+    onTextSizeChange: (scale: number) => void;
+    onDarkModeChange: (enabled: boolean) => void;
 }
 
 export class SettingsPanel {
     private container: HTMLElement;
     private callbacks: SettingsCallbacks;
     private voices: { id: string, name: string }[] = [];
-    private currentSettings: { voiceId: string, speedWpm: number, strategy: string };
+    private currentSettings: { voiceId: string, speedWpm: number, strategy: string, textSize?: number, darkMode?: boolean };
 
     constructor(
         container: HTMLElement,
         callbacks: SettingsCallbacks,
-        initialSettings: { voiceId: string, speedWpm: number, strategy: string }
+        initialSettings: { voiceId: string, speedWpm: number, strategy: string, textSize?: number, darkMode?: boolean }
     ) {
         this.container = container;
         this.callbacks = callbacks;
@@ -69,6 +71,21 @@ export class SettingsPanel {
                                 </label>
                             </div>
                         </section>
+
+                        <section class="settings-group">
+                            <h3>Display</h3>
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="dark-mode-toggle" ${this.currentSettings.darkMode ? 'checked' : ''}>
+                                    Dark Mode
+                                </label>
+                            </div>
+                            <div class="range-control">
+                                <label for="text-size-range" style="font-size: 0.9rem; color: var(--color-text-secondary);">Text Size</label>
+                                <input type="range" min="0.5" max="2.0" step="0.1" id="text-size-range" value="${this.currentSettings.textSize || 1.0}">
+                                <span id="text-size-value">${this.currentSettings.textSize || 1.0}x</span>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>
@@ -100,6 +117,21 @@ export class SettingsPanel {
                 const val = (e.target as HTMLInputElement).value as 'TOKEN' | 'CHUNK';
                 this.callbacks.onStrategyChange(val);
             });
+        });
+
+        // Dark Mode
+        const darkModeToggle = this.container.querySelector('#dark-mode-toggle') as HTMLInputElement;
+        darkModeToggle?.addEventListener('change', (e) => {
+            this.callbacks.onDarkModeChange(darkModeToggle.checked);
+        });
+
+        // Text Size
+        const textSizeRange = this.container.querySelector('#text-size-range') as HTMLInputElement;
+        const textSizeValue = this.container.querySelector('#text-size-value');
+        textSizeRange?.addEventListener('input', (e) => {
+            const val = parseFloat((e.target as HTMLInputElement).value);
+            if (textSizeValue) textSizeValue.textContent = `${val}x`;
+            this.callbacks.onTextSizeChange(val);
         });
     }
 

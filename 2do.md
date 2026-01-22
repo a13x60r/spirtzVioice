@@ -1,10 +1,12 @@
 # High Priority
 
-- [ ] make it use whole screen dynamically (responsive layout)
-    - *Note: Remove hardcoded max-width.*
+- [x] make it use whole screen dynamically (responsive layout)
+    - *Note: Removed hardcoded max-width.*
+- [x] feature: text size control
+- [x] feature: dark mode
+
 - [ ] save mode setting for each stored text
 - [ ] add multifile upload
-- [ ] feature: can we start reading while synthesizing chunks?
 
 # UX / UI Improvements
 

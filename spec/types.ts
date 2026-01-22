@@ -38,6 +38,8 @@ export interface Settings {
     useWebGPU?: boolean;  // Enable WebGPU acceleration (experimental)
     gpuPreference?: GpuPreference;  // GPU selection hint: 'high-performance' (discrete) or 'low-power' (integrated)
     playbackRate?: number; // 0.5x to 2.0x (default 1.0)
+    textSize?: number; // Scale factor (e.g., 1.0, 1.2)
+    darkMode?: boolean; // True for dark, false for light
 }
 
 export interface VoicePackage {

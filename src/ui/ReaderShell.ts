@@ -191,15 +191,28 @@ export class ReaderShell {
             {
                 onClose: () => this.settingsPanel.unmount(),
                 onVoiceChange: async (voiceId) => {
-                    // Update default
+                    console.log(`[ReaderShell] onVoiceChange: ${voiceId}`);
+                    // Update default global
                     defaultSettings.voiceId = voiceId;
                     await settingsStore.saveSettings({ voiceId });
 
+                    // Update active settings
                     this.settings.voiceId = voiceId;
+
+                    // Update current document settings persistence
+                    if (this.currentDocId) {
+                        try {
+                            await documentStore.updateSettings(this.currentDocId, voiceId, this.settings.speedWpm);
+                            console.log(`[ReaderShell] Saved voice ${voiceId} to doc ${this.currentDocId}`);
+                        } catch (e) {
+                            console.warn("Failed to save doc settings", e);
+                        }
+                    }
 
                     const voice = (await this.audioEngine.getAvailableVoices()).find(v => v.id === voiceId);
                     if (voice && !voice.isInstalled) {
                         // Don't trigger synthesis if not installed
+                        console.log(`[ReaderShell] Voice ${voiceId} not installed, skipping synthesis`);
                         return;
                     }
 

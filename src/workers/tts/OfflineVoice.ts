@@ -17,7 +17,7 @@ export class OfflineVoice {
     private toAbsoluteUrl(relativePath: string): string {
         // If we are in a worker, sometimes relative paths work better if they are base-absolute (starting with /)
         // But if originUrl is provided, we use it to ensure it's fully qualified for multi-worker contexts.
-        if (this.originUrl && !relativePath.startsWith('http')) {
+        if (this.originUrl && !relativePath.startsWith('http') && !relativePath.startsWith('blob:')) {
             // Ensure no double slashes if originUrl ends with / and relativePath starts with /
             const origin = this.originUrl.replace(/\/$/, '');
             const path = relativePath.startsWith('/') ? relativePath : '/' + relativePath;

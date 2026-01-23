@@ -10,7 +10,7 @@
     --color-error: #ef4444;
 
     /* Typography */
-    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-family: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
     --font-size-base: 16px;
     --font-size-lg: 1.125rem;
     --font-size-xl: 1.25rem;

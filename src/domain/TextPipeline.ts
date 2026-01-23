@@ -27,10 +27,10 @@ export class TextPipeline {
 
     // Regex patterns for token classification
     const patterns = {
-      word: /[a-zA-Z0-9''\u2019]+/,
-      punct: /[.,!?;:—–\-"""''()[\]{}]/,
-      space: / +/,
-      newline: /\n+/,
+      word: /[\p{L}\p{N}''\u2019]+/u,
+      punct: /[.,!?;:—–\-"""''()[\]{}]/u,
+      space: / +/u,
+      newline: /\n+/u,
     };
 
     while (position < rawText.length) {

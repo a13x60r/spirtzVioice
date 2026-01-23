@@ -38,7 +38,7 @@ export class TextPipeline {
 
       // Try each pattern in priority order
       for (const [type, pattern] of Object.entries(patterns)) {
-        const regex = new RegExp(`^${pattern.source}`);
+        const regex = new RegExp(`^${pattern.source}`, 'u');
         const match = rawText.slice(position).match(regex);
 
         if (match) {

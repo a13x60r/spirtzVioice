@@ -33,9 +33,22 @@ export class SettingsPanel {
 
     mount() {
         // Generate options
+        // Generate options
         const languages = Array.from(new Set(this.voices.map(v => v.lang))).sort();
+
+        const getLangName = (code: string) => {
+            const names: Record<string, string> = {
+                'en-US': 'English (US)',
+                'es-ES': 'Spanish (ES)',
+                'fr-FR': 'French (FR)',
+                'de-DE': 'German (DE)',
+                'ru-RU': 'Russian (RU)'
+            };
+            return names[code] || code;
+        };
+
         const langOptions = languages.map(l =>
-            `<option value="${l}" ${l === this.currentSettings.language ? 'selected' : ''}>${l}</option>`
+            `<option value="${l}" ${l === this.currentSettings.language ? 'selected' : ''}>${getLangName(l)}</option>`
         ).join('');
 
         const filteredVoices = this.voices.filter(v => v.lang === this.currentSettings.language);

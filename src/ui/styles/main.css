@@ -504,7 +504,6 @@ textarea.input {
 /* Document List */
 .document-list-container {
     width: 100%;
-    max-width: 600px;
     margin: 0 auto;
     padding: var(--spacing-lg);
 }

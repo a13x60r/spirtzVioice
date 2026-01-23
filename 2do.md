@@ -5,15 +5,20 @@
 - [x] feature: text size control
 - [x] feature: dark mode
 
-- [x] save mode setting for each stored text
-- [x] add multifile upload
+- [ ] save mode setting for each stored text
+- [ ] add multifile upload
 
 # UX / UI Improvements
 
 
 # Features (Todo)
-- [ ] add language selection in settings
+- [ ] add marker to current word in text view (if in text view)
+- [ ] add keyboard shortcuts
+- [ ] add languages 
+- [x] add language selection in settings
 - [ ] add language detection
+- [x] add voice selection in settings
+- [ ] add import from url
 
 # Rejected / Obsolete
 - [x] sync settings wpm to main screen wpm (Decided: Strict separation of default vs active WPM)

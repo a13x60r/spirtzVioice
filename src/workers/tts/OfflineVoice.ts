@@ -38,19 +38,29 @@ export class OfflineVoice {
         ];
     }
 
-    async loadVoice(voiceId: string): Promise<void> {
-        // Map voice IDs to actual model filenames
-        const voiceMap: Record<string, string> = {
-            'default': 'en_US-amy-medium.onnx',
-            'en-us': 'en_US-amy-medium.onnx',
-            'amy': 'en_US-amy-medium.onnx',
-            'en_US-amy-medium.onnx': 'en_US-amy-medium.onnx'
-        };
+    async loadVoice(voiceId: string, assets?: { model: ArrayBuffer | Blob, config: ArrayBuffer | Blob }): Promise<void> {
+        if (assets) {
+            console.log(`Loading custom voice assets for ${voiceId}`);
+            // Revoke previous URLs if they exist to prevent memory leaks
+            if (this.currentModelUrl.startsWith('blob:')) URL.revokeObjectURL(this.currentModelUrl);
+            if (this.currentConfigUrl.startsWith('blob:')) URL.revokeObjectURL(this.currentConfigUrl);
 
-        const actualVoiceFile = voiceMap[voiceId] || 'en_US-amy-medium.onnx';
-        this.currentModelUrl = BASE_URL + actualVoiceFile;
-        this.currentConfigUrl = BASE_URL + actualVoiceFile + '.json';
-        console.log(`Configured voice: ${voiceId} -> ${actualVoiceFile}`);
+            this.currentModelUrl = URL.createObjectURL(assets.model instanceof Blob ? assets.model : new Blob([assets.model]));
+            this.currentConfigUrl = URL.createObjectURL(assets.config instanceof Blob ? assets.config : new Blob([assets.config]));
+        } else {
+            // Map voice IDs to actual model filenames
+            const voiceMap: Record<string, string> = {
+                'default': 'en_US-amy-medium.onnx',
+                'en-us': 'en_US-amy-medium.onnx',
+                'amy': 'en_US-amy-medium.onnx',
+                'en_US-amy-medium.onnx': 'en_US-amy-medium.onnx'
+            };
+
+            const actualVoiceFile = voiceMap[voiceId] || 'en_US-amy-medium.onnx';
+            this.currentModelUrl = BASE_URL + actualVoiceFile;
+            this.currentConfigUrl = BASE_URL + actualVoiceFile + '.json';
+            console.log(`Configured voice: ${voiceId} -> ${actualVoiceFile}`);
+        }
 
         // Warmup: Synthesize a tiny snippet to force download & cache of the model
         // This prevents race conditions when multiple workers try to fetch the 60MB file at once.

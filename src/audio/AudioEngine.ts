@@ -1,10 +1,12 @@
 import { audioStore } from '../storage/AudioStore';
+import { voicePackageStore } from '../storage/VoicePackageStore';
+import { VOICE_REGISTRY } from './VoiceRegistry';
 import { AudioScheduler } from './AudioScheduler';
 import { PlaybackController } from './PlaybackController';
 import { PlanEngine } from '@domain/PlanEngine';
 import { TimelineEngine } from '@domain/TimelineEngine';
-import type { RenderPlan, Timeline, Token, Settings } from '@spec/types';
-import type { ChunkCompleteResponse, WorkerResponse } from '@workers/tts-protocol';
+import type { RenderPlan, Timeline, Token, Settings, VoicePackage } from '@spec/types';
+import type { ChunkCompleteResponse, WorkerResponse, LoadVoiceRequest } from '@workers/tts-protocol';
 
 /**
  * AudioEngine: Orchestrates the entire audio pipeline
@@ -261,13 +263,62 @@ export class AudioEngine {
     }
 
     async loadVoice(voiceId: string): Promise<void> {
+        // Attempt to find in registry/store
+        const installed = await voicePackageStore.isVoiceInstalled(voiceId);
+        let assets: LoadVoiceRequest['assets'] | undefined;
+
+        if (installed) {
+            const model = await voicePackageStore.getVoiceAsset(voiceId, 'model.onnx');
+            const config = await voicePackageStore.getVoiceAsset(voiceId, 'config.json');
+            if (model && config) {
+                assets = { model, config };
+            }
+        }
+
         return new Promise((resolve, reject) => {
             this.pendingVoiceLoads.set(voiceId, { resolve, reject });
             this.worker.postMessage({
                 type: 'LOAD_VOICE',
-                payload: { voiceId }
+                payload: { voiceId, assets } as LoadVoiceRequest
             });
         });
+    }
+
+    async installVoice(voiceId: string, onProgress?: (percent: number) => void): Promise<void> {
+        const voiceDef = VOICE_REGISTRY.find(v => v.id === voiceId);
+        if (!voiceDef) throw new Error(`Voice ${voiceId} not found in registry`);
+
+        if (await voicePackageStore.isVoiceInstalled(voiceId)) return;
+
+        onProgress?.(10);
+        const [modelRes, configRes] = await Promise.all([
+            fetch(voiceDef.modelUrl),
+            fetch(voiceDef.configUrl)
+        ]);
+
+        if (!modelRes.ok || !configRes.ok) throw new Error("Failed to download voice assets");
+
+        const [modelData, configData] = await Promise.all([
+            modelRes.arrayBuffer(),
+            configRes.json()
+        ]);
+
+        onProgress?.(80);
+        const metadata: VoicePackage = {
+            voiceId: voiceDef.id,
+            name: voiceDef.name,
+            lang: voiceDef.lang,
+            version: '1.0.0',
+            sizeBytes: voiceDef.sizeBytes,
+            assets: ['model.onnx', 'config.json']
+        };
+
+        const assetsMap = new Map<string, ArrayBuffer | Blob>();
+        assetsMap.set('model.onnx', modelData);
+        assetsMap.set('config.json', new Blob([JSON.stringify(configData)], { type: 'application/json' }));
+
+        await voicePackageStore.installVoice(metadata, assetsMap);
+        onProgress?.(100);
     }
 
     private async synthesizeAllChunks(plan: RenderPlan, onProgress?: (percent: number, message?: string) => void) {
@@ -405,16 +456,16 @@ export class AudioEngine {
 
     private pendingVoiceList: { resolve: (voices: { id: string, name: string }[]) => void, reject: (err: Error) => void } | null = null;
 
-    async getAvailableVoices(): Promise<{ id: string, name: string }[]> {
-        return new Promise((resolve, reject) => {
-            if (this.pendingVoiceList) {
-                // If already pending, maybe chain or reject? For MVP, just replace or queue.
-                // Simpler: reject previous or just allow overwrite (might lose response)
-                // Let's just overwrite for now.
-            }
-            this.pendingVoiceList = { resolve, reject };
-            this.worker.postMessage({ type: 'GET_VOICES' });
-        });
+    async getAvailableVoices(): Promise<{ id: string, name: string, lang: string, isInstalled: boolean }[]> {
+        const installed = await voicePackageStore.listVoices();
+        const installedIds = new Set(installed.map(v => v.voiceId));
+
+        return VOICE_REGISTRY.map(v => ({
+            id: v.id,
+            name: v.name,
+            lang: v.lang,
+            isInstalled: v.isBuiltIn || installedIds.has(v.id)
+        }));
     }
 
     async updateSettings(settings: Settings, onProgress?: (percent: number, message?: string) => void) {

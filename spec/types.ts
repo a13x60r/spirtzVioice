@@ -40,6 +40,7 @@ export interface Settings {
     playbackRate?: number; // 0.5x to 2.0x (default 1.0)
     textSize?: number; // Scale factor (e.g., 1.0, 1.2)
     darkMode?: boolean; // True for dark, false for light
+    language: string; // Default 'en-US'
 }
 
 export interface VoicePackage {

@@ -1,6 +1,8 @@
 export interface SettingsCallbacks {
     onClose: () => void;
     onVoiceChange: (voiceId: string) => void;
+    onLanguageChange: (lang: string) => void;
+    onInstallVoice: (voiceId: string) => Promise<void>;
     onSpeedChange: (wpm: number) => void;
     onStrategyChange: (strategy: 'TOKEN' | 'CHUNK') => void;
     onTextSizeChange: (scale: number) => void;
@@ -10,29 +12,39 @@ export interface SettingsCallbacks {
 export class SettingsPanel {
     private container: HTMLElement;
     private callbacks: SettingsCallbacks;
-    private voices: { id: string, name: string }[] = [];
-    private currentSettings: { voiceId: string, speedWpm: number, strategy: string, textSize?: number, darkMode?: boolean };
+    private voices: { id: string, name: string, lang: string, isInstalled: boolean }[] = [];
+    private currentSettings: { voiceId: string, speedWpm: number, strategy: string, language: string, textSize?: number, darkMode?: boolean };
+    private isInstalling: boolean = false;
 
     constructor(
         container: HTMLElement,
         callbacks: SettingsCallbacks,
-        initialSettings: { voiceId: string, speedWpm: number, strategy: string, textSize?: number, darkMode?: boolean }
+        initialSettings: { voiceId: string, speedWpm: number, strategy: string, language: string, textSize?: number, darkMode?: boolean }
     ) {
         this.container = container;
         this.callbacks = callbacks;
         this.currentSettings = initialSettings;
     }
 
-    setVoices(voices: { id: string, name: string }[]) {
+    setVoices(voices: { id: string, name: string, lang: string, isInstalled: boolean }[]) {
         this.voices = voices;
-        // If mounted, re-render logic could go here, but usually set before mount
+        if (this.container.innerHTML) this.mount(); // Re-render if open
     }
 
     mount() {
         // Generate options
-        const voiceOptions = this.voices.map(v =>
-            `<option value="${v.id}" ${v.id === this.currentSettings.voiceId ? 'selected' : ''}>${v.name}</option>`
+        const languages = Array.from(new Set(this.voices.map(v => v.lang))).sort();
+        const langOptions = languages.map(l =>
+            `<option value="${l}" ${l === this.currentSettings.language ? 'selected' : ''}>${l}</option>`
         ).join('');
+
+        const filteredVoices = this.voices.filter(v => v.lang === this.currentSettings.language);
+        const voiceOptions = filteredVoices.map(v =>
+            `<option value="${v.id}" ${v.id === this.currentSettings.voiceId ? 'selected' : ''}>${v.name}${v.isInstalled ? '' : ' (Download)'}</option>`
+        ).join('');
+
+        const selectedVoice = this.voices.find(v => v.id === this.currentSettings.voiceId);
+        const needsDownload = selectedVoice && !selectedVoice.isInstalled;
 
         this.container.innerHTML = `
             <div class="settings-modal-overlay">
@@ -44,10 +56,24 @@ export class SettingsPanel {
                     
                     <div class="settings-content">
                         <section class="settings-group">
-                            <h3>Voice</h3>
-                            <select id="voice-select" class="input">
-                                ${voiceOptions}
+                            <h3>Language</h3>
+                            <select id="lang-select" class="input">
+                                ${langOptions}
                             </select>
+                        </section>
+
+                        <section class="settings-group">
+                            <h3>Voice</h3>
+                            <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                                <select id="voice-select" class="input">
+                                    ${voiceOptions}
+                                </select>
+                                ${needsDownload ? `
+                                    <button class="btn btn-primary" id="install-voice" ${this.isInstalling ? 'disabled' : ''}>
+                                        ${this.isInstalling ? 'Downloading...' : 'Download Voice'}
+                                    </button>
+                                ` : ''}
+                            </div>
                         </section>
 
                         <section class="settings-group">
@@ -97,16 +123,37 @@ export class SettingsPanel {
     private bindEvents() {
         this.container.querySelector('#close-settings')?.addEventListener('click', () => this.callbacks.onClose());
 
+        const langSelect = this.container.querySelector('#lang-select') as HTMLSelectElement;
+        langSelect?.addEventListener('change', (e) => {
+            const val = (e.currentTarget as HTMLSelectElement).value;
+            this.currentSettings.language = val;
+            this.callbacks.onLanguageChange(val);
+            this.mount(); // Refresh voice list
+        });
+
         const voiceSelect = this.container.querySelector('#voice-select') as HTMLSelectElement;
         voiceSelect?.addEventListener('change', (e) => {
             const val = (e.target as HTMLSelectElement).value;
             this.callbacks.onVoiceChange(val);
+            this.mount(); // Refresh to show download button if needed
+        });
+
+        const installBtn = this.container.querySelector('#install-voice') as HTMLButtonElement;
+        installBtn?.addEventListener('click', async () => {
+            this.isInstalling = true;
+            this.mount();
+            try {
+                await this.callbacks.onInstallVoice(this.currentSettings.voiceId);
+            } finally {
+                this.isInstalling = false;
+                this.mount();
+            }
         });
 
         const speedRange = this.container.querySelector('#speed-range') as HTMLInputElement;
         const speedValue = this.container.querySelector('#speed-value');
-        speedRange?.addEventListener('input', (e) => {
-            const val = parseInt((e.target as HTMLInputElement).value);
+        speedRange?.addEventListener('input', () => {
+            const val = parseInt(speedRange.value);
             if (speedValue) speedValue.textContent = `${val} WPM`;
             this.callbacks.onSpeedChange(val);
         });
@@ -128,8 +175,8 @@ export class SettingsPanel {
         // Text Size
         const textSizeRange = this.container.querySelector('#text-size-range') as HTMLInputElement;
         const textSizeValue = this.container.querySelector('#text-size-value');
-        textSizeRange?.addEventListener('input', (e) => {
-            const val = parseFloat((e.target as HTMLInputElement).value);
+        textSizeRange?.addEventListener('input', () => {
+            const val = parseFloat(textSizeRange.value);
             if (textSizeValue) textSizeValue.textContent = `${val}x`;
             this.callbacks.onTextSizeChange(val);
         });

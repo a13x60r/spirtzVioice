@@ -44,3 +44,11 @@ export interface ChunkCompleteResponse {
     durationSec: number;
     sampleRate: number;
 }
+
+export interface LoadVoiceRequest {
+    voiceId: string;
+    assets?: {
+        model: ArrayBuffer | Blob;
+        config: ArrayBuffer | Blob;
+    };
+}

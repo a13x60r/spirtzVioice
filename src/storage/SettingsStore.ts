@@ -17,7 +17,8 @@ const DEFAULT_SETTINGS: Settings = {
     tokenizerVersion: '1',
     playbackRate: 1.0,
     textSize: 1.0,
-    darkMode: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    darkMode: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
+    language: 'en-US'
 };
 
 export class SettingsStore {

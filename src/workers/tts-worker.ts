@@ -28,8 +28,8 @@ ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
                 break;
 
             case 'LOAD_VOICE':
-                const { voiceId } = payload;
-                await ttsEngine.loadVoice(voiceId);
+                const { voiceId, assets } = payload;
+                await ttsEngine.loadVoice(voiceId, assets);
                 sendResponse('VOICE_LOADED', { voiceId });
                 break;
 

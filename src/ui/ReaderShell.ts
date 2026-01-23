@@ -126,7 +126,8 @@ export class ReaderShell {
                 lookaheadSec: 20,
                 mode: 'RSVP',
                 pauseRules: { punctPauseMs: 400, paragraphPauseMs: 600 },
-                tokenizerVersion: '1'
+                tokenizerVersion: '1',
+                language: 'en-US'
             };
         }
 
@@ -196,12 +197,46 @@ export class ReaderShell {
 
                     this.settings.voiceId = voiceId;
 
+                    const voice = (await this.audioEngine.getAvailableVoices()).find(v => v.id === voiceId);
+                    if (voice && !voice.isInstalled) {
+                        // Don't trigger synthesis if not installed
+                        return;
+                    }
+
                     this.loadingOverlay.show('Loading Voice...', () => this.audioEngine.cancelSynthesis());
                     await this.audioEngine.updateSettings(this.settings, (p, msg) => {
                         this.loadingOverlay.setProgress(p);
                         if (msg) this.loadingOverlay.setText(msg);
                     });
                     this.loadingOverlay.hide();
+                },
+                onLanguageChange: async (lang) => {
+                    defaultSettings.language = lang;
+                    await settingsStore.saveSettings({ language: lang });
+                },
+                onInstallVoice: async (voiceId) => {
+                    this.loadingOverlay.show('Downloading Voice components...', () => { });
+                    try {
+                        await this.audioEngine.installVoice(voiceId, (p) => {
+                            this.loadingOverlay.setProgress(p);
+                        });
+                        // Refresh voices in settings
+                        const voices = await this.audioEngine.getAvailableVoices();
+                        this.settingsPanel.setVoices(voices);
+
+                        // If it was the selected voice, trigger synthesis
+                        if (this.settings.voiceId === voiceId) {
+                            this.loadingOverlay.setText('Initializing voice...');
+                            await this.audioEngine.updateSettings(this.settings, (p, msg) => {
+                                this.loadingOverlay.setProgress(p);
+                                if (msg) this.loadingOverlay.setText(msg);
+                            });
+                        }
+                    } catch (e: any) {
+                        alert("Failed to download voice: " + e.message);
+                    } finally {
+                        this.loadingOverlay.hide();
+                    }
                 },
                 onSpeedChange: async (wpm) => {
                     defaultSettings.speedWpm = wpm;

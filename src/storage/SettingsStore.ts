@@ -15,7 +15,9 @@ const DEFAULT_SETTINGS: Settings = {
         paragraphPauseMs: 600
     },
     tokenizerVersion: '1',
-    playbackRate: 1.0
+    playbackRate: 1.0,
+    textSize: 1.0,
+    darkMode: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 };
 
 export class SettingsStore {

@@ -5,8 +5,8 @@
 - [x] feature: text size control
 - [x] feature: dark mode
 
-- [ ] save mode setting for each stored text
-- [ ] add multifile upload
+- [x] save mode setting for each stored text
+- [x] add multifile upload
 
 # UX / UI Improvements
 

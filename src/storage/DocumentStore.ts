@@ -41,7 +41,7 @@ export class DocumentStore {
     /**
      * Update reading progress
      */
-    async updateProgress(id: string, tokenIndex: number, speedWpm?: number) {
+    async updateProgress(id: string, tokenIndex: number, speedWpm?: number, mode?: 'RSVP' | 'PARAGRAPH') {
         const updateData: Partial<DocumentEntity> = {
             progressTokenIndex: tokenIndex,
             lastReadAt: Date.now()
@@ -49,6 +49,10 @@ export class DocumentStore {
 
         if (speedWpm !== undefined) {
             updateData.speedWpm = speedWpm;
+        }
+
+        if (mode !== undefined) {
+            updateData.mode = mode;
         }
 
         await db.documents.update(id, updateData);

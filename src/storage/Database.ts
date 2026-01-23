@@ -13,6 +13,7 @@ export interface DocumentEntity {
     voiceId: string; // Last used voice
     speedWpm: number; // Last used speed
     contentType: 'text' | 'html' | 'markdown';
+    mode?: 'RSVP' | 'PARAGRAPH';
     totalTokens?: number; // Total token count for accurate progress
 }
 

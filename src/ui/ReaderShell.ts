@@ -242,8 +242,13 @@ export class ReaderShell {
         }).catch(err => console.error("Failed to fetch voices", err));
 
         // TextInput
-        this.textInput = new TextInput(this.viewContainer, async (title, originalText, ttsText, contentType) => {
-            await this.handleNewDocument(title, originalText, ttsText, contentType);
+        this.textInput = new TextInput(this.viewContainer, async (docs) => {
+            if (docs.length === 1) {
+                const { title, originalText, ttsText, contentType } = docs[0];
+                await this.handleNewDocument(title, originalText, ttsText, contentType);
+            } else if (docs.length > 1) {
+                await this.handleBulkImport(docs);
+            }
         });
 
         // DocumentList
@@ -289,6 +294,23 @@ export class ReaderShell {
         this.setupPlaybackListeners();
     }
 
+    private async handleBulkImport(docs: { title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown' }[]) {
+        this.loadingOverlay.show(`Importing ${docs.length} documents...`, () => { });
+
+        for (let i = 0; i < docs.length; i++) {
+            const f = docs[i];
+            const tokens = TextPipeline.tokenize(f.ttsText);
+
+            this.loadingOverlay.setText(`Importing ${i + 1}/${docs.length}: ${f.title}`);
+            this.loadingOverlay.setProgress((i / docs.length) * 100);
+
+            await documentStore.createDocument(f.title, f.originalText, f.ttsText, f.contentType, tokens.length);
+        }
+
+        this.loadingOverlay.hide();
+        await this.showDocumentList();
+    }
+
     private showTextInput() {
         this.audioEngine.getController().pause();
         if (this.currentView) this.currentView.unmount();
@@ -327,6 +349,10 @@ export class ReaderShell {
             this.controls.updateSpeed(this.settings.playbackRate || 1.0, this.settings.speedWpm);
         }
 
+        if (doc.mode) {
+            this.settings.mode = doc.mode;
+        }
+
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, doc.progressTokenIndex, (p, msg) => {
             this.loadingOverlay.setProgress(p);
             if (msg) this.loadingOverlay.setText(msg);
@@ -344,6 +370,10 @@ export class ReaderShell {
 
         this.settings.mode = mode;
         settingsStore.saveSettings({ mode });
+
+        if (this.currentDocId) {
+            documentStore.updateProgress(this.currentDocId, this.audioEngine.getController().getCurrentTokenIndex(), this.settings.speedWpm, mode);
+        }
 
         if (mode === 'RSVP') {
             this.currentView = this.rsvpView;
@@ -401,7 +431,7 @@ export class ReaderShell {
         // settingsStore.saveSettings({ speedWpm: wpm });
 
         if (this.currentDocId) {
-            await documentStore.updateProgress(this.currentDocId, this.audioEngine.getController().getCurrentTokenIndex(), wpm);
+            await documentStore.updateProgress(this.currentDocId, this.audioEngine.getController().getCurrentTokenIndex(), wpm, this.settings.mode);
         }
 
         // This triggers re-synthesis
@@ -428,7 +458,7 @@ export class ReaderShell {
             if (this.currentDocId) {
                 const now = Date.now();
                 if (now - lastSaveTime > SAVE_INTERVAL) {
-                    documentStore.updateProgress(this.currentDocId, index, this.settings.speedWpm);
+                    documentStore.updateProgress(this.currentDocId, index, this.settings.speedWpm, this.settings.mode);
                     lastSaveTime = now;
                 }
             }

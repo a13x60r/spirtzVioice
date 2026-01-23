@@ -141,6 +141,14 @@ export class SettingsPanel {
             const val = (e.currentTarget as HTMLSelectElement).value;
             this.currentSettings.language = val;
             this.callbacks.onLanguageChange(val);
+
+            // Auto-select first voice of new language
+            const firstVoice = this.voices.find(v => v.lang === val);
+            if (firstVoice) {
+                this.currentSettings.voiceId = firstVoice.id;
+                this.callbacks.onVoiceChange(firstVoice.id);
+            }
+
             this.mount(); // Refresh voice list
         });
 

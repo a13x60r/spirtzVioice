@@ -267,9 +267,14 @@ export class AudioEngine {
         const installed = await voicePackageStore.isVoiceInstalled(voiceId);
         let assets: LoadVoiceRequest['assets'] | undefined;
 
+        console.log(`[AudioEngine] loadVoice: ${voiceId}, installed=${installed}`);
+
         if (installed) {
             const model = await voicePackageStore.getVoiceAsset(voiceId, 'model.onnx');
             const config = await voicePackageStore.getVoiceAsset(voiceId, 'config.json');
+
+            console.log(`[AudioEngine] Assets found: model=${!!model}, config=${!!config}`);
+
             if (model && config) {
                 assets = { model, config };
             }

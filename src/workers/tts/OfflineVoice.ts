@@ -39,6 +39,7 @@ export class OfflineVoice {
     }
 
     async loadVoice(voiceId: string, assets?: { model: ArrayBuffer | Blob, config: ArrayBuffer | Blob }): Promise<void> {
+        console.log(`[OfflineVoice] loadVoice called for ${voiceId}, hasAssets=${!!assets}`);
         if (assets) {
             console.log(`Loading custom voice assets for ${voiceId}`);
             // Revoke previous URLs if they exist to prevent memory leaks

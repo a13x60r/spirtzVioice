@@ -1,5 +1,3 @@
-# High Priority
-- [ ] feature: add language detection, save language for each stored text (Cost: M, Prio: High)
 - [ ] ux: make progress bar of currently playing text to seeker bar to navigate text (Cost: M, Prio: High)
 - [ ] tech: add testing for all features (unit tests) (Cost: L, Prio: Med)
 - [ ] tech: add testing for all features (integration tests) (Cost: M, Prio: Med)
@@ -12,6 +10,8 @@
 - [ ] replace text UI with icons, where possible (e.g. settings)
 
 # Done
+- [x] feature: add language detection, save language for each stored text
+- [x] fix: critical TTS warm-up freeze (Worker path resolution)
 - [x] add multifile upload
 - [x] save setting for each stored text (Speed, Voice, Mode)
 - [x] make it use whole screen dynamically (responsive layout)

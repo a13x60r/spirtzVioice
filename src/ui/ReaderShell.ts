@@ -216,7 +216,7 @@ export class ReaderShell {
         const settingsMount = this.container.querySelector('#settings-mount') as HTMLElement;
 
         // Load fresh defaults for the settings panel, separate from active settings
-        let defaultSettings = await settingsStore.loadSettings();
+        const defaultSettings = await settingsStore.loadSettings();
 
         this.settingsPanel = new SettingsPanel(
             settingsMount,

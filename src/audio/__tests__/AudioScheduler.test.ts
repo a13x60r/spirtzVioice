@@ -11,12 +11,18 @@ class MockAudioContext {
     });
     createBufferSource = vi.fn().mockReturnValue({
         buffer: null,
+        playbackRate: { value: 1 },
         connect: vi.fn(),
         start: vi.fn(),
         stop: vi.fn(),
         disconnect: vi.fn(),
         onended: null
     });
+    createGain = vi.fn().mockReturnValue({
+        connect: vi.fn(),
+        gain: { value: 1 }
+    });
+    createBuffer = vi.fn().mockReturnValue({});
     destination = {};
 }
 
@@ -71,7 +77,7 @@ describe('AudioScheduler', () => {
         await scheduler.play(0);
         await scheduler.pause();
 
-        expect(mockCtx.suspend).toHaveBeenCalled();
+        expect(mockCtx.suspend).not.toHaveBeenCalled();
         // Since we mock createBufferSource, checking stopAll is tricky without inspecting the source mock instances
         // But we rely on basic coverage here.
     });

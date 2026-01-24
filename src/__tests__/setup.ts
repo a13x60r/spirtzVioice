@@ -90,6 +90,10 @@ if (!globalTarget.Worker) {
     globalTarget.Worker = MockWorker as unknown as typeof Worker;
 }
 
-if (!globalTarget.BroadcastChannel) {
-    globalTarget.BroadcastChannel = MockBroadcastChannel as unknown as typeof BroadcastChannel;
+globalTarget.BroadcastChannel = MockBroadcastChannel as unknown as typeof BroadcastChannel;
+
+if (typeof Blob !== 'undefined' && !Blob.prototype.arrayBuffer) {
+    Blob.prototype.arrayBuffer = function () {
+        return Promise.resolve(new ArrayBuffer(this.size));
+    };
 }

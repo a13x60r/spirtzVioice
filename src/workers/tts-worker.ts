@@ -18,20 +18,22 @@ ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
                 sendResponse('INIT_COMPLETE');
                 break;
 
-            case 'GET_VOICES':
+            case 'GET_VOICES': {
                 const voices = await ttsEngine.getVoices();
                 sendResponse('VOICES_LIST', voices);
                 break;
+            }
 
             case 'SYNTHESIZE_CHUNK':
                 await handleSynthesize(payload as SynthesizeRequest);
                 break;
 
-            case 'LOAD_VOICE':
+            case 'LOAD_VOICE': {
                 const { voiceId, assets } = payload;
                 await ttsEngine.loadVoice(voiceId, assets);
                 sendResponse('VOICE_LOADED', { voiceId });
                 break;
+            }
 
             default:
                 console.warn('Unknown message type:', type);

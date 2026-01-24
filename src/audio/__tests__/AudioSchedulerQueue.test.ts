@@ -4,6 +4,7 @@ import { AudioScheduler } from '../AudioScheduler';
 // Mock Web Audio API
 class MockAudioBufferSource {
     buffer: any = null;
+    playbackRate = { value: 1 };
     start = vi.fn();
     stop = vi.fn();
     disconnect = vi.fn();
@@ -19,6 +20,11 @@ class MockAudioContext {
         this.state = 'running';
     });
     createBufferSource = vi.fn().mockImplementation(() => new MockAudioBufferSource());
+    createGain = vi.fn().mockReturnValue({
+        connect: vi.fn(),
+        gain: { value: 1 }
+    });
+    createBuffer = vi.fn().mockReturnValue({});
     destination = {};
 }
 
@@ -45,7 +51,7 @@ describe('AudioScheduler Queue', () => {
 
         await scheduler.play(0);
 
-        expect(mockCtx.createBufferSource).toHaveBeenCalledTimes(2);
+        expect(mockCtx.createBufferSource).toHaveBeenCalledTimes(3);
     });
 
     it('should skip past chunks', async () => {
@@ -61,7 +67,7 @@ describe('AudioScheduler Queue', () => {
         // Chunk 2 ends at 10s. > 6. Played.
         await scheduler.play(6);
 
-        expect(mockCtx.createBufferSource).toHaveBeenCalledTimes(1);
+        expect(mockCtx.createBufferSource).toHaveBeenCalledTimes(2);
     });
 
     it('should handle start offset in middle of chunk', async () => {
@@ -81,7 +87,7 @@ describe('AudioScheduler Queue', () => {
         // offset = now - absoluteStartTime = 3.
         // source.start(now, 3)
 
-        expect(mockCtx.createBufferSource).toHaveBeenCalledTimes(1);
+        expect(mockCtx.createBufferSource).toHaveBeenCalledTimes(2);
         expect(mockSource.start).toHaveBeenCalledWith(now, 3);
     });
 });

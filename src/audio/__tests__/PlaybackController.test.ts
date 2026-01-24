@@ -12,12 +12,18 @@ class MockAudioContext {
     });
     createBufferSource = vi.fn().mockReturnValue({
         buffer: null,
+        playbackRate: { value: 1 },
         connect: vi.fn(),
         start: vi.fn(),
         stop: vi.fn(),
         disconnect: vi.fn(),
         onended: null
     });
+    createGain = vi.fn().mockReturnValue({
+        connect: vi.fn(),
+        gain: { value: 1 }
+    });
+    createBuffer = vi.fn().mockReturnValue({});
     destination = {};
 }
 
@@ -31,8 +37,8 @@ describe('PlaybackController', () => {
     });
 
     it('should return 0 duration when no timeline is set', () => {
-        // @ts-ignore - method might not exist yet
-        expect(controller.getDuration?.() ?? 0).toBe(0);
+        const duration = (controller as { getDuration?: () => number }).getDuration?.() ?? 0;
+        expect(duration).toBe(0);
     });
 
     it('should return correct duration when timeline is set', () => {
@@ -44,7 +50,7 @@ describe('PlaybackController', () => {
 
         controller.setTimeline(timeline);
 
-        // @ts-ignore
-        expect(controller.getDuration?.()).toBe(123.45);
+        const duration = (controller as { getDuration?: () => number }).getDuration?.();
+        expect(duration).toBe(123.45);
     });
 });

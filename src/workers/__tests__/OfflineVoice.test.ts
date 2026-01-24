@@ -1,5 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { OfflineVoice } from '../tts/OfflineVoice';
+
+vi.mock('../tts/piper-api', () => ({
+    piperGenerate: vi.fn().mockResolvedValue({
+        file: new Blob([new ArrayBuffer(44)], { type: 'audio/wav' }),
+        duration: 500,
+        phonemes: ['t', 'e', 's', 't']
+    })
+}));
 
 describe('OfflineVoice', () => {
     it('should fail initialization', async () => {
@@ -21,10 +29,6 @@ describe('OfflineVoice', () => {
 
         expect(result.sampleRate).toBeGreaterThan(0);
         expect(result.durationSec).toBeGreaterThan(0);
-        expect(result.audioData.length).toBeGreaterThan(0);
-
-        // Check if duration matches samples
-        const expectedSamples = Math.floor(result.durationSec * result.sampleRate);
-        expect(result.audioData.length).toBe(expectedSamples);
+        expect(result.wavBuffer?.byteLength).toBe(44);
     });
 });

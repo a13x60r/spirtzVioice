@@ -18,7 +18,6 @@ class WorkerPool {
     private activeWorkers: Set<Worker> = new Set();
 
     getWorker(url: string): Worker {
-
         // Try to find an idle worker
         const idleWorker = this.workers.find(w => !this.activeWorkers.has(w));
         if (idleWorker) {
@@ -75,7 +74,7 @@ export const piperGenerate = async (
         console.warn("Emotion inference is not supported in this local adaptation of piper-wasm.");
     }
 
-    return new Promise<PiperGenerateResult>(async (resolve, reject) => {
+    return new Promise<PiperGenerateResult>((resolve, reject) => {
         const worker = pool.getWorker(workerUrl);
 
         const messageHandler = (event: MessageEvent) => {
@@ -120,6 +119,11 @@ export const piperGenerate = async (
         };
 
         worker.addEventListener("message", messageHandler);
+        worker.addEventListener("error", (e) => {
+            console.error("Piper worker error:", e);
+            cleanup();
+            reject(new Error(`Worker error: ${e.message}`));
+        });
 
         // Optimizing CPU usage:
         // If we have 3 workers, we shouldn't let each consume all cores.

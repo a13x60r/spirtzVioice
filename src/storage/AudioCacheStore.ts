@@ -35,14 +35,14 @@ export class AudioCacheStore {
         let freedBytes = 0;
 
         // Iterate by oldest access time
-        const collection = db.audioCache.orderBy('lastAccessMs');
+        const items = await db.audioCache.orderBy('lastAccessMs').toArray();
 
-        await collection.each(async (item) => {
-            if (freedBytes >= targetBytesToFree) return;
+        for (const item of items) {
+            if (freedBytes >= targetBytesToFree) break;
 
             freedBytes += item.sizeBytes;
             await db.audioCache.delete(item.id);
-        });
+        }
 
         return freedBytes;
     }

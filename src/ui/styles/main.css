@@ -15,6 +15,9 @@
     --font-size-lg: 1.125rem;
     --font-size-xl: 1.25rem;
 
+    /* Responsive Font Sizes */
+    --font-size-hero: 2rem;
+
     /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
@@ -24,6 +27,7 @@
 
     /* RSVP Specifics */
     --rsvp-font-size: 3.5rem;
+    --rsvp-font-size-mobile: 2.5rem;
     --rsvp-font-weight: 700;
 }
 
@@ -80,11 +84,14 @@ body {
 .shell-container {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    /* max-width: 800px;  Removed for responsive full-width */
+    height: 100vh;
+    height: 100dvh;
+    /* Better mobile handling */
     margin: 0 auto;
     width: 100%;
     padding: var(--spacing-md);
+    overflow: hidden;
+    /* Prevent body scroll */
 }
 
 .header {
@@ -93,6 +100,20 @@ body {
     align-items: center;
     padding: var(--spacing-md) 0;
     border-bottom: 1px solid var(--color-border);
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
+    gap: var(--spacing-md);
+}
+
+.header h1 {
+    font-size: var(--font-size-xl);
+    margin: 0;
+}
+
+.header>div {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
 }
 
 .main-view {
@@ -144,6 +165,23 @@ body {
     font-size: 0.85rem;
 }
 
+/* Mobile Touch Targets */
+@media (hover: none) and (pointer: coarse) {
+
+    .btn,
+    .input {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        min-height: 28px;
+        min-width: 28px;
+        margin-top: -11px;
+        transform: scale(1.5);
+    }
+}
+
 .input {
     background: var(--color-bg);
     color: var(--color-text);
@@ -161,6 +199,7 @@ body {
     justify-content: center;
     height: 100%;
     width: 100%;
+    padding: var(--spacing-md);
 }
 
 .rsvp-word-layout {
@@ -315,11 +354,36 @@ body {
     gap: var(--spacing-sm);
 }
 
+.speed-control-group {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .speed-control {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
     font-size: 0.9rem;
+}
+
+.speed-control input[type="range"] {
+    width: 80px;
+}
+
+.speed-control span {
+    min-width: 36px;
+    font-weight: 600;
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.icon-label {
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
 }
 
 .time-display {
@@ -331,26 +395,79 @@ body {
 
 /* Mobile responsive controls */
 @media (max-width: 600px) {
-    .controls-row {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: var(--spacing-md);
+    :root {
+        --spacing-md: 0.75rem;
     }
 
-    .speed-control {
-        order: 3;
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-sm);
+        padding-bottom: var(--spacing-sm);
+    }
+
+    .header h1 {
+        text-align: center;
         width: 100%;
-        justify-content: center;
+        margin-bottom: var(--spacing-xs);
     }
 
-    .time-display {
-        order: 2;
+    .header>div {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .shell-container {
+        padding: var(--spacing-sm);
+    }
+
+    .rsvp-word-layout {
+        font-size: var(--rsvp-font-size-mobile);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .controls-row {
+        flex-direction: column;
+        gap: var(--spacing-lg);
+        width: 100%;
     }
 
     .playback-buttons {
         order: 1;
         width: 100%;
         justify-content: center;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-sm);
+    }
+
+    .playback-buttons .btn {
+        padding: var(--spacing-xs);
+    }
+
+    .time-display {
+        order: 2;
+        width: 100%;
+        text-align: center;
+        margin: var(--spacing-xs) 0;
+    }
+
+    .speed-control-group {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        gap: var(--spacing-lg);
+        padding-top: var(--spacing-md);
+        border-top: 1px solid var(--color-border);
+    }
+
+    .speed-control {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .speed-control input[type="range"] {
+        flex: 1;
+        width: auto;
     }
 }
 

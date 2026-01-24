@@ -71,20 +71,20 @@ export class Controls {
                 </div>
                 
                 <div class="controls-row">
-                    <div class="speed-control-group" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div class="speed-control-group">
                         <div class="speed-control">
                             <label for="speed-input" title="Playback Rate (Instant)">R</label>
-                            <input type="range" id="speed-input" min="0.5" max="2.0" step="0.1" value="${initialRate}" style="width: 60px">
-                            <span id="speed-val-display" style="min-width: 32px; font-weight: 600; color: var(--color-primary); font-size: 0.8rem;">${initialRate.toFixed(1)}x</span>
+                            <input type="range" id="speed-input" min="0.5" max="2.0" step="0.1" value="${initialRate}">
+                            <span id="speed-val-display">${initialRate.toFixed(1)}x</span>
                         </div>
                         <div class="speed-control">
                             <label for="wpm-input" title="Synthesis WPM (Re-generates Audio)">W</label>
-                            <input type="range" id="wpm-input" min="200" max="600" step="10" value="${initialWpm}" style="width: 60px">
-                            <span id="wpm-val-display" style="min-width: 32px; font-weight: 600; color: var(--color-primary); font-size: 0.8rem;">${initialWpm}</span>
+                            <input type="range" id="wpm-input" min="200" max="600" step="10" value="${initialWpm}">
+                            <span id="wpm-val-display">${initialWpm}</span>
                         </div>
                          <div class="speed-control">
-                            <div title="Volume" style="color: var(--color-text-secondary); display: flex; align-items: center;">${ICONS.volume}</div>
-                            <input type="range" id="volume-input" min="0" max="1" step="0.05" value="${initialVolume}" style="width: 60px">
+                            <div title="Volume" class="icon-label">${ICONS.volume}</div>
+                            <input type="range" id="volume-input" min="0" max="1" step="0.05" value="${initialVolume}">
                         </div>
                     </div>
 

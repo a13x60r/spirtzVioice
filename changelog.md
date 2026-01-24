@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `AudioCacheStore` iteration bug preventing efficient cache cleanup.
 - Resolved visual overlaps in Controls component on small screens.
 - Fixed settings panel responsiveness: added max-height and scrolling for small screens.
+- Fixed visibility of "Start Reading" button on mobile by enabling scrolling in "New Document" view.
 
 ### Added (Previous)
 - **Language Support**:

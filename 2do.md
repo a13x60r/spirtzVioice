@@ -7,7 +7,7 @@
 # Features (Todo)
 - [ ] add import from url
 - [ ] add import from share (Android/iOS intent)
-- [ ] replace text UI with icons, where possible (e.g. settings)
+- [x] replace text UI with icons, where possible (e.g. settings)
 
 # Done
 - [x] feature: add language detection, save language for each stored text

@@ -10,6 +10,8 @@ export interface SettingsCallbacks {
     onSkipSettingsChange: (settings: { seekSec: number, wordCount: number, sentenceCount: number, paragraphCount: number, mediaSkipBackUnit: 'word' | 'sentence' | 'paragraph' | 'seek', mediaSkipFwdUnit: 'word' | 'sentence' | 'paragraph' | 'seek' }) => void;
 }
 
+const CLOSE_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.71 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29 10.59 10.6l6.3-6.3z"/></svg>`;
+
 export class SettingsPanel {
     private container: HTMLElement;
     private callbacks: SettingsCallbacks;
@@ -95,7 +97,7 @@ export class SettingsPanel {
                 <div class="settings-modal">
                     <header class="settings-header">
                         <h2>Settings</h2>
-                        <button class="btn btn-secondary" id="close-settings">Close</button>
+                        <button class="btn btn-secondary btn-icon" id="close-settings" title="Close" aria-label="Close">${CLOSE_ICON}</button>
                     </header>
                     
                     <div class="settings-content">

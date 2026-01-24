@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved visual overlaps in Controls component on small screens.
 - Fixed settings panel responsiveness: added max-height and scrolling for small screens.
 - Fixed visibility of "Start Reading" button on mobile by enabling scrolling in "New Document" view.
+- **Controls Visibility**:
+    - Auto-collapse controls when not in reading mode (Library/New Document).
+    - Ensure controls remain visible when paused during active reading sessions.
+
 
 ### Added (Previous)
 - **Language Support**:

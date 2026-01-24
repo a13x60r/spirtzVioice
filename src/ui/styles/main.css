@@ -116,6 +116,49 @@ body {
     flex-wrap: wrap;
 }
 
+.header .btn-icon::after,
+.header .btn-icon::before {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.header .btn-icon::after {
+    content: attr(title);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    transform: translate(-50%, 6px);
+    background: var(--color-text);
+    color: var(--color-bg);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    z-index: 5;
+}
+
+.header .btn-icon::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 4px);
+    transform: translate(-50%, 6px);
+    border-width: 6px 6px 0;
+    border-style: solid;
+    border-color: var(--color-text) transparent transparent;
+    z-index: 4;
+}
+
+.header .btn-icon:hover::after,
+.header .btn-icon:hover::before,
+.header .btn-icon:focus-visible::after,
+.header .btn-icon:focus-visible::before {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
 .main-view {
     flex: 1;
     display: flex;
@@ -131,6 +174,21 @@ body {
     padding: var(--spacing-md);
     border-radius: 12px;
     border: 1px solid var(--color-border);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: bottom;
+    max-height: 200px;
+    opacity: 1;
+}
+
+.controls-area.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
+    opacity: 0;
+    overflow: hidden;
+    border: none;
+    transform: translateY(20px);
 }
 
 /* Common Components */
@@ -143,6 +201,18 @@ body {
     cursor: pointer;
     font-weight: 500;
     transition: opacity 0.2s;
+}
+
+.btn-icon {
+    padding: 6px;
+    line-height: 0;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
 .btn:hover {
@@ -163,6 +233,33 @@ body {
 .btn-sm {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: 0.85rem;
+}
+
+.btn-sm.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+}
+
+.btn-icon[data-count]::after {
+    content: attr(data-count);
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--color-error);
+    color: white;
+    font-size: 0.65rem;
+    line-height: 16px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-icon[data-count="0"]::after {
+    display: none;
 }
 
 /* Mobile Touch Targets */

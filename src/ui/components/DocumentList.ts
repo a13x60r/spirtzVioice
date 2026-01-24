@@ -1,6 +1,11 @@
 import { documentStore } from '../../storage/DocumentStore';
 import type { DocumentEntity } from '../../storage/Database';
 
+const LIBRARY_ICONS = {
+    play: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
+    trash: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>`
+};
+
 interface DocumentListCallbacks {
     onResume: (docId: string) => void;
     onDelete: (docId: string) => void;
@@ -84,8 +89,8 @@ export class DocumentList {
                         <input type="checkbox" id="select-all" ${allSelected ? 'checked' : ''}>
                         <span>Select All ${this.filterText ? '(Filtered)' : ''}</span>
                     </label>
-                    <button class="btn btn-danger btn-sm" id="btn-delete-selected" ${!anySelected ? 'disabled' : ''}>
-                        Delete Selected (${this.selectedIds.size})
+                    <button class="btn btn-danger btn-sm btn-icon" id="btn-delete-selected" data-count="${this.selectedIds.size}" title="Delete Selected (${this.selectedIds.size})" aria-label="Delete Selected (${this.selectedIds.size})" ${!anySelected ? 'disabled' : ''}>
+                        ${LIBRARY_ICONS.trash}
                     </button>
                 </div>
 
@@ -175,10 +180,12 @@ export class DocumentList {
                     ` : ''}
                 </div>
                 <div class="document-actions">
-                    <button class="btn btn-primary btn-sm" id="resume-${doc.id}">
-                        ${progress > 0 ? 'Resume' : 'Start'}
+                    <button class="btn btn-primary btn-sm btn-icon" id="resume-${doc.id}" title="${progress > 0 ? 'Resume' : 'Start'}" aria-label="${progress > 0 ? 'Resume' : 'Start'}">
+                        ${LIBRARY_ICONS.play}
                     </button>
-                    <button class="btn btn-danger btn-sm" id="delete-${doc.id}">Delete</button>
+                    <button class="btn btn-danger btn-sm btn-icon" id="delete-${doc.id}" title="Delete" aria-label="Delete">
+                        ${LIBRARY_ICONS.trash}
+                    </button>
                 </div>
             </div>
         `;

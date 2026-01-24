@@ -15,6 +15,13 @@ import { ParagraphView } from './views/ParagraphView';
 import type { ReaderView } from './views/ViewInterface';
 import { TextPipeline } from '@domain/TextPipeline';
 
+const HEADER_ICONS = {
+    library: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v15H6c-1.1 0-2-.9-2-2V5zm2 0v13h9V5H6z"/><path d="M18 6h2v14c0 1.1-.9 2-2 2H8v-2h10V6z"/></svg>`,
+    newDoc: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 3H6c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9l-7-7zm0 2.5L19.5 12H13V5.5z"/><path d="M12 14h-2v-2H8v2H6v2h2v2h2v-2h2z"/></svg>`,
+    switchView: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 7h11l-3.5-3.5 1.4-1.4L22.8 9l-6.9 6.9-1.4-1.4L18 11H7V7zm10 10H6l3.5 3.5-1.4 1.4L1.2 15l6.9-6.9 1.4 1.4L6 13h11v4z"/></svg>`,
+    settings: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.7.22l2.39-.96c.5.4 1.04.71 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.23 1.13-.54 1.63-.94l2.39.96c.27.11.56.02.7-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5S10.07 8.5 12 8.5s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>`
+};
+
 export class ReaderShell {
     private container: HTMLElement;
     private audioEngine: AudioEngine;
@@ -27,6 +34,7 @@ export class ReaderShell {
     // UI states
     private viewContainer!: HTMLElement;
     private uiLoopActive: boolean = false;
+    private isReaderActive: boolean = false;
 
     // Components
     private settingsPanel!: SettingsPanel;
@@ -86,10 +94,10 @@ export class ReaderShell {
                 <header class="header">
                     <h1>Spritz Voice</h1>
                     <div>
-                        <button class="btn btn-secondary" id="btn-library" style="margin-right: 10px">Library</button>
-                        <button class="btn btn-secondary" id="btn-new-text" style="margin-right: 10px">New</button>
-                        <button class="btn btn-secondary" id="btn-toggle-view" style="margin-right: 10px">Switch View</button>
-                        <button class="btn btn-secondary" id="btn-settings">Settings</button>
+                        <button class="btn btn-secondary btn-icon" id="btn-library" title="Library" aria-label="Library">${HEADER_ICONS.library}</button>
+                        <button class="btn btn-secondary btn-icon" id="btn-new-text" title="New Document" aria-label="New Document">${HEADER_ICONS.newDoc}</button>
+                        <button class="btn btn-secondary btn-icon" id="btn-toggle-view" title="Switch View" aria-label="Switch View">${HEADER_ICONS.switchView}</button>
+                        <button class="btn btn-secondary btn-icon" id="btn-settings" title="Settings" aria-label="Settings">${HEADER_ICONS.settings}</button>
                     </div>
                 </header>
                 
@@ -406,6 +414,7 @@ export class ReaderShell {
     }
 
     private showTextInput() {
+        this.isReaderActive = false;
         this.audioEngine.getController().pause();
         if (this.currentView) this.currentView.unmount();
         this.documentList.unmount();
@@ -416,6 +425,7 @@ export class ReaderShell {
     }
 
     private async showDocumentList() {
+        this.isReaderActive = false;
         this.audioEngine.getController().pause();
         if (this.currentView) this.currentView.unmount();
         this.textInput.unmount();
@@ -458,6 +468,8 @@ export class ReaderShell {
     }
 
     private switchView(mode: 'RSVP' | 'PARAGRAPH') {
+        this.isReaderActive = true;
+
         if (this.currentView) this.currentView.unmount();
         this.textInput.unmount();
         this.documentList.unmount();
@@ -497,6 +509,16 @@ export class ReaderShell {
             const scheduler = controller.getScheduler();
 
             const isPlaying = controller.getState() === 'PLAYING';
+
+            const controlsMount = this.container.querySelector('#controls-mount');
+            if (controlsMount) {
+                if (this.isReaderActive) {
+                    controlsMount.classList.remove('collapsed');
+                } else {
+                    controlsMount.classList.add('collapsed');
+                }
+            }
+
             this.controls.setPlaying(isPlaying);
 
             // Sync Media Session state & Position

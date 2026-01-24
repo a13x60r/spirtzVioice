@@ -29,6 +29,9 @@ export class AudioScheduler {
     private isPlaying: boolean = false;
     private lastOpId: number = 0;
 
+    // Keep context active with silent buffer to hold Media Session focus
+    private silenceNode: AudioBufferSourceNode | null = null;
+
     constructor() {
         const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
         this.ctx = new AudioContextClass();
@@ -51,6 +54,24 @@ export class AudioScheduler {
     async resumeContext() {
         if (this.ctx.state === 'suspended') {
             await this.ctx.resume();
+        }
+        this.ensureKeepAlive();
+    }
+
+    private ensureKeepAlive() {
+        if (this.silenceNode) return;
+        try {
+            // Play infinite silence to keep the AudioContext active and the Media Session "claimed"
+            // This prevents the OS from switching media focus to another app when we pause.
+            const buffer = this.ctx.createBuffer(1, 1, 22050);
+            const source = this.ctx.createBufferSource();
+            source.buffer = buffer;
+            source.loop = true;
+            source.connect(this.ctx.destination);
+            source.start();
+            this.silenceNode = source;
+        } catch (e) {
+            console.warn("Failed to start keep-alive silence", e);
         }
     }
 
@@ -190,7 +211,10 @@ export class AudioScheduler {
         if (!this.isPlaying) return;
         this.offsetTime = this.getCurrentTime();
 
-        await this.ctx.suspend();
+        // Do NOT suspend context here. Suspending causes the browser to release
+        // the Media Session (media keys), causing the "Physical Play Button"
+        // to resume other apps (e.g. Spotify) instead of this one.
+        // await this.ctx.suspend(); 
 
         // Check again after wait
         if (opId !== undefined && opId < this.lastOpId) return;

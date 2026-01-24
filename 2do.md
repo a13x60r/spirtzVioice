@@ -1,3 +1,7 @@
+# TODO
+- [ ] add import from url
+- [ ] add import from share
+- [ ] make progress bar of currently playing text to seeker bar to navigate text like in video player
 # High Priority
 
 - [x] make it use whole screen dynamically (responsive layout)
@@ -5,25 +9,26 @@
 - [x] feature: text size control
 - [x] feature: dark mode
 
-- [ ] save mode setting for each stored text
+- [ ] save setting for each stored text
 - [ ] add multifile upload
+
 
 # UX / UI Improvements
 
 
 # Features (Todo)
-- [ ] add keyboard shortcuts
-- [ ] add languages 
+- [x] add multimedia button(physical like on headphones) support (play/pause, skip, etc.)
+- [x] add keyboard shortcuts
 - [ ] replace text UI with icons, where applicable 
-- [x] add language selection in settings
-- [ ] add language detection
-- [x] add voice selection in settings
+- [ ] add language detection, save language for each stored text
 - [ ] add import from url
 
 # Rejected / Obsolete
 - [x] sync settings wpm to main screen wpm (Decided: Strict separation of default vs active WPM)
 
 # Done
+- [x] add language selection in settings
+- [x] add voice selection in settings
 - [x] Debug Play/Pause and Seek issues.
 - [x] Fix responsiveness of Play/Pause button (removed await on resume context).
 - [x] rename buttons to use icons instead of text (Play, Pause, Library, etc.)

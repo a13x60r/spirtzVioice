@@ -44,6 +44,9 @@ export class ReaderShell {
         this.audioEngine = new AudioEngine();
         this.rsvpView = new RSVPView();
         this.paragraphView = new ParagraphView();
+
+        // Initial setup for TS - actually init in renderShell
+        this.keepAliveAudio = new Audio();
     }
 
     async init() {
@@ -63,9 +66,21 @@ export class ReaderShell {
 
         this.startUiLoop();
         this.setupMediaSession();
+        this.setupKeyboardShortcuts();
     }
 
+    // Media Session state
+    private lastPlaybackState: 'playing' | 'paused' | 'none' = 'none';
+
+    // HTML5 Audio anchor to hold system focus (stronger than Web Audio API)
+    private keepAliveAudio: HTMLAudioElement;
+
     private renderShell() {
+        // Initialize silent anchor
+        this.keepAliveAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+        this.keepAliveAudio.loop = true;
+        this.keepAliveAudio.volume = 0; // Ensure it's silent
+
         this.container.innerHTML = `
             <div class="shell-container">
                 <header class="header">
@@ -155,6 +170,9 @@ export class ReaderShell {
                 } else {
                     controller.play().catch(err => console.error("Play failed", err));
                 }
+
+                // Start Keep-Alive anchor
+                this.keepAliveAudio.play().catch(() => { });
             },
             onSeek: (offset) => {
                 controller.seek(offset);
@@ -340,6 +358,7 @@ export class ReaderShell {
         }
 
         this.setupPlaybackListeners();
+        this.updateMediaMetadata(title);
     }
 
     private async handleBulkImport(docs: { title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown' }[]) {
@@ -409,6 +428,7 @@ export class ReaderShell {
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
         this.setupPlaybackListeners();
+        this.updateMediaMetadata(doc.title);
     }
 
     private switchView(mode: 'RSVP' | 'PARAGRAPH') {
@@ -452,6 +472,32 @@ export class ReaderShell {
 
             const isPlaying = controller.getState() === 'PLAYING';
             this.controls.setPlaying(isPlaying);
+
+            // Sync Media Session state & Position
+            if ('mediaSession' in navigator) {
+                const newState = isPlaying ? 'playing' : 'paused';
+                if (this.lastPlaybackState !== newState) {
+                    navigator.mediaSession.playbackState = newState;
+                    this.lastPlaybackState = newState;
+                }
+
+                // Update position state occassionally (e.g. every second or on state change) reduces overhead
+                // But simplified here to run often enough or check for drift
+                const currentTime = scheduler.getCurrentTime();
+                const duration = controller.getDuration();
+
+                if (duration > 0 && currentTime <= duration) {
+                    try {
+                        navigator.mediaSession.setPositionState({
+                            duration: duration,
+                            playbackRate: this.settings.playbackRate || 1.0,
+                            position: currentTime
+                        });
+                    } catch (e) {
+                        // fast seeking can cause position > duration
+                    }
+                }
+            }
 
             const currentTime = scheduler.getCurrentTime();
             const totalTime = controller.getDuration();
@@ -534,6 +580,57 @@ export class ReaderShell {
             // Optional: Seek
             navigator.mediaSession.setActionHandler('seekbackward', () => controller.seek(-10));
             navigator.mediaSession.setActionHandler('seekforward', () => controller.seek(10));
+            // Stop
+            navigator.mediaSession.setActionHandler('stop', () => {
+                controller.pause();
+                controller.seekByToken(0);
+            });
         }
+    }
+
+    private updateMediaMetadata(title: string) {
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: title,
+                artist: 'Spritz Voice',
+                album: 'Reader'
+            });
+        }
+    }
+
+    private setupKeyboardShortcuts() {
+        window.addEventListener('keydown', (e) => {
+            const controller = this.audioEngine.getController();
+
+            // Ignore if in input field
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+            switch (e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    // Toggle Play/Pause
+                    controller.getScheduler().resumeContext();
+                    if (controller.getState() === 'PLAYING') controller.pause();
+                    else controller.play().catch(console.error);
+                    break;
+                case 'MediaPlayPause':
+                    // e.preventDefault(); // Let default action occur if browser doesn't catch it
+                    controller.getScheduler().resumeContext();
+                    if (controller.getState() === 'PLAYING') controller.pause();
+                    else controller.play().catch(console.error);
+                    break;
+                case 'MediaTrackNext':
+                    if (this.currentTokens.length) controller.skipParagraph(1, this.currentTokens);
+                    break;
+                case 'MediaTrackPrevious':
+                    if (this.currentTokens.length) controller.skipParagraph(-1, this.currentTokens);
+                    break;
+                case 'MediaStop':
+                    controller.pause();
+                    controller.seekByToken(0);
+                    break;
+            }
+        });
     }
 }

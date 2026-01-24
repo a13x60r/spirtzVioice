@@ -159,7 +159,7 @@ export class PlaybackController {
         if (!currentToken) return;
 
         const currentSentenceId = currentToken.sentenceId;
-        let targetSentenceId = currentSentenceId + direction;
+        const targetSentenceId = currentSentenceId + direction;
 
         // Find the first token of the target sentence
         const targetToken = tokens.find(t => t.sentenceId === targetSentenceId);

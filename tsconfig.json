@@ -9,6 +9,9 @@
             "DOM.Iterable",
             "WebWorker"
         ],
+        "types": [
+            "vite/client"
+        ],
         "skipLibCheck": true,
         /* Bundler mode */
         "moduleResolution": "bundler",

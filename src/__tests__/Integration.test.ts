@@ -42,6 +42,7 @@ const mockAudioContext = {
         connect: vi.fn(),
         start: vi.fn(),
         stop: vi.fn(),
+        playbackRate: { value: 1 },
         onended: null,
         buffer: null
     }),
@@ -49,6 +50,7 @@ const mockAudioContext = {
         connect: vi.fn(),
         gain: { value: 1 }
     }),
+    createBuffer: () => ({}),
     decodeAudioData: mockDecodeAudioData,
     destination: {}
 };
@@ -64,7 +66,8 @@ describe('Integration: Core Flow', () => {
             setInterval: window.setInterval,
             clearInterval: window.clearInterval,
             setTimeout: window.setTimeout,
-            clearTimeout: window.clearTimeout
+            clearTimeout: window.clearTimeout,
+            location: window.location ?? { origin: 'http://localhost' }
         });
 
         // Reset DB mocks if needed? fake-indexeddb handles in-memory

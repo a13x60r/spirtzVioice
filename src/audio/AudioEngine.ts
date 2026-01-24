@@ -144,7 +144,6 @@ export class AudioEngine {
 
         // Build Optimized Chunk Timeline
         this.chunkTimeline = [];
-        let missingEntries = 0;
         let cumulativeTime = 0;
 
         for (const chunk of this.currentPlan.chunks) {
@@ -165,7 +164,6 @@ export class AudioEngine {
                     startSec: cumulativeTime,
                     endSec: cumulativeTime + duration
                 });
-                missingEntries++;
             }
             cumulativeTime += duration;
         }

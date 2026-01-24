@@ -91,31 +91,33 @@ export class TextPipeline {
         return text.toLowerCase();
 
       case 'punct':
-        // Map punctuation to spoken equivalents or silence
-        const punctMap: Record<string, string> = {
-          '.': '',
-          ',': '',
-          '!': '',
-          '?': '',
-          ';': '',
-          ':': '',
-          '-': '',
-          '—': '',
-          '–': '',
-          '"': '',
-          "'": '',
-          '(': '',
-          ')': '',
-          '[': '',
-          ']': '',
-          '{': '',
-          '}': '',
-          '\u2018': '',
-          '\u2019': '',
-          '\u201C': '',
-          '\u201D': '',
-        };
-        return punctMap[text] || '';
+        {
+          // Map punctuation to spoken equivalents or silence
+          const punctMap: Record<string, string> = {
+            '.': '',
+            ',': '',
+            '!': '',
+            '?': '',
+            ';': '',
+            ':': '',
+            '-': '',
+            '—': '',
+            '–': '',
+            '"': '',
+            "'": '',
+            '(': '',
+            ')': '',
+            '[': '',
+            ']': '',
+            '{': '',
+            '}': '',
+            '\u2018': '',
+            '\u2019': '',
+            '\u201C': '',
+            '\u201D': '',
+          };
+          return punctMap[text] || '';
+        }
 
       case 'space':
         return ' ';
@@ -150,5 +152,4 @@ export class TextPipeline {
     return Math.max(...tokens.map(t => t.sentenceId)) + 1;
   }
 }
-
 

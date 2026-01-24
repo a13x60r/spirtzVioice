@@ -2,7 +2,7 @@
 
 import { piperGenerate } from './piper-api';
 
-const BASE_URL = '/piper/';
+const BASE_URL = (import.meta.env.BASE_URL || '/') + 'piper/';
 
 export class OfflineVoice {
     private currentModelUrl: string = BASE_URL + 'en_US-amy-medium.onnx';
@@ -67,7 +67,11 @@ export class OfflineVoice {
         // This prevents race conditions when multiple workers try to fetch the 60MB file at once.
         console.log(`[OfflineVoice] Warming up voice ${voiceId}...`);
         try {
-            await this.synthesize("Ready", 300);
+            // Race with timeout of 10 seconds
+            const warmupPromise = this.synthesize("Ready", 300);
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Warmup timeout")), 10000));
+
+            await Promise.race([warmupPromise, timeoutPromise]);
             console.log(`[OfflineVoice] Warmup complete.`);
         } catch (e) {
             console.warn(`[OfflineVoice] Warmup failed (non-fatal if network issue persists, but likely to fail later):`, e);

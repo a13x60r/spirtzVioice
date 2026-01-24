@@ -235,8 +235,8 @@ export class AudioScheduler {
 
     private stopAll() {
         this.sources.forEach(s => {
-            try { s.stop(); } catch (e) { }
-            try { s.disconnect(); } catch (e) { }
+            try { s.stop(); } catch (e) { void e; }
+            try { s.disconnect(); } catch (e) { void e; }
         });
         this.sources = [];
     }

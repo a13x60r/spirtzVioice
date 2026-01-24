@@ -116,6 +116,7 @@ describe('Integration: Core Flow', () => {
         engine = new AudioEngine();
         const settings: Settings = {
             voiceId: 'default',
+            language: 'en-US',
             speedWpm: 300,
             strategy: 'TOKEN',
             chunkSize: 5,

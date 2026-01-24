@@ -6,6 +6,7 @@ import type { Settings } from '@spec/types';
 describe('PlanEngine', () => {
     const mockSettings: Settings = {
         voiceId: 'voice-1',
+        language: 'en-US',
         speedWpm: 200,
         strategy: 'TOKEN',
         chunkSize: 1,

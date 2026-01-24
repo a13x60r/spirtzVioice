@@ -5,7 +5,7 @@ export class DocumentStore {
     /**
      * Create a new document
      */
-    async createDocument(title: string, originalText: string, ttsText?: string, contentType: 'text' | 'html' | 'markdown' = 'text', totalTokens?: number): Promise<DocumentEntity> {
+    async createDocument(title: string, originalText: string, ttsText?: string, contentType: 'text' | 'html' | 'markdown' = 'text', totalTokens?: number, language?: string): Promise<DocumentEntity> {
         const doc: DocumentEntity = {
             id: uuidv4(),
             title,
@@ -13,6 +13,7 @@ export class DocumentStore {
             contentType,
             ttsText: ttsText || originalText, // Fallback to originalText if no ttsText provided
             totalTokens,
+            language,
             createdAt: Date.now(),
             lastReadAt: Date.now(),
             progressTokenIndex: 0,

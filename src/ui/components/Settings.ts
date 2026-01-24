@@ -261,7 +261,7 @@ export class SettingsPanel {
 
         // Dark Mode
         const darkModeToggle = this.container.querySelector('#dark-mode-toggle') as HTMLInputElement;
-        darkModeToggle?.addEventListener('change', (e) => {
+        darkModeToggle?.addEventListener('change', () => {
             this.callbacks.onDarkModeChange(darkModeToggle.checked);
         });
 

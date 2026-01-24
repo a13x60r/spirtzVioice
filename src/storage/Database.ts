@@ -15,6 +15,7 @@ export interface DocumentEntity {
     contentType: 'text' | 'html' | 'markdown';
     mode?: 'RSVP' | 'PARAGRAPH';
     totalTokens?: number; // Total token count for accurate progress
+    language?: string; // ISO language code detected or manual
 }
 
 export interface SettingsEntity extends Settings {
@@ -71,6 +72,11 @@ export class AppDatabase extends Dexie {
         // Version 3: Clear corrupted cache (reset audio)
         this.version(3).stores({}).upgrade(tx => {
             return tx.table('audioChunks').clear();
+        });
+
+        // Version 4: Add language field to documents
+        this.version(4).stores({
+            documents: 'id, title, lastReadAt, language'
         });
     }
 }

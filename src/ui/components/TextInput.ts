@@ -1,9 +1,9 @@
 
 export class TextInput {
     private container: HTMLElement;
-    private onSubmit: (docs: { title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown' }[]) => void;
+    private onSubmit: (docs: { title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown', language?: string }[]) => void;
 
-    constructor(container: HTMLElement, onSubmit: (docs: { title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown' }[]) => void) {
+    constructor(container: HTMLElement, onSubmit: (docs: { title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown', language?: string }[]) => void) {
         this.container = container;
         this.onSubmit = onSubmit;
     }
@@ -69,14 +69,21 @@ export class TextInput {
             }
         });
 
-        startBtn?.addEventListener('click', () => {
+        startBtn?.addEventListener('click', async () => {
             const title = titleInput.value;
             const text = textTextArea.value;
             if (title && text) {
                 const originalContent = (textTextArea as any)._originalContent || text;
                 const ttsContent = (textTextArea as any)._ttsContent || text;
                 const contentType = (textTextArea as any)._contentType || 'text';
-                this.onSubmit([{ title, originalText: originalContent, ttsText: ttsContent, contentType }]);
+
+                let language = (textTextArea as any)._language;
+                if (!language) {
+                    const { detectLanguage } = await import('../utils/languageUtils');
+                    language = detectLanguage(ttsContent);
+                }
+
+                this.onSubmit([{ title, originalText: originalContent, ttsText: ttsContent, contentType, language }]);
             }
         });
 
@@ -148,6 +155,7 @@ export class TextInput {
                 (textTextArea as any)._originalContent = doc.originalText;
                 (textTextArea as any)._ttsContent = doc.ttsText;
                 (textTextArea as any)._contentType = doc.contentType;
+                (textTextArea as any)._language = doc.language;
             }
         } catch (error) {
             console.error('Error reading file:', error);
@@ -173,11 +181,15 @@ export class TextInput {
             contentType = 'text';
         }
 
+        const { detectLanguage } = await import('../utils/languageUtils');
+        const language = detectLanguage(ttsText);
+
         return {
             title: file.name.replace(/\.[^/.]+$/, ""),
             originalText: content,
             ttsText: ttsText,
-            contentType
+            contentType,
+            language
         };
     }
 

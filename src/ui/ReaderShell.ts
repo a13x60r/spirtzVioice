@@ -328,8 +328,8 @@ export class ReaderShell {
         // TextInput
         this.textInput = new TextInput(this.viewContainer, async (docs) => {
             if (docs.length === 1) {
-                const { title, originalText, ttsText, contentType } = docs[0];
-                await this.handleNewDocument(title, originalText, ttsText, contentType);
+                const { title, originalText, ttsText, contentType, language } = docs[0];
+                await this.handleNewDocument(title, originalText, ttsText, contentType, language);
             } else if (docs.length > 1) {
                 await this.handleBulkImport(docs);
             }
@@ -351,14 +351,23 @@ export class ReaderShell {
         this.showDocumentList();
     }
 
-    private async handleNewDocument(title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown') {
+    private async handleNewDocument(title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown', language?: string) {
         this.loadingOverlay.show('Processing Document...', () => this.audioEngine.cancelSynthesis());
 
         const tokens = TextPipeline.tokenize(ttsText);
         this.currentTokens = tokens;
 
-        const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length);
+        const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length, language);
         this.currentDocId = doc.id;
+
+        // Auto-select voice for language
+        if (language) {
+            const voiceId = await this.selectVoiceForLanguage(language);
+            if (voiceId) {
+                this.settings.voiceId = voiceId;
+                await documentStore.updateSettings(doc.id, voiceId, this.settings.speedWpm);
+            }
+        }
 
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p, msg) => {
             this.loadingOverlay.setProgress(p);
@@ -379,7 +388,7 @@ export class ReaderShell {
         this.updateMediaMetadata(title);
     }
 
-    private async handleBulkImport(docs: { title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown' }[]) {
+    private async handleBulkImport(docs: { title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown', language?: string }[]) {
         this.loadingOverlay.show(`Importing ${docs.length} documents...`, () => { });
 
         for (let i = 0; i < docs.length; i++) {
@@ -389,7 +398,7 @@ export class ReaderShell {
             this.loadingOverlay.setText(`Importing ${i + 1}/${docs.length}: ${f.title}`);
             this.loadingOverlay.setProgress((i / docs.length) * 100);
 
-            await documentStore.createDocument(f.title, f.originalText, f.ttsText, f.contentType, tokens.length);
+            await documentStore.createDocument(f.title, f.originalText, f.ttsText, f.contentType, tokens.length, f.language);
         }
 
         this.loadingOverlay.hide();
@@ -428,14 +437,13 @@ export class ReaderShell {
         const tokens = TextPipeline.tokenize(textForTts);
         this.currentTokens = tokens;
 
-        if (doc.speedWpm) {
-            this.settings.speedWpm = doc.speedWpm;
-            // Update controls to reflect new WPM
-            this.controls.updateSpeed(this.settings.playbackRate || 1.0, this.settings.speedWpm);
-        }
-
-        if (doc.mode) {
-            this.settings.mode = doc.mode;
+        if (doc.voiceId && doc.voiceId !== 'default') {
+            this.settings.voiceId = doc.voiceId;
+        } else if (doc.language) {
+            const voiceId = await this.selectVoiceForLanguage(doc.language);
+            if (voiceId) {
+                this.settings.voiceId = voiceId;
+            }
         }
 
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, doc.progressTokenIndex, (p, msg) => {
@@ -712,5 +720,18 @@ export class ReaderShell {
                     break;
             }
         });
+    }
+
+    private async selectVoiceForLanguage(langCode: string): Promise<string | null> {
+        const voices = await this.audioEngine.getAvailableVoices();
+        // Priority 1: Installed voice matching language
+        let match = voices.find(v => v.lang.startsWith(langCode) && v.isInstalled);
+        if (match) return match.id;
+
+        // Priority 2: Any voice matching language
+        match = voices.find(v => v.lang.startsWith(langCode));
+        if (match) return match.id;
+
+        return null;
     }
 }

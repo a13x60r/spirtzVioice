@@ -91,6 +91,10 @@ export class AudioEngine {
         this.bufferedChunks.clear();
         this.isSynthesisCancelled = false;
 
+        // Prevent JIT buffering of stale chunks during synthesis
+        this.currentTimeline = null;
+        this.chunkTimeline = [];
+
         // Clear previous schedule
         this.scheduler.clear();
 

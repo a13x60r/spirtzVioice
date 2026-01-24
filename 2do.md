@@ -12,9 +12,9 @@
 
 
 # Features (Todo)
-- [ ] add marker to current word in text view (if in text view)
 - [ ] add keyboard shortcuts
 - [ ] add languages 
+- [ ] replace text UI with icons, where applicable 
 - [x] add language selection in settings
 - [ ] add language detection
 - [x] add voice selection in settings

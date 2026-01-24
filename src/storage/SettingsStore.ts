@@ -18,7 +18,15 @@ const DEFAULT_SETTINGS: Settings = {
     playbackRate: 1.0,
     textSize: 1.0,
     darkMode: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
-    language: 'en-US'
+    language: 'en-US',
+    skipSettings: {
+        seekSec: 10,
+        wordCount: 1,
+        sentenceCount: 1,
+        paragraphCount: 1,
+        mediaSkipBackUnit: 'paragraph',
+        mediaSkipFwdUnit: 'paragraph'
+    }
 };
 
 export class SettingsStore {

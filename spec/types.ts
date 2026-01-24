@@ -26,6 +26,15 @@ export interface PauseRules {
 
 export type GpuPreference = 'high-performance' | 'low-power' | 'default';
 
+export interface SkipSettings {
+    seekSec: number;
+    wordCount: number;
+    sentenceCount: number;
+    paragraphCount: number;
+    mediaSkipBackUnit: 'word' | 'sentence' | 'paragraph' | 'seek';
+    mediaSkipFwdUnit: 'word' | 'sentence' | 'paragraph' | 'seek';
+}
+
 export interface Settings {
     voiceId: string;
     speedWpm: number;
@@ -41,6 +50,7 @@ export interface Settings {
     textSize?: number; // Scale factor (e.g., 1.0, 1.2)
     darkMode?: boolean; // True for dark, false for light
     language: string; // Default 'en-US'
+    skipSettings?: SkipSettings;
 }
 
 export interface VoicePackage {

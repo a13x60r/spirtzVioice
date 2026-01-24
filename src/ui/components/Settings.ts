@@ -7,19 +7,50 @@ export interface SettingsCallbacks {
     onStrategyChange: (strategy: 'TOKEN' | 'CHUNK') => void;
     onTextSizeChange: (scale: number) => void;
     onDarkModeChange: (enabled: boolean) => void;
+    onSkipSettingsChange: (settings: { seekSec: number, wordCount: number, sentenceCount: number, paragraphCount: number, mediaSkipBackUnit: 'word' | 'sentence' | 'paragraph' | 'seek', mediaSkipFwdUnit: 'word' | 'sentence' | 'paragraph' | 'seek' }) => void;
 }
 
 export class SettingsPanel {
     private container: HTMLElement;
     private callbacks: SettingsCallbacks;
     private voices: { id: string, name: string, lang: string, isInstalled: boolean }[] = [];
-    private currentSettings: { voiceId: string, speedWpm: number, strategy: string, language: string, textSize?: number, darkMode?: boolean };
+    private currentSettings: {
+        voiceId: string,
+        speedWpm: number,
+        strategy: string,
+        language: string,
+        textSize?: number,
+        darkMode?: boolean,
+        skipSettings?: {
+            seekSec: number;
+            wordCount: number;
+            sentenceCount: number;
+            paragraphCount: number;
+            mediaSkipBackUnit?: 'word' | 'sentence' | 'paragraph' | 'seek';
+            mediaSkipFwdUnit?: 'word' | 'sentence' | 'paragraph' | 'seek';
+        }
+    };
     private isInstalling: boolean = false;
 
     constructor(
         container: HTMLElement,
         callbacks: SettingsCallbacks,
-        initialSettings: { voiceId: string, speedWpm: number, strategy: string, language: string, textSize?: number, darkMode?: boolean }
+        initialSettings: {
+            voiceId: string,
+            speedWpm: number,
+            strategy: string,
+            language: string,
+            textSize?: number,
+            darkMode?: boolean,
+            skipSettings?: {
+                seekSec: number;
+                wordCount: number;
+                sentenceCount: number;
+                paragraphCount: number;
+                mediaSkipBackUnit?: 'word' | 'sentence' | 'paragraph' | 'seek';
+                mediaSkipFwdUnit?: 'word' | 'sentence' | 'paragraph' | 'seek';
+            }
+        }
     ) {
         this.container = container;
         this.callbacks = callbacks;
@@ -125,6 +156,47 @@ export class SettingsPanel {
                                 <span id="text-size-value">${this.currentSettings.textSize || 1.0}x</span>
                             </div>
                         </section>
+
+                        <section class="settings-group">
+                            <h3>Skip Intervals</h3>
+                            <div class="range-control">
+                                <label style="font-size: 0.8rem; color: var(--color-text-secondary);">Seek (Seconds)</label>
+                                <input type="range" min="5" max="60" step="5" id="skip-seek" value="${this.currentSettings.skipSettings?.seekSec || 10}">
+                                <span id="skip-seek-value">${this.currentSettings.skipSettings?.seekSec || 10}s</span>
+                            </div>
+                            <div class="range-control">
+                                <label style="font-size: 0.8rem; color: var(--color-text-secondary);">Words</label>
+                                <input type="range" min="1" max="20" step="1" id="skip-words" value="${this.currentSettings.skipSettings?.wordCount || 1}">
+                                <span id="skip-words-value">${this.currentSettings.skipSettings?.wordCount || 1}</span>
+                            </div>
+                            <div class="range-control">
+                                <label style="font-size: 0.8rem; color: var(--color-text-secondary);">Sentences</label>
+                                <input type="range" min="1" max="10" step="1" id="skip-sentences" value="${this.currentSettings.skipSettings?.sentenceCount || 1}">
+                                <span id="skip-sentences-value">${this.currentSettings.skipSettings?.sentenceCount || 1}</span>
+                            </div>
+                                <input type="range" min="1" max="5" step="1" id="skip-paragraphs" value="${this.currentSettings.skipSettings?.paragraphCount || 1}">
+                                <span id="skip-paragraphs-value">${this.currentSettings.skipSettings?.paragraphCount || 1}</span>
+                            </div>
+
+                            <div style="margin-top: 1rem;">
+                                <label style="font-size: 0.8rem; color: var(--color-text-secondary); display: block; margin-bottom: 0.5rem;">Headset Previous Action</label>
+                                <select id="media-skip-back-unit" class="input" style="width: 100%;">
+                                    <option value="word" ${this.currentSettings.skipSettings?.mediaSkipBackUnit === 'word' ? 'selected' : ''}>Skip Word Back</option>
+                                    <option value="sentence" ${this.currentSettings.skipSettings?.mediaSkipBackUnit === 'sentence' ? 'selected' : ''}>Skip Sentence Back</option>
+                                    <option value="paragraph" ${(!this.currentSettings.skipSettings?.mediaSkipBackUnit || this.currentSettings.skipSettings?.mediaSkipBackUnit === 'paragraph') ? 'selected' : ''}>Skip Paragraph Back</option>
+                                    <option value="seek" ${this.currentSettings.skipSettings?.mediaSkipBackUnit === 'seek' ? 'selected' : ''}>Seek Time Back</option>
+                                </select>
+                            </div>
+                            <div style="margin-top: 0.5rem;">
+                                <label style="font-size: 0.8rem; color: var(--color-text-secondary); display: block; margin-bottom: 0.5rem;">Headset Next Action</label>
+                                <select id="media-skip-fwd-unit" class="input" style="width: 100%;">
+                                    <option value="word" ${this.currentSettings.skipSettings?.mediaSkipFwdUnit === 'word' ? 'selected' : ''}>Skip Word Forward</option>
+                                    <option value="sentence" ${this.currentSettings.skipSettings?.mediaSkipFwdUnit === 'sentence' ? 'selected' : ''}>Skip Sentence Forward</option>
+                                    <option value="paragraph" ${(!this.currentSettings.skipSettings?.mediaSkipFwdUnit || this.currentSettings.skipSettings?.mediaSkipFwdUnit === 'paragraph') ? 'selected' : ''}>Skip Paragraph Forward</option>
+                                    <option value="seek" ${this.currentSettings.skipSettings?.mediaSkipFwdUnit === 'seek' ? 'selected' : ''}>Seek Time Forward</option>
+                                </select>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>
@@ -201,6 +273,40 @@ export class SettingsPanel {
             if (textSizeValue) textSizeValue.textContent = `${val}x`;
             this.callbacks.onTextSizeChange(val);
         });
+
+        // Skip Intervals
+        const skipSeek = this.container.querySelector('#skip-seek') as HTMLInputElement;
+        const skipWords = this.container.querySelector('#skip-words') as HTMLInputElement;
+        const skipSentences = this.container.querySelector('#skip-sentences') as HTMLInputElement;
+        const skipParagraphs = this.container.querySelector('#skip-paragraphs') as HTMLInputElement;
+        const mediaSkipBackUnit = this.container.querySelector('#media-skip-back-unit') as HTMLSelectElement;
+        const mediaSkipFwdUnit = this.container.querySelector('#media-skip-fwd-unit') as HTMLSelectElement;
+
+        const updateSkip = () => {
+            const settings = {
+                seekSec: parseInt(skipSeek.value),
+                wordCount: parseInt(skipWords.value),
+                sentenceCount: parseInt(skipSentences.value),
+                paragraphCount: parseInt(skipParagraphs.value),
+                mediaSkipBackUnit: mediaSkipBackUnit.value as 'word' | 'sentence' | 'paragraph' | 'seek',
+                mediaSkipFwdUnit: mediaSkipFwdUnit.value as 'word' | 'sentence' | 'paragraph' | 'seek'
+            };
+            this.currentSettings.skipSettings = settings;
+            this.callbacks.onSkipSettingsChange(settings);
+
+            // Update labels
+            this.container.querySelector('#skip-seek-value')!.textContent = `${settings.seekSec}s`;
+            this.container.querySelector('#skip-words-value')!.textContent = `${settings.wordCount}`;
+            this.container.querySelector('#skip-sentences-value')!.textContent = `${settings.sentenceCount}`;
+            this.container.querySelector('#skip-paragraphs-value')!.textContent = `${settings.paragraphCount}`;
+        };
+
+        skipSeek?.addEventListener('input', updateSkip);
+        skipWords?.addEventListener('input', updateSkip);
+        skipSentences?.addEventListener('input', updateSkip);
+        skipParagraphs?.addEventListener('input', updateSkip);
+        mediaSkipBackUnit?.addEventListener('change', updateSkip);
+        mediaSkipFwdUnit?.addEventListener('change', updateSkip);
     }
 
     unmount() {

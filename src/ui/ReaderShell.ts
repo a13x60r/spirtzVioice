@@ -142,7 +142,15 @@ export class ReaderShell {
                 mode: 'RSVP',
                 pauseRules: { punctPauseMs: 400, paragraphPauseMs: 600 },
                 tokenizerVersion: '1',
-                language: 'en-US'
+                language: 'en-US',
+                skipSettings: {
+                    seekSec: 10,
+                    wordCount: 1,
+                    sentenceCount: 1,
+                    paragraphCount: 1,
+                    mediaSkipBackUnit: 'paragraph',
+                    mediaSkipFwdUnit: 'paragraph'
+                }
             };
         }
 
@@ -175,22 +183,28 @@ export class ReaderShell {
                 this.keepAliveAudio.play().catch(() => { });
             },
             onSeek: (offset) => {
-                controller.seek(offset);
+                const multiplier = offset > 0 ? 1 : -1;
+                const seekVal = (this.settings.skipSettings?.seekSec || 10) * multiplier;
+                controller.seek(seekVal);
             },
             onSkip: (type, direction) => {
                 const tokens = this.currentTokens;
                 if (!tokens.length) return;
 
-                if (type === 'word') {
-                    controller.skipWord(direction, tokens);
-                } else if (type === 'sentence') {
-                    controller.skipSentence(direction, tokens);
-                } else if (type === 'paragraph') {
-                    controller.skipParagraph(direction, tokens);
-                }
+                const count = (type === 'word' ? this.settings.skipSettings?.wordCount :
+                    type === 'sentence' ? this.settings.skipSettings?.sentenceCount :
+                        this.settings.skipSettings?.paragraphCount) || 1;
 
-                if (controller.getState() === 'PLAYING') {
-                    // already playing
+                const step = direction > 0 ? 1 : -1;
+
+                for (let i = 0; i < count; i++) {
+                    if (type === 'word') {
+                        controller.skipWord(step, tokens);
+                    } else if (type === 'sentence') {
+                        controller.skipSentence(step, tokens);
+                    } else if (type === 'paragraph') {
+                        controller.skipParagraph(step, tokens);
+                    }
                 }
             },
             onSpeedChange: (rate) => this.handleRateChange(rate),
@@ -297,6 +311,10 @@ export class ReaderShell {
                     settingsStore.saveSettings({ darkMode: enabled });
                     if (enabled) document.documentElement.classList.add('dark-mode');
                     else document.documentElement.classList.remove('dark-mode');
+                },
+                onSkipSettingsChange: async (skipSettings) => {
+                    this.settings.skipSettings = skipSettings;
+                    await settingsStore.saveSettings({ skipSettings });
                 }
             },
             defaultSettings
@@ -568,18 +586,45 @@ export class ReaderShell {
                 else controller.play().catch(e => console.error(e));
             };
 
-            const skipPara = (direction: 1 | -1) => {
-                if (this.currentTokens.length) controller.skipParagraph(direction, this.currentTokens);
+            const handleMediaSkip = (direction: 1 | -1) => {
+                if (!this.currentTokens.length) return;
+
+                // Select strategy based on direction
+                const unit = direction === -1
+                    ? (this.settings.skipSettings?.mediaSkipBackUnit || 'paragraph')
+                    : (this.settings.skipSettings?.mediaSkipFwdUnit || 'paragraph');
+
+                if (unit === 'seek') {
+                    const val = (this.settings.skipSettings?.seekSec || 10);
+                    controller.seek(direction * val);
+                    return;
+                }
+
+                const count = (unit === 'word' ? this.settings.skipSettings?.wordCount :
+                    unit === 'sentence' ? this.settings.skipSettings?.sentenceCount :
+                        this.settings.skipSettings?.paragraphCount) || 1;
+
+                for (let i = 0; i < count; i++) {
+                    if (unit === 'word') controller.skipWord(direction, this.currentTokens);
+                    else if (unit === 'sentence') controller.skipSentence(direction, this.currentTokens);
+                    else controller.skipParagraph(direction, this.currentTokens);
+                }
             };
 
             navigator.mediaSession.setActionHandler('play', togglePlay);
             navigator.mediaSession.setActionHandler('pause', togglePlay);
-            navigator.mediaSession.setActionHandler('previoustrack', () => skipPara(-1));
-            navigator.mediaSession.setActionHandler('nexttrack', () => skipPara(1));
+            navigator.mediaSession.setActionHandler('previoustrack', () => handleMediaSkip(-1)); // Back
+            navigator.mediaSession.setActionHandler('nexttrack', () => handleMediaSkip(1));      // Forward
 
             // Optional: Seek
-            navigator.mediaSession.setActionHandler('seekbackward', () => controller.seek(-10));
-            navigator.mediaSession.setActionHandler('seekforward', () => controller.seek(10));
+            navigator.mediaSession.setActionHandler('seekbackward', () => {
+                const val = (this.settings.skipSettings?.seekSec || 10);
+                controller.seek(-val);
+            });
+            navigator.mediaSession.setActionHandler('seekforward', () => {
+                const val = (this.settings.skipSettings?.seekSec || 10);
+                controller.seek(val);
+            });
             // Stop
             navigator.mediaSession.setActionHandler('stop', () => {
                 controller.pause();
@@ -621,10 +666,45 @@ export class ReaderShell {
                     else controller.play().catch(console.error);
                     break;
                 case 'MediaTrackNext':
-                    if (this.currentTokens.length) controller.skipParagraph(1, this.currentTokens);
+                    if (navigator.mediaSession) {
+                        // Let MediaSession handling take over if possible, but manual here:
+                        // Or reuse handleMediaSkip logic if we extract it.
+                        // For now, manual reuse of logic:
+                        const unit = this.settings.skipSettings?.mediaSkipFwdUnit || 'paragraph';
+
+                        if (unit === 'seek') {
+                            const val = (this.settings.skipSettings?.seekSec || 10);
+                            controller.seek(val);
+                        } else {
+                            const count = (unit === 'word' ? this.settings.skipSettings?.wordCount :
+                                unit === 'sentence' ? this.settings.skipSettings?.sentenceCount :
+                                    this.settings.skipSettings?.paragraphCount) || 1;
+                            for (let i = 0; i < count; i++) {
+                                if (unit === 'word') controller.skipWord(1, this.currentTokens);
+                                else if (unit === 'sentence') controller.skipSentence(1, this.currentTokens);
+                                else controller.skipParagraph(1, this.currentTokens);
+                            }
+                        }
+                    }
                     break;
                 case 'MediaTrackPrevious':
-                    if (this.currentTokens.length) controller.skipParagraph(-1, this.currentTokens);
+                    if (navigator.mediaSession) {
+                        const unit = this.settings.skipSettings?.mediaSkipBackUnit || 'paragraph';
+
+                        if (unit === 'seek') {
+                            const val = (this.settings.skipSettings?.seekSec || 10);
+                            controller.seek(-val);
+                        } else {
+                            const count = (unit === 'word' ? this.settings.skipSettings?.wordCount :
+                                unit === 'sentence' ? this.settings.skipSettings?.sentenceCount :
+                                    this.settings.skipSettings?.paragraphCount) || 1;
+                            for (let i = 0; i < count; i++) {
+                                if (unit === 'word') controller.skipWord(-1, this.currentTokens);
+                                else if (unit === 'sentence') controller.skipSentence(-1, this.currentTokens);
+                                else controller.skipParagraph(-1, this.currentTokens);
+                            }
+                        }
+                    }
                     break;
                 case 'MediaStop':
                     controller.pause();

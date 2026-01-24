@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Touch-optimized controls (min 44px target).
     - Adaptive RSVP font sizes for smaller screens.
     - Improved header and controls layout for mobile devices.
+    - Added collapsible speed/audio controls on mobile with a toggle button to save vertical space.
 
 ### Fixed
 - Fixed `AudioCacheStore` iteration bug preventing efficient cache cleanup.

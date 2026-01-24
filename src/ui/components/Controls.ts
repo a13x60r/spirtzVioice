@@ -10,7 +10,8 @@ const ICONS = {
     skipParaFwd: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`, // Skip Next
     seekBack: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/><text x="12" y="18" font-size="6" text-anchor="middle" fill="currentColor">10</text></svg>`, // Replay 10 (Custom approx)
     seekFwd: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/><text x="12" y="18" font-size="6" text-anchor="middle" fill="currentColor">10</text></svg>`, // Fwd 10
-    volume: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`
+    volume: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`,
+    tune: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>`
 };
 
 export class Controls {
@@ -71,7 +72,7 @@ export class Controls {
                 </div>
                 
                 <div class="controls-row">
-                    <div class="speed-control-group">
+                    <div class="speed-control-group" id="speed-control-group">
                         <div class="speed-control">
                             <label for="speed-input" title="Playback Rate (Instant)">R</label>
                             <input type="range" id="speed-input" min="0.5" max="2.0" step="0.1" value="${initialRate}">
@@ -100,6 +101,8 @@ export class Controls {
                         <button class="btn btn-secondary btn-icon" id="skip-word-fwd" title="Next Word">${ICONS.skipWordFwd}</button>
                         <button class="btn btn-secondary btn-icon" id="skip-sent-fwd" title="Next Sentence">${ICONS.skipSentFwd}</button>
                         <button class="btn btn-secondary btn-icon" id="skip-para-fwd" title="Next Paragraph">${ICONS.skipParaFwd}</button>
+                        
+                        <button class="btn btn-secondary btn-icon" id="toggle-speed" title="Tune Speed/Audio">${ICONS.tune}</button>
                     </div>
 
                     <div class="time-display" id="time-display">0:00 / 0:00</div>
@@ -122,6 +125,8 @@ export class Controls {
                 }
                 .playback-buttons {
                     align-items: center;
+                    flex-wrap: wrap;
+                    justify-content: center;
                 }
             </style>
         `;
@@ -139,6 +144,14 @@ export class Controls {
     private bindEvents() {
         this.playBtn.addEventListener('click', () => {
             this.onPlayPause();
+        });
+
+        // Mobile speed toggle
+        this.container.querySelector('#toggle-speed')?.addEventListener('click', (e) => {
+            const btn = e.currentTarget as HTMLElement;
+            const group = this.container.querySelector('#speed-control-group');
+            group?.classList.toggle('expanded');
+            btn.classList.toggle('active');
         });
 
         this.container.querySelector('#seek-back')?.addEventListener('click', () => this.onSeek(-10));

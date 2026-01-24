@@ -324,7 +324,13 @@ body {
 .controls-layout {
     display: flex;
     flex-direction: column;
+    flex-direction: column;
     gap: var(--spacing-md);
+}
+
+#toggle-speed {
+    display: none;
+    /* Hidden on desktop */
 }
 
 .progress-bar-container {
@@ -440,15 +446,14 @@ body {
         margin-top: var(--spacing-sm);
     }
 
-    .playback-buttons .btn {
-        padding: var(--spacing-xs);
+    /* Speed Control Toggle Logic (Mobile only) */
+    #toggle-speed {
+        display: inline-flex;
     }
 
-    .time-display {
-        order: 2;
-        width: 100%;
-        text-align: center;
-        margin: var(--spacing-xs) 0;
+    #toggle-speed.active {
+        background-color: var(--color-primary);
+        color: white;
     }
 
     .speed-control-group {
@@ -458,6 +463,13 @@ body {
         gap: var(--spacing-lg);
         padding-top: var(--spacing-md);
         border-top: 1px solid var(--color-border);
+        display: none;
+        /* Hidden by default on mobile */
+    }
+
+    .speed-control-group.expanded {
+        display: flex;
+        /* Shown when toggled */
     }
 
     .speed-control {

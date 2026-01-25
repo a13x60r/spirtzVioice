@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Ensure controls remain visible when paused during active reading sessions.
 - **TTS Engine**:
     - Fixed Piper TTS hang in non-cross-origin-isolated environments by forcing single-threaded mode.
+- Fixed `#toggle-speed` button visibility issue on mobile by increasing container `max-height`.
 
 
 

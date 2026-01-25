@@ -59,18 +59,66 @@ export class ReaderShell {
 
     async init() {
         this.renderShell();
-        await this.loadInitialState();
+
+        // Handle Share Target API (must be before loading initial state to prioritize share)
+        const params = new URLSearchParams(window.location.search);
+        const title = params.get('title');
+        const text = params.get('text');
+        const url = params.get('url');
+
+        if (title || text || url) {
+            console.log('[ReaderShell] Received shared content:', { title, textLength: text?.length, url });
+
+            // Construct body from text and url
+            let body = text || '';
+            if (url) {
+                if (body) body += '\n\n';
+                body += url;
+            }
+
+            // Clean up URL so we don't re-trigger on reload
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+
+            // Wait for rest of init but skip storing "last read" as default for now...
+            // Actually good to load initial settings, just defer document loading?
+            // Let's load settings first so we have defaults for voice/etc.
+            await this.loadInitialState();
+            await seedMockVoices();
+            await this.setupComponents();
+
+            // Initialize loading overlay logic manualy since setupComponents does it too late/early?
+            // setupComponents initializes specific UI components. LoadingOverlay is created below.
+            // We need to initialize overlay and remove initial loader before processing new doc.
+        } else {
+            await this.loadInitialState();
+        }
 
         // Seed voices if needed
-        await seedMockVoices();
+        if (!title && !text && !url) await seedMockVoices();
 
-        await this.setupComponents();
+        if (!title && !text && !url) await this.setupComponents();
 
         // Initialize loading overlay
         this.loadingOverlay = new LoadingOverlay();
         // Hide initial loading screen if present
         const initialLoader = document.querySelector('.loading');
         if (initialLoader) initialLoader.remove();
+
+        // If we had shared content, process it now that UI is ready
+        if (title || text || url) {
+            // We need to ensure components are setup even in share mode
+            if (!this.settingsPanel) await this.setupComponents(); // Ensure components exist
+
+            let body = text || '';
+            if (url) {
+                if (body) body += '\n\n';
+                body += url;
+            }
+            // Use default title if missing
+            const docTitle = title || 'Shared Content';
+            await this.handleNewDocument(docTitle, body, body, 'text');
+        }
 
         this.startUiLoop();
         this.setupMediaSession();

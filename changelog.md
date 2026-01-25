@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added collapsible speed/audio controls on mobile with a toggle button to save vertical space.
 
 ### Fixed
+- **PWA Installation**:
+    - Removed conflicting `manifest.webmanifest` to fix Android installation issue.
+    - Updated `index.html` to rely on Vite's auto-injected manifest.
+
+### Added
+- **PWA Share Target**:
+    - Added `share_target` configuration to `vite.config.ts` to allow receiving shared text/URLs from other apps.
+    - Implemented handling of shared content in `ReaderShell` on startup.
+
+### Fixed (Previous)
 - Fixed `AudioCacheStore` iteration bug preventing efficient cache cleanup.
 - Resolved visual overlaps in Controls component on small screens.
 - Fixed settings panel responsiveness: added max-height and scrolling for small screens.

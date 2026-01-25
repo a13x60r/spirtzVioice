@@ -93,7 +93,17 @@ export default defineConfig({
                         type: 'image/png',
                         purpose: 'any maskable'
                     }
-                ]
+                ],
+                share_target: {
+                    action: './',
+                    method: 'GET',
+                    enctype: 'application/x-www-form-urlencoded',
+                    params: {
+                        title: 'title',
+                        text: 'text',
+                        url: 'url'
+                    }
+                }
             },
             devOptions: {
                 enabled: false // Disable SW in dev to eliminate it as a variable for fetch errors

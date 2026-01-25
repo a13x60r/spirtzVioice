@@ -4,7 +4,6 @@ import { VOICE_REGISTRY } from './VoiceRegistry';
 import { AudioScheduler } from './AudioScheduler';
 import { PlaybackController } from './PlaybackController';
 import { PlanEngine } from '@domain/PlanEngine';
-import { TimelineEngine } from '@domain/TimelineEngine';
 import type { RenderPlan, Timeline, Token, Settings, VoicePackage } from '@spec/types';
 import type { ChunkCompleteResponse, WorkerResponse, LoadVoiceRequest } from '@workers/tts-protocol';
 
@@ -28,7 +27,7 @@ export class AudioEngine {
     private gpuPreference?: 'high-performance' | 'low-power' | 'default';
 
     // Pending resolver map for chunks
-    private pendingChunks = new Map<string, { resolve: (response: ChunkCompleteResponse) => void, reject: (err: any) => void }>();
+    private pendingChunks = new Map<string, { resolve: (response: ChunkCompleteResponse) => void, reject: (err: any) => void, sessionId: number }>();
     // Pending resolver map for voice loads
     private pendingVoiceLoads = new Map<string, { resolve: () => void, reject: (err: Error) => void }>();
 
@@ -37,6 +36,13 @@ export class AudioEngine {
 
     // Optimized timeline for chunks { hash, start, end }
     private chunkTimeline: { chunkHash: string, startSec: number, endSec: number }[] = [];
+    private pendingDurations = new Map<string, number>();
+    private nextChunkIndex: number = 0;
+    private chunkCumulativeTime: number = 0;
+    private timelineComplete: boolean = true;
+    private synthesisSessionId: number = 0;
+    private currentChunkHashSet = new Set<string>();
+    private currentChunkByHash = new Map<string, any>();
 
     // Shared context for metadata decoding (lightweight)
     private metadataCtx = new OfflineAudioContext(1, 1, new AudioContext().sampleRate);
@@ -90,10 +96,19 @@ export class AudioEngine {
         this.gpuPreference = settings.gpuPreference;
         this.bufferedChunks.clear();
         this.isSynthesisCancelled = false;
+        this.pendingDurations.clear();
+        this.nextChunkIndex = 0;
+        this.chunkCumulativeTime = 0;
+        this.timelineComplete = false;
+        this.controller.setTimelineComplete(false);
+        this.synthesisSessionId++;
+        const sessionId = this.synthesisSessionId;
 
         // Prevent JIT buffering of stale chunks during synthesis
         this.currentTimeline = null;
         this.chunkTimeline = [];
+        this.currentChunkHashSet.clear();
+        this.currentChunkByHash.clear();
 
         // Clear previous schedule
         this.scheduler.clear();
@@ -106,14 +121,27 @@ export class AudioEngine {
         // Create Plan
         const plan = await PlanEngine.generatePlan(docId, tokens, settings);
         this.currentPlan = plan;
+        this.currentChunkHashSet = new Set(plan.chunks.map(c => c.chunkHash));
+        this.currentChunkByHash = new Map(plan.chunks.map(c => [c.chunkHash, c]));
 
         // Apply playback rate
         if (settings.playbackRate) {
             this.scheduler.setPlaybackRate(settings.playbackRate);
         }
 
-        console.log('Synthesizing audio...');
-        await this.synthesizeAllChunks(this.currentPlan, onProgress);
+        console.log('Synthesizing initial audio...');
+        const initialChunkTarget = this.getInitialChunkTargetIndex(plan, _startTokenIndex);
+        const DEFAULT_INITIAL_CHUNKS = 2;
+        const initialChunkCount = Math.min(
+            plan.chunks.length,
+            Math.max(DEFAULT_INITIAL_CHUNKS, initialChunkTarget + 1)
+        );
+        await this.synthesizeInitialChunks(plan, initialChunkCount, onProgress, sessionId);
+
+        await this.appendAvailableTimeline(sessionId);
+
+        // Continue synthesis in background
+        void this.synthesizeRemainingChunks(plan, initialChunkCount, onProgress, sessionId);
 
         if (this.isSynthesisCancelled) {
             console.log('Synthesis cancelled');
@@ -121,60 +149,12 @@ export class AudioEngine {
             return;
         }
 
-        console.log('Building timeline...');
-
-        // Fetch durations for timeline building
-        const audioAssets = new Map<string, any>();
-
         if (!this.currentPlan) return;
-
-        // Parallel fetch of durations
-        await Promise.all(this.currentPlan.chunks.map(async chunk => {
-            const dur = await audioStore.getDuration(chunk.chunkHash);
-            if (dur) {
-                audioAssets.set(chunk.chunkHash, { durationSec: dur });
-            }
-        }));
-
-        this.currentTimeline = TimelineEngine.buildTimeline(
-            this.currentPlan,
-            audioAssets as any,
-            tokens
-        );
-
-        // Build Optimized Chunk Timeline
-        this.chunkTimeline = [];
-        let cumulativeTime = 0;
-
-        for (const chunk of this.currentPlan.chunks) {
-            const firstTokenId = chunk.tokenIds[0];
-            const entry = this.currentTimeline.entries.find(e => e.tokenId === firstTokenId);
-            const duration = await audioStore.getDuration(chunk.chunkHash) || 0;
-
-            if (entry) {
-                this.chunkTimeline.push({
-                    chunkHash: chunk.chunkHash,
-                    startSec: entry.tStartSec,
-                    endSec: entry.tStartSec + duration
-                });
-            } else {
-                // Fallback
-                this.chunkTimeline.push({
-                    chunkHash: chunk.chunkHash,
-                    startSec: cumulativeTime,
-                    endSec: cumulativeTime + duration
-                });
-            }
-            cumulativeTime += duration;
-        }
-
-        this.chunkTimeline.sort((a, b) => a.startSec - b.startSec);
-        this.controller.setTimeline(this.currentTimeline);
 
         // Initial buffering for start (or startTokenIndex time)
         let startTime = 0;
         if (_startTokenIndex > 0) {
-            const entry = this.currentTimeline.entries.find(e => e.tokenIndex === _startTokenIndex);
+            const entry = (this.currentTimeline as any)?.entries?.find((entry: any) => entry.tokenIndex === _startTokenIndex);
             if (entry) startTime = entry.tStartSec;
         }
 
@@ -248,6 +228,10 @@ export class AudioEngine {
         const chunkEntity = await audioStore.getChunk(chunkHash);
         if (!chunkEntity) {
             console.warn(`[JIT] Chunk ${chunkHash} not in DB!`);
+            const chunk = this.currentChunkByHash.get(chunkHash);
+            if (chunk && this.currentPlan) {
+                this.synthesizeChunk(chunk, this.currentPlan, this.synthesisSessionId).catch(console.warn);
+            }
             return;
         }
 
@@ -328,20 +312,58 @@ export class AudioEngine {
         onProgress?.(100);
     }
 
-    private async synthesizeAllChunks(plan: RenderPlan, onProgress?: (percent: number, message?: string) => void) {
-        // Filter out chunks that are already in DB
+    private getInitialChunkTargetIndex(plan: RenderPlan, startTokenIndex: number): number {
+        if (startTokenIndex <= 0) return 0;
+        const idx = plan.chunks.findIndex(c => startTokenIndex >= c.startTokenIndex && startTokenIndex < c.endTokenIndex);
+        return idx >= 0 ? idx : 0;
+    }
+
+    private async synthesizeInitialChunks(
+        plan: RenderPlan,
+        initialChunkCount: number,
+        onProgress: ((percent: number, message?: string) => void) | undefined,
+        sessionId: number
+    ) {
+        const target = Math.min(initialChunkCount, plan.chunks.length);
+        if (target === 0) return;
+
+        onProgress?.(0, `Preparing audio 0/${target}...`);
+
+        for (let i = 0; i < target; i++) {
+            if (this.isSynthesisCancelled || sessionId !== this.synthesisSessionId) return;
+            const chunk = plan.chunks[i];
+            const duration = await this.getChunkDuration(chunk.chunkHash);
+            if (duration !== undefined) {
+                this.pendingDurations.set(chunk.chunkHash, duration);
+                onProgress?.(Math.round(((i + 1) / target) * 100), `Preparing audio ${i + 1}/${target}...`);
+                continue;
+            }
+            await this.synthesizeChunk(chunk, plan, sessionId);
+            onProgress?.(Math.round(((i + 1) / target) * 100), `Preparing audio ${i + 1}/${target}...`);
+        }
+    }
+
+    private async synthesizeRemainingChunks(
+        plan: RenderPlan,
+        startIndex: number,
+        onProgress: ((percent: number, message?: string) => void) | undefined,
+        sessionId: number
+    ) {
+        if (sessionId !== this.synthesisSessionId) return;
+
         const chunksToSynth: any[] = [];
 
-        // Batch check DB
-        await Promise.all(plan.chunks.map(async chunk => {
-            const exists = await audioStore.hasChunk(chunk.chunkHash);
-            if (!exists) chunksToSynth.push(chunk);
-        }));
+        for (let i = startIndex; i < plan.chunks.length; i++) {
+            const chunk = plan.chunks[i];
+            if (await audioStore.hasChunk(chunk.chunkHash)) {
+                continue;
+            }
+            chunksToSynth.push(chunk);
+        }
 
         const total = chunksToSynth.length;
-
         if (total === 0) {
-            onProgress?.(100, 'All chunks cached');
+            await this.appendAvailableTimeline(sessionId);
             return;
         }
 
@@ -351,22 +373,110 @@ export class AudioEngine {
         let completed = 0;
 
         const processChunk = async (chunk: any) => {
-            if (this.isSynthesisCancelled) return; // Cancel check
-            await this.synthesizeChunk(chunk, plan);
+            if (this.isSynthesisCancelled || sessionId !== this.synthesisSessionId) return;
+            await this.synthesizeChunk(chunk, plan, sessionId);
             completed++;
             onProgress?.(Math.round((completed / total) * 100), `Synthesizing chunk ${completed}/${total}...`);
         };
 
-        // Process in batches
         for (let i = 0; i < total; i += CONCURRENCY) {
-            if (this.isSynthesisCancelled) break; // Cancel check loop
+            if (this.isSynthesisCancelled || sessionId !== this.synthesisSessionId) break;
             const batch = chunksToSynth.slice(i, i + CONCURRENCY);
             await Promise.all(batch.map((chunk) => processChunk(chunk)));
         }
+
+        await this.appendAvailableTimeline(sessionId);
     }
 
-    private async synthesizeChunk(chunk: any, plan: RenderPlan): Promise<void> {
+    private async getChunkDuration(chunkHash: string): Promise<number | undefined> {
+        const cached = this.pendingDurations.get(chunkHash);
+        if (cached !== undefined) return cached;
+
+        const dur = await audioStore.getDuration(chunkHash);
+        if (dur !== undefined) this.pendingDurations.set(chunkHash, dur);
+        return dur;
+    }
+
+    private async appendAvailableTimeline(sessionId: number) {
+        if (sessionId !== this.synthesisSessionId) return;
+        if (!this.currentPlan) return;
+
+        if (!this.currentTimeline) {
+            this.currentTimeline = {
+                planId: this.currentPlan.planId,
+                entries: [],
+                durationSec: 0
+            };
+        }
+
+        let currentTime = this.currentTimeline.durationSec;
+
+        while (this.nextChunkIndex < this.currentPlan.chunks.length) {
+            const chunk = this.currentPlan.chunks[this.nextChunkIndex];
+            const duration = await this.getChunkDuration(chunk.chunkHash);
+            if (duration === undefined) break;
+
+            const chunkStartSec = this.chunkCumulativeTime;
+            const chunkEndSec = chunkStartSec + duration;
+
+            const chunkTokens = this.currentTokens.slice(chunk.startTokenIndex, chunk.endTokenIndex);
+
+            if (this.currentPlan.strategy === 'TOKEN') {
+                const token = chunkTokens[0];
+                if (token) {
+                    this.currentTimeline.entries.push({
+                        tokenId: token.tokenId,
+                        tokenIndex: token.index,
+                        tStartSec: currentTime,
+                        tEndSec: currentTime + duration
+                    });
+                    currentTime += duration;
+                }
+            } else {
+                const validTokens = chunkTokens.filter(t => t.type === 'word');
+                const totalWeight = validTokens.length;
+
+                if (totalWeight > 0) {
+                    const timePerToken = duration / totalWeight;
+
+                    for (const token of chunkTokens) {
+                        if (token.type === 'word') {
+                            this.currentTimeline.entries.push({
+                                tokenId: token.tokenId,
+                                tokenIndex: token.index,
+                                tStartSec: currentTime,
+                                tEndSec: currentTime + timePerToken
+                            });
+                            currentTime += timePerToken;
+                        }
+                    }
+                }
+            }
+
+            this.chunkTimeline.push({
+                chunkHash: chunk.chunkHash,
+                startSec: chunkStartSec,
+                endSec: chunkEndSec
+            });
+
+            this.chunkCumulativeTime = chunkEndSec;
+            this.nextChunkIndex++;
+        }
+
+        this.currentTimeline.durationSec = currentTime;
+        this.controller.setTimeline(this.currentTimeline);
+
+        const complete = this.nextChunkIndex >= this.currentPlan.chunks.length;
+        if (complete !== this.timelineComplete) {
+            this.timelineComplete = complete;
+            this.controller.setTimelineComplete(complete);
+        }
+    }
+
+    private async synthesizeChunk(chunk: any, plan: RenderPlan, sessionId: number): Promise<void> {
         if (this.isSynthesisCancelled) return; // Immediate bailout
+
+        if (this.pendingChunks.has(chunk.chunkHash)) return;
 
         // Double check cache
         if (await audioStore.hasChunk(chunk.chunkHash)) return;
@@ -383,6 +493,10 @@ export class AudioEngine {
                         const duration = audioBuffer.duration;
                         const blob = new Blob([response.audioData], { type: 'audio/wav' });
                         await audioStore.saveChunk(chunk.chunkHash, blob, duration);
+                        if (sessionId === this.synthesisSessionId && this.currentChunkHashSet.has(chunk.chunkHash)) {
+                            this.pendingDurations.set(chunk.chunkHash, duration);
+                            await this.appendAvailableTimeline(sessionId);
+                        }
                         resolve();
                     } catch (e) {
                         console.error("Save/Decode error", e);
@@ -392,7 +506,8 @@ export class AudioEngine {
                 reject: (err) => {
                     console.error("Chunk synthesis rejected", err);
                     reject(err);
-                }
+                },
+                sessionId
             });
 
             this.worker.postMessage({

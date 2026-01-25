@@ -7,6 +7,7 @@ export class PlaybackController {
     private scheduler: AudioScheduler;
     private cursor: PlaybackCursor;
     private timeline: Timeline | null = null;
+    private timelineComplete: boolean = true;
 
     // Callbacks for UI updates
     onTimeUpdate?: (time: number) => void;
@@ -28,6 +29,10 @@ export class PlaybackController {
     setTimeline(timeline: Timeline) {
         this.timeline = timeline;
         this.cursor.setTimeline(timeline);
+    }
+
+    setTimelineComplete(complete: boolean) {
+        this.timelineComplete = complete;
     }
 
     getDuration(): number {
@@ -92,6 +97,11 @@ export class PlaybackController {
         if (!this.timeline) return;
         const current = this.scheduler.getCurrentTime();
         let target = current + offsetSec;
+
+        if (!this.timelineComplete && target > this.timeline.durationSec) {
+            return;
+        }
+
         target = Math.max(0, Math.min(target, this.timeline.durationSec));
 
         const wasPlaying = this.isPlaying;
@@ -119,6 +129,11 @@ export class PlaybackController {
 
     seekByToken(tokenIndex: number) {
         if (!this.timeline) return;
+
+        if (!this.timelineComplete) {
+            const lastEntry = this.timeline.entries[this.timeline.entries.length - 1];
+            if (!lastEntry || tokenIndex > lastEntry.tokenIndex) return;
+        }
 
         const time = TimelineEngine.getTimeForToken(this.timeline, tokenIndex);
         const wasPlaying = this.isPlaying;
@@ -241,7 +256,7 @@ export class PlaybackController {
         }
 
         // Check for end
-        if (this.timeline && time >= this.timeline.durationSec) {
+        if (this.timelineComplete && this.timeline && time >= this.timeline.durationSec) {
             this.pause();
         }
     }

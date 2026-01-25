@@ -30,6 +30,8 @@ export class ReaderShell {
     private rsvpView: RSVPView;
     private paragraphView: ParagraphView;
     private settings!: Settings;
+    private initialized: boolean = false;
+    private destroyed: boolean = false;
 
     // UI states
     private viewContainer!: HTMLElement;
@@ -58,6 +60,8 @@ export class ReaderShell {
     }
 
     async init() {
+        if (this.initialized) return;
+        this.initialized = true;
         this.renderShell();
 
         // Handle Share Target API (must be before loading initial state to prioritize share)
@@ -123,6 +127,25 @@ export class ReaderShell {
         this.startUiLoop();
         this.setupMediaSession();
         this.setupKeyboardShortcuts();
+    }
+
+    destroy() {
+        if (this.destroyed) return;
+        this.destroyed = true;
+
+        this.audioEngine.cancelSynthesis();
+        this.audioEngine.getController().pause().catch(() => { });
+        this.audioEngine.destroy();
+
+        this.currentView?.unmount();
+        this.textInput?.unmount();
+        this.documentList?.unmount();
+        this.settingsPanel?.unmount();
+
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) overlay.remove();
+
+        if (this.container) this.container.innerHTML = '';
     }
 
     // Media Session state

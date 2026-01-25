@@ -49,12 +49,12 @@ export class ParagraphView implements ReaderView {
         this.tokenEls.clear();
 
         if (this.contentType === 'html') {
-            this.contentEl.innerHTML = this.originalText;
+            this.contentEl.innerHTML = this.stripExternalImages(this.originalText);
             // TODO: implement highlighting for HTML if possible
             return;
         } else if (this.contentType === 'markdown') {
             const html = marked.parse(this.originalText);
-            this.contentEl.innerHTML = html as string; // marked.parse returns string
+            this.contentEl.innerHTML = this.stripExternalImages(html as string); // marked.parse returns string
             return;
         }
 
@@ -119,5 +119,29 @@ export class ParagraphView implements ReaderView {
 
     setTheme(_theme: string): void {
         // Theme logic
+    }
+
+    private stripExternalImages(html: string): string {
+        const template = document.createElement('template');
+        template.innerHTML = html;
+
+        const images = template.content.querySelectorAll('img');
+        images.forEach(img => {
+            const src = img.getAttribute('src') || '';
+            if (!src) return;
+            if (this.isExternalImageUrl(src)) img.remove();
+        });
+
+        return template.innerHTML;
+    }
+
+    private isExternalImageUrl(src: string): boolean {
+        try {
+            const url = new URL(src, window.location.origin);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+            return url.origin !== window.location.origin;
+        } catch {
+            return false;
+        }
     }
 }

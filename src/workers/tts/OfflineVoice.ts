@@ -8,6 +8,8 @@ export class OfflineVoice {
     private currentModelUrl: string = BASE_URL + 'en_US-amy-medium.onnx';
     private currentConfigUrl: string = BASE_URL + 'en_US-amy-medium.onnx.json';
     private originUrl: string;
+    private currentVoiceId: string | null = null;
+    private isWarm: boolean = false;
 
     constructor(originUrl: string = '') {
         this.originUrl = originUrl || '';
@@ -40,6 +42,9 @@ export class OfflineVoice {
 
     async loadVoice(voiceId: string, assets?: { model: ArrayBuffer | Blob, config: ArrayBuffer | Blob }): Promise<void> {
         console.log(`[OfflineVoice] loadVoice called for ${voiceId}, hasAssets=${!!assets}`);
+        if (this.isWarm && this.currentVoiceId === voiceId && !assets) {
+            return;
+        }
         if (assets) {
             console.log(`Loading custom voice assets for ${voiceId}`);
             // Revoke previous URLs if they exist to prevent memory leaks
@@ -63,6 +68,9 @@ export class OfflineVoice {
             console.log(`Configured voice: ${voiceId} -> ${actualVoiceFile}`);
         }
 
+        this.currentVoiceId = voiceId;
+        this.isWarm = false;
+
         // Warmup: Synthesize a tiny snippet to force download & cache of the model
         // This prevents race conditions when multiple workers try to fetch the 60MB file at once.
         console.log(`[OfflineVoice] Warming up voice ${voiceId}...`);
@@ -73,6 +81,7 @@ export class OfflineVoice {
 
             await Promise.race([warmupPromise, timeoutPromise]);
             console.log(`[OfflineVoice] Warmup complete.`);
+            this.isWarm = true;
         } catch (e) {
             console.warn(`[OfflineVoice] Warmup failed (non-fatal if network issue persists, but likely to fail later):`, e);
         }

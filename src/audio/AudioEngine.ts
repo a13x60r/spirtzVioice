@@ -33,6 +33,9 @@ export class AudioEngine {
 
     // Track currently buffered chunks to prevent duplicates
     private bufferedChunks = new Set<string>();
+    private loadedVoiceId: string | null = null;
+    private loadedVoiceHasAssets: boolean = false;
+    private pendingVoiceAssets = new Map<string, boolean>();
 
     // Optimized timeline for chunks { hash, start, end }
     private chunkTimeline: { chunkHash: string, startSec: number, endSec: number }[] = [];
@@ -71,6 +74,15 @@ export class AudioEngine {
 
     getController() {
         return this.controller;
+    }
+
+    destroy() {
+        this.cancelSynthesis();
+        this.pendingChunks.clear();
+        this.pendingVoiceLoads.clear();
+        this.pendingVoiceAssets.clear();
+        this.scheduler.clear();
+        this.worker.terminate();
     }
 
     setVolume(volume: number) {
@@ -265,6 +277,32 @@ export class AudioEngine {
                 assets = { model, config };
             }
         }
+
+        if (this.loadedVoiceId === voiceId && this.loadedVoiceHasAssets === !!assets && !this.pendingVoiceLoads.has(voiceId)) {
+            return;
+        }
+
+        if (this.pendingVoiceLoads.has(voiceId)) {
+            return new Promise((resolve, reject) => {
+                const existing = this.pendingVoiceLoads.get(voiceId);
+                if (!existing) {
+                    resolve();
+                    return;
+                }
+                this.pendingVoiceLoads.set(voiceId, {
+                    resolve: () => {
+                        existing.resolve();
+                        resolve();
+                    },
+                    reject: (err: Error) => {
+                        existing.reject(err);
+                        reject(err);
+                    }
+                });
+            });
+        }
+
+        this.pendingVoiceAssets.set(voiceId, !!assets);
 
         return new Promise((resolve, reject) => {
             this.pendingVoiceLoads.set(voiceId, { resolve, reject });
@@ -554,6 +592,9 @@ export class AudioEngine {
                     resolver.resolve();
                     this.pendingVoiceLoads.delete(payload.voiceId);
                 }
+                this.loadedVoiceId = payload.voiceId;
+                this.loadedVoiceHasAssets = this.pendingVoiceAssets.get(payload.voiceId) || false;
+                this.pendingVoiceAssets.delete(payload.voiceId);
                 break;
             }
             case 'VOICE_ERROR': {
@@ -563,6 +604,7 @@ export class AudioEngine {
                         resolver.reject(new Error(error));
                         this.pendingVoiceLoads.delete(payload.voiceId);
                     }
+                    this.pendingVoiceAssets.delete(payload.voiceId);
                 }
                 break;
             }

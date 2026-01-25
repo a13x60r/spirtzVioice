@@ -5,6 +5,8 @@ import type { WorkerMessage, WorkerResponse, SynthesizeRequest, ChunkCompleteRes
 const ctx: Worker = self as any;
 let ttsEngine: OfflineVoice;
 let originUrl: string = '';
+let currentVoiceId: string | null = null;
+let voiceReady: boolean = false;
 
 ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
     const { type, payload } = event.data;
@@ -30,7 +32,13 @@ ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 
             case 'LOAD_VOICE': {
                 const { voiceId, assets } = payload;
+                if (voiceReady && currentVoiceId === voiceId && !assets) {
+                    sendResponse('VOICE_LOADED', { voiceId });
+                    break;
+                }
                 await ttsEngine.loadVoice(voiceId, assets);
+                currentVoiceId = voiceId;
+                voiceReady = true;
                 sendResponse('VOICE_LOADED', { voiceId });
                 break;
             }

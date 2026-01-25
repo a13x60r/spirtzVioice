@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Controls Visibility**:
     - Auto-collapse controls when not in reading mode (Library/New Document).
     - Ensure controls remain visible when paused during active reading sessions.
+- **TTS Engine**:
+    - Fixed Piper TTS hang in non-cross-origin-isolated environments by forcing single-threaded mode.
+
 
 
 ### Added (Previous)

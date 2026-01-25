@@ -129,7 +129,20 @@ export const piperGenerate = async (
         // If we have 3 workers, we shouldn't let each consume all cores.
         // We split available cores among workers.
         const totalCores = navigator.hardwareConcurrency || 4;
-        const threadsPerWorker = Math.max(1, Math.floor(totalCores / MAX_WORKERS));
+
+        // CRITICAL FIX: WASM Threads (SharedArrayBuffer) require crossOriginIsolated to be true.
+        // If it's false, we MUST use 1 thread (main thread only inside the WASM environment) 
+        // effectively disabling the thread pool inside the WASM module itself, 
+        // otherwise it will hang indefinitely waiting for atomics that never work.
+        const isIsolated = self.crossOriginIsolated;
+
+        if (!isIsolated && totalCores > 1) {
+            console.warn(`[Piper] Cross-Origin Isolation is FALSE. Forcing single-threaded mode to prevent hang. Cores available: ${totalCores}`);
+        }
+
+        const threadsPerWorker = isIsolated
+            ? Math.max(1, Math.floor(totalCores / MAX_WORKERS))
+            : 1;
 
         worker.postMessage({
             kind: "init",

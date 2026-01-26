@@ -2,6 +2,7 @@ import type { Token, Settings } from '@spec/types';
 import './styles/main.css';
 import { AudioEngine } from '../audio/AudioEngine';
 import { seedMockVoices } from '../utils/seed_voices';
+import { seedDocuments } from '../utils/seed_documents';
 
 import { documentStore } from '../storage/DocumentStore';
 import { settingsStore } from '../storage/SettingsStore';
@@ -97,6 +98,7 @@ export class ReaderShell {
             // Let's load settings first so we have defaults for voice/etc.
             await this.loadInitialState();
             await seedMockVoices();
+            await seedDocuments();
             await this.setupComponents();
 
             // Initialize loading overlay logic manualy since setupComponents does it too late/early?
@@ -107,7 +109,10 @@ export class ReaderShell {
         }
 
         // Seed voices if needed
-        if (!title && !text && !url) await seedMockVoices();
+        if (!title && !text && !url) {
+            await seedMockVoices();
+            await seedDocuments();
+        }
 
         if (!title && !text && !url) await this.setupComponents();
 

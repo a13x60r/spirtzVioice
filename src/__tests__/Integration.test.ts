@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AudioEngine } from '@audio/AudioEngine';
+import { audioStore } from '@storage/AudioStore';
 import { documentStore } from '@storage/DocumentStore';
 import { TextPipeline } from '@domain/TextPipeline';
 import { Settings } from '@spec/types';
@@ -55,12 +56,25 @@ const mockAudioContext = {
     destination: {}
 };
 
+const injectMetadataCtx = (instance: AudioEngine) => {
+    (instance as any).metadataCtx = { decodeAudioData: mockDecodeAudioData };
+};
+
 describe('Integration: Core Flow', () => {
     let engine: AudioEngine;
 
     beforeEach(() => {
+        mockDecodeAudioData.mockImplementation((_buffer) => {
+            return Promise.resolve({
+                duration: 1.0,
+                sampleRate: 44100,
+                numberOfChannels: 1,
+                getChannelData: () => new Float32Array(44100)
+            });
+        });
         vi.stubGlobal('Worker', MockWorker);
         vi.stubGlobal('AudioContext', vi.fn(() => mockAudioContext));
+        vi.stubGlobal('OfflineAudioContext', vi.fn(() => ({ decodeAudioData: mockDecodeAudioData })));
         vi.stubGlobal('window', {
             ...window,
             setInterval: window.setInterval,
@@ -69,6 +83,11 @@ describe('Integration: Core Flow', () => {
             clearTimeout: window.clearTimeout,
             location: window.location ?? { origin: 'http://localhost' }
         });
+
+        vi.spyOn(audioStore, 'getChunk').mockResolvedValue({
+            data: new Blob([new ArrayBuffer(10)]),
+            durationSec: 1.0
+        } as any);
 
         // Reset DB mocks if needed? fake-indexeddb handles in-memory
 
@@ -117,6 +136,7 @@ describe('Integration: Core Flow', () => {
 
         // 3. Init Engine
         engine = new AudioEngine();
+        injectMetadataCtx(engine);
         const settings: Settings = {
             voiceId: 'default',
             language: 'en-US',
@@ -152,5 +172,44 @@ describe('Integration: Core Flow', () => {
         expect(controller.getState()).toBe('PAUSED');
 
         // Success
+    });
+
+    it('should preserve token position when WPM changes', async () => {
+        const doc = await documentStore.createDocument(
+            "WPM Test",
+            "one two three four five six seven eight nine ten"
+        );
+
+        const tokens = TextPipeline.tokenize(doc.originalText);
+        expect(tokens.length).toBeGreaterThan(7);
+
+        engine = new AudioEngine();
+        injectMetadataCtx(engine);
+        const settings: Settings = {
+            voiceId: 'default',
+            language: 'en-US',
+            speedWpm: 300,
+            strategy: 'TOKEN',
+            chunkSize: 5,
+            lookaheadSec: 10,
+            mode: 'RSVP',
+            pauseRules: { punctPauseMs: 0, paragraphPauseMs: 0 },
+            tokenizerVersion: '1'
+        };
+
+        const startTokenIndex = 6;
+        await engine.loadDocument(doc.id, tokens, settings, startTokenIndex);
+
+        const controller = engine.getController();
+        expect(controller.getCurrentTokenIndex()).toBe(startTokenIndex);
+
+        const updatedSettings: Settings = {
+            ...settings,
+            speedWpm: 450
+        };
+
+        await engine.updateSettings(updatedSettings);
+
+        expect(controller.getCurrentTokenIndex()).toBe(startTokenIndex);
     });
 });

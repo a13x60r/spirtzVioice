@@ -664,7 +664,7 @@ export class AudioEngine {
 
         // Re-load document with new settings
         // This triggers re-planning and re-synthesis (differential via cache)
-        await this.loadDocument(this.currentPlan.docId, this.currentTokens, settings, 0, onProgress);
+        await this.loadDocument(this.currentPlan.docId, this.currentTokens, settings, currentTokenIndex, onProgress);
 
         // Restore playback state
         if (wasPlaying) {

@@ -80,7 +80,7 @@ export class Controls {
                         </div>
                         <div class="speed-control">
                             <label for="wpm-input" title="Synthesis WPM (Re-generates Audio)">W</label>
-                            <input type="range" id="wpm-input" min="200" max="600" step="10" value="${initialWpm}">
+                            <input type="range" id="wpm-input" min="200" max="1300" step="10" value="${initialWpm}">
                             <span id="wpm-val-display">${initialWpm}</span>
                         </div>
                          <div class="speed-control">

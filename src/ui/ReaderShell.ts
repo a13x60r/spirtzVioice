@@ -14,12 +14,14 @@ import { LoadingOverlay } from './components/LoadingOverlay';
 import { ParagraphView } from './views/ParagraphView';
 import type { ReaderView } from './views/ViewInterface';
 import { TextPipeline } from '@domain/TextPipeline';
+import { InstallPrompt } from './InstallPrompt';
 
 const HEADER_ICONS = {
     library: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v15H6c-1.1 0-2-.9-2-2V5zm2 0v13h9V5H6z"/><path d="M18 6h2v14c0 1.1-.9 2-2 2H8v-2h10V6z"/></svg>`,
     newDoc: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M13 3H6c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-9l-7-7zm0 2.5L19.5 12H13V5.5z"/><path d="M12 14h-2v-2H8v2H6v2h2v2h2v-2h2z"/></svg>`,
     switchView: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 7h11l-3.5-3.5 1.4-1.4L22.8 9l-6.9 6.9-1.4-1.4L18 11H7V7zm10 10H6l3.5 3.5-1.4 1.4L1.2 15l6.9-6.9 1.4 1.4L6 13h11v4z"/></svg>`,
-    settings: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.7.22l2.39-.96c.5.4 1.04.71 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.23 1.13-.54 1.63-.94l2.39.96c.27.11.56.02.7-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5S10.07 8.5 12 8.5s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>`
+    settings: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.7.22l2.39-.96c.5.4 1.04.71 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.23 1.13-.54 1.63-.94l2.39.96c.27.11.56.02.7-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5S10.07 8.5 12 8.5s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>`,
+    install: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M5 20h14v-2H5v2z"/><path d="M12 2v12l4-4 1.4 1.4L12 17.8 6.6 11.4 8 10l4 4V2h0z"/></svg>`
 };
 
 export class ReaderShell {
@@ -32,11 +34,13 @@ export class ReaderShell {
     private settings!: Settings;
     private initialized: boolean = false;
     private destroyed: boolean = false;
+    private installPrompt: InstallPrompt | null = null;
 
     // UI states
     private viewContainer!: HTMLElement;
     private uiLoopActive: boolean = false;
     private isReaderActive: boolean = false;
+    private lastWpmLogTime: number = 0;
 
     // Components
     private settingsPanel!: SettingsPanel;
@@ -63,6 +67,10 @@ export class ReaderShell {
         if (this.initialized) return;
         this.initialized = true;
         this.renderShell();
+        this.installPrompt = new InstallPrompt((available) => {
+            const installBtn = this.container.querySelector('#btn-install-app') as HTMLElement | null;
+            if (installBtn) installBtn.style.display = available ? 'inline-flex' : 'none';
+        });
 
         // Handle Share Target API (must be before loading initial state to prioritize share)
         const params = new URLSearchParams(window.location.search);
@@ -168,6 +176,7 @@ export class ReaderShell {
                         <button class="btn btn-secondary btn-icon" id="btn-library" title="Library" aria-label="Library">${HEADER_ICONS.library}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-new-text" title="New Document" aria-label="New Document">${HEADER_ICONS.newDoc}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-toggle-view" title="Switch View" aria-label="Switch View">${HEADER_ICONS.switchView}</button>
+                        <button class="btn btn-secondary btn-icon" id="btn-install-app" title="Install App" aria-label="Install App" style="display: none;">${HEADER_ICONS.install}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-settings" title="Settings" aria-label="Settings">${HEADER_ICONS.settings}</button>
                     </div>
                 </header>
@@ -198,6 +207,11 @@ export class ReaderShell {
         // Settings toggle
         this.container.querySelector('#btn-settings')?.addEventListener('click', () => {
             this.settingsPanel.mount();
+        });
+
+        // Install app
+        this.container.querySelector('#btn-install-app')?.addEventListener('click', async () => {
+            await this.installPrompt?.promptInstall();
         });
 
         // View toggle
@@ -439,6 +453,8 @@ export class ReaderShell {
         const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length, language);
         this.currentDocId = doc.id;
 
+        await documentStore.updateSettings(doc.id, this.settings.voiceId, this.settings.speedWpm);
+
         // Auto-select voice for language
         if (language) {
             const voiceId = await this.selectVoiceForLanguage(language);
@@ -525,6 +541,11 @@ export class ReaderShell {
             if (voiceId) {
                 this.settings.voiceId = voiceId;
             }
+        }
+
+        if (doc.speedWpm) {
+            this.settings.speedWpm = doc.speedWpm;
+            this.controls.setWpm(doc.speedWpm);
         }
 
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, doc.progressTokenIndex, (p, msg) => {
@@ -627,6 +648,14 @@ export class ReaderShell {
             const percentage = totalTokens > 0 ? (currentIndex / totalTokens) * 100 : 0;
             this.controls.setProgress(percentage);
 
+            if (isPlaying) {
+                const now = performance.now();
+                if (now - this.lastWpmLogTime >= 1000) {
+                    console.log(`[Playback] WPM (controls): ${this.settings.speedWpm}`);
+                    this.lastWpmLogTime = now;
+                }
+            }
+
             requestAnimationFrame(loop);
         };
         requestAnimationFrame(loop);
@@ -649,10 +678,14 @@ export class ReaderShell {
 
         // This triggers re-synthesis
         this.loadingOverlay.show('Synthesizing...', () => this.audioEngine.cancelSynthesis());
-        await this.audioEngine.updateSettings(this.settings, (p, msg) => {
-            this.loadingOverlay.setProgress(p);
-            if (msg) this.loadingOverlay.setText(msg);
-        });
+        try {
+            await this.audioEngine.updateSettings(this.settings, (p, msg) => {
+                this.loadingOverlay.setProgress(p);
+                if (msg) this.loadingOverlay.setText(msg);
+            });
+        } finally {
+            this.loadingOverlay.hide();
+        }
     }
 
     private setupPlaybackListeners() {

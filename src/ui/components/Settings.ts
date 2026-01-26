@@ -125,7 +125,7 @@ export class SettingsPanel {
                         <section class="settings-group">
                             <h3>Reading Speed</h3>
                             <div class="range-control">
-                                <input type="range" min="100" max="800" step="10" id="speed-range" value="${this.currentSettings.speedWpm}">
+                                <input type="range" min="100" max="1300" step="10" id="speed-range" value="${this.currentSettings.speedWpm}">
                                 <span id="speed-value">${this.currentSettings.speedWpm} WPM</span>
                             </div>
                         </section>

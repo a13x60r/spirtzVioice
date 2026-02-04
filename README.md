@@ -1,11 +1,11 @@
 # Spirtz Voice
 
-An offline-first reader app with exact text-to-speech synchronization supporting RSVP and Paragraph display modes.
+An offline-first reader app with exact text-to-speech synchronization supporting RSVP, Focus, and Paragraph display modes.
 
 ## Features
 
 - ✨ **Exact Text↔Voice Sync**: Audio clock drives precise token highlighting
-- 📖 **Dual Display Modes**: RSVP (single token) and Paragraph (full text) with instant switching
+- 📖 **Three Display Modes**: RSVP (single token), Focus (chunked phrases), and Paragraph (full text) with instant switching
 - 🎯 **Two Synthesis Strategies**: TOKEN (per-word) and CHUNK (multi-word) with runtime switching
 - 📱 **Offline-First PWA**: Works completely offline after initial install
 - 🎨 **Modern UI**: Responsive design with dark mode support
@@ -51,7 +51,7 @@ See [spec/00_README.md](./spec/00_README.md) for detailed architecture documenta
 
 ### Core Layers
 
-1. **UI Layer**: ReaderShell, RSVPView, ParagraphView
+1. **UI Layer**: ReaderShell, RSVPView, FocusView, ParagraphView
 2. **Domain Layer**: TextPipeline, PlanEngine, TimelineEngine
 3. **Audio Layer**: TTSEngine (Worker), AudioScheduler, PlaybackController
 4. **Storage Layer**: IndexedDB for documents, settings, audio cache

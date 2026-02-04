@@ -1,6 +1,7 @@
 import type { Token } from '@spec/types';
 import type { ReaderView } from './ViewInterface';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 export class ParagraphView implements ReaderView {
     private container: HTMLElement | null = null;
@@ -49,12 +50,14 @@ export class ParagraphView implements ReaderView {
         this.tokenEls.clear();
 
         if (this.contentType === 'html') {
-            this.contentEl.innerHTML = this.stripExternalImages(this.originalText);
+            const clean = DOMPurify.sanitize(this.originalText);
+            this.contentEl.innerHTML = this.stripExternalImages(clean);
             // TODO: implement highlighting for HTML if possible
             return;
         } else if (this.contentType === 'markdown') {
             const html = marked.parse(this.originalText);
-            this.contentEl.innerHTML = this.stripExternalImages(html as string); // marked.parse returns string
+            const clean = DOMPurify.sanitize(html as string);
+            this.contentEl.innerHTML = this.stripExternalImages(clean);
             return;
         }
 

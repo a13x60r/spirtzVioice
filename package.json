@@ -13,7 +13,9 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/dompurify": "^3.0.5",
     "dexie": "^3.2.4",
+    "dompurify": "^3.3.1",
     "marked": "^17.0.1",
     "piper-wasm": "^0.1.4",
     "uuid": "^13.0.0"

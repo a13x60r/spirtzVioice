@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Conducted comprehensive security audit.
+- Fixed **Critical Stored XSS** vulnerability in `ParagraphView.ts` by implementing `dompurify` sanitization for all rendered content.
+
 ### Fixed
+
+- Fixed build error in `InstallPrompt.ts` (type mismatch for `beforeinstallprompt` event handling).
+
+### Fixed (Previous)
 
 - **TTS Synchronization**:
   - Implemented character-weighted duration distribution for precise word-level timing.

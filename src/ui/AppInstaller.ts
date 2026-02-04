@@ -1,4 +1,4 @@
-export class InstallPrompt {
+export class AppInstaller {
     private promptEvent: any;
     private onAvailabilityChange?: (available: boolean) => void;
 

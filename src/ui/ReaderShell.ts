@@ -15,7 +15,7 @@ import { LoadingOverlay } from './components/LoadingOverlay';
 import { ParagraphView } from './views/ParagraphView';
 import type { ReaderView } from './views/ViewInterface';
 import { TextPipeline } from '@domain/TextPipeline';
-import { InstallPrompt } from './InstallPrompt';
+import { AppInstaller } from './AppInstaller';
 
 const HEADER_ICONS = {
     library: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v15H6c-1.1 0-2-.9-2-2V5zm2 0v13h9V5H6z"/><path d="M18 6h2v14c0 1.1-.9 2-2 2H8v-2h10V6z"/></svg>`,
@@ -35,7 +35,7 @@ export class ReaderShell {
     private settings!: Settings;
     private initialized: boolean = false;
     private destroyed: boolean = false;
-    private installPrompt: InstallPrompt | null = null;
+    private appInstaller: AppInstaller | null = null;
 
     // UI states
     private viewContainer!: HTMLElement;
@@ -68,7 +68,7 @@ export class ReaderShell {
         if (this.initialized) return;
         this.initialized = true;
         this.renderShell();
-        this.installPrompt = new InstallPrompt((available) => {
+        this.appInstaller = new AppInstaller((available: boolean) => {
             const installBtn = this.container.querySelector('#btn-install-app') as HTMLElement | null;
             if (installBtn) installBtn.style.display = available ? 'inline-flex' : 'none';
         });
@@ -216,7 +216,7 @@ export class ReaderShell {
 
         // Install app
         this.container.querySelector('#btn-install-app')?.addEventListener('click', async () => {
-            await this.installPrompt?.promptInstall();
+            await this.appInstaller?.promptInstall();
         });
 
         // View toggle

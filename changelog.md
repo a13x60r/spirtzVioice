@@ -14,7 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed build error in `InstallPrompt.ts` (type mismatch for `beforeinstallprompt` event handling).
+- Fixed build errors in `ReaderShell.ts`:
+  - Resolved `InstallPrompt` naming conflict by renaming to `AppInstaller`.
+  - Added explicit type for `available` parameter to fix implicit `any` error.
+  - Fixed constructor argument mismatch and missing property errors in `ReaderShell`.
 
 ### Fixed (Previous)
 

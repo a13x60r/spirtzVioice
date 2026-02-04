@@ -3,7 +3,9 @@ import type { ReaderView } from './ViewInterface';
 
 export class FocusView implements ReaderView {
     private container: HTMLElement | null = null;
+    private prevChunkEl: HTMLElement | null = null;
     private chunkEl: HTMLElement | null = null;
+    private nextChunkEl: HTMLElement | null = null;
     private currentChunkIndex: number = -1;
     private focusContainer: HTMLElement | null = null;
     private pagingBtn: HTMLButtonElement | null = null;
@@ -46,10 +48,16 @@ export class FocusView implements ReaderView {
         this.container.innerHTML = `
             <div class="focus-container">
                 <button class="btn btn-secondary btn-sm focus-paging-btn" id="focus-paging-btn" type="button">Paging</button>
-                <div class="focus-chunk" id="focus-chunk"></div>
+                <div class="focus-lines" id="focus-lines">
+                    <div class="focus-chunk focus-ghost" id="focus-prev"></div>
+                    <div class="focus-chunk focus-current" id="focus-chunk"></div>
+                    <div class="focus-chunk focus-ghost" id="focus-next"></div>
+                </div>
             </div>
         `;
+        this.prevChunkEl = this.container.querySelector('#focus-prev');
         this.chunkEl = this.container.querySelector('#focus-chunk');
+        this.nextChunkEl = this.container.querySelector('#focus-next');
         this.focusContainer = this.container.querySelector('.focus-container');
         this.pagingBtn = this.container.querySelector('#focus-paging-btn');
 
@@ -81,7 +89,9 @@ export class FocusView implements ReaderView {
         if (this.container) {
             this.container.innerHTML = '';
             this.container = null;
+            this.prevChunkEl = null;
             this.chunkEl = null;
+            this.nextChunkEl = null;
             this.currentChunkIndex = -1;
             this.focusContainer = null;
             this.pagingBtn = null;
@@ -89,13 +99,17 @@ export class FocusView implements ReaderView {
     }
 
     update(chunkIndex: number, chunks: ReaderChunk[]): void {
-        if (!this.chunkEl || !chunks || chunks.length === 0) return;
+        if (!this.chunkEl || !this.prevChunkEl || !this.nextChunkEl || !chunks || chunks.length === 0) return;
         if (this.currentChunkIndex === chunkIndex) return;
         this.currentChunkIndex = chunkIndex;
 
         const chunk = chunks[chunkIndex];
+        const prevChunk = chunkIndex > 0 ? chunks[chunkIndex - 1] : null;
+        const nextChunk = chunkIndex < chunks.length - 1 ? chunks[chunkIndex + 1] : null;
         if (chunk) {
+            this.prevChunkEl.textContent = prevChunk?.text ?? '';
             this.chunkEl.textContent = chunk.text;
+            this.nextChunkEl.textContent = nextChunk?.text ?? '';
         }
     }
 

@@ -19,9 +19,9 @@
 
 ## P1 - Orientation layer (fix "where am I?")
 
-- [ ] Ghost context lines
-  - [ ] FocusView: render previous chunk (faint), current chunk (primary), next chunk (faint)
-  - [ ] keep anchor fixed; no motion; only opacity transition <=100ms
+- [x] Ghost context lines
+  - [x] FocusView: render previous chunk (faint), current chunk (primary), next chunk (faint)
+  - [x] keep anchor fixed; no motion; only opacity transition <=100ms
 - [ ] Structural progress
   - [ ] src/components/Progress.tsx
   - [ ] show Chapter -> Section label

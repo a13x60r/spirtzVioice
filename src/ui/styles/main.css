@@ -387,13 +387,31 @@ body {
     touch-action: manipulation;
 }
 
+.focus-lines {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    max-width: 70ch;
+    text-align: center;
+}
+
 .focus-chunk {
     font-size: calc(var(--rsvp-font-size) * 0.75);
     font-weight: 600;
-    max-width: 70ch;
     text-align: center;
     line-height: 1.3;
     color: var(--color-text);
+    transition: opacity 0.1s ease;
+}
+
+.focus-ghost {
+    opacity: 0.35;
+}
+
+.focus-current {
+    opacity: 1;
 }
 
 .focus-paging-btn {

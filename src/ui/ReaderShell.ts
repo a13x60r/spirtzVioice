@@ -65,6 +65,9 @@ export class ReaderShell {
         this.rsvpView = new RSVPView();
         this.paragraphView = new ParagraphView();
         this.focusView = new FocusView();
+        this.focusView.setPanicExitHandler(() => {
+            this.handleFocusPanicExit();
+        });
 
         // Initial setup for TS - actually init in renderShell
         this.keepAliveAudio = new Audio();
@@ -888,6 +891,59 @@ export class ReaderShell {
         if (match) return match.id;
 
         return null;
+    }
+
+    private async handleFocusPanicExit() {
+        const controller = this.audioEngine.getController();
+        if (!this.currentTokens.length || !this.currentChunks.length) {
+            this.switchView('PARAGRAPH');
+            return;
+        }
+
+        if (controller.getState() === 'PLAYING') {
+            try {
+                await controller.pause();
+            } catch {
+                // best-effort pause
+            }
+        }
+
+        const tokenIndex = controller.getCurrentTokenIndex();
+        const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+        const chunk = this.currentChunks[chunkIndex];
+        const targetIndex = chunk
+            ? this.findTokenIndexForOffset(chunk.startOffset, tokenIndex)
+            : Math.max(0, tokenIndex);
+
+        controller.seekByToken(targetIndex);
+        this.switchView('PARAGRAPH');
+
+        if (this.currentView instanceof ParagraphView) {
+            this.currentView.update(targetIndex, this.currentTokens);
+        }
+    }
+
+    private findTokenIndexForOffset(offset: number, fallbackIndex: number): number {
+        if (!this.currentTokens.length) return fallbackIndex;
+
+        let left = 0;
+        let right = this.currentTokens.length - 1;
+        let result = -1;
+
+        while (left <= right) {
+            const mid = Math.floor((left + right) / 2);
+            const startOffset = this.currentTokens[mid].startOffset;
+
+            if (startOffset >= offset) {
+                result = mid;
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+
+        if (result === -1) return this.currentTokens.length - 1;
+        return result;
     }
 
     private getNextMode(current: 'RSVP' | 'PARAGRAPH' | 'FOCUS'): 'RSVP' | 'PARAGRAPH' | 'FOCUS' {

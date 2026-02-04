@@ -12,10 +12,10 @@
   - [x] delay = baseMsPerWord*words + punctPause + sentenceEndPause + longWordBonus
   - [x] punct: comma +120ms, ;: +200ms, .?! +450ms
   - [x] longWordBonus: +35ms per word length >=9
-- [ ] Add panic exit to Paging view at exact location
-  - [ ] src/routes/reader/PagingView.tsx (or equivalent)
-  - [ ] src/routes/reader/FocusView.tsx: button + long-press on center to open paging at paraId + startOffset
-  - [ ] ensure bidirectional: paging -> resume focus at nearest chunk
+- [x] Add panic exit to Paging view at exact location
+  - [x] src/routes/reader/PagingView.tsx (or equivalent)
+  - [x] src/routes/reader/FocusView.tsx: button + long-press on center to open paging at paraId + startOffset
+  - [x] ensure bidirectional: paging -> resume focus at nearest chunk
 
 ## P1 - Orientation layer (fix "where am I?")
 

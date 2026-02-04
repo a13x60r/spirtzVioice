@@ -247,7 +247,10 @@ export class AudioScheduler {
         const rawAcTime = this.ctx.currentTime - this.startTime;
         const timelineTime = rawAcTime * this.playbackRate;
 
-        const latencyAc = (this.ctx.baseLatency || 0) + ((this.ctx as any).outputLatency || 0);
+        // Latency compensation: baseLatency is context processing, outputLatency is system/hardware
+        // If outputLatency is 0/unavailable, we use a conservative 25ms estimate for Windows/Mobile
+        const rawOutputLatency = (this.ctx as any).outputLatency || 0;
+        const latencyAc = (this.ctx.baseLatency || 0) + (rawOutputLatency > 0 ? rawOutputLatency : 0.025);
         const latencyTimeline = latencyAc * this.playbackRate;
 
         return Math.max(0, timelineTime - latencyTimeline);

@@ -47,14 +47,17 @@ export class AudioEngine {
     private currentChunkHashSet = new Set<string>();
     private currentChunkByHash = new Map<string, any>();
 
-    // Shared context for metadata decoding (lightweight)
-    private metadataCtx = new OfflineAudioContext(1, 1, new AudioContext().sampleRate);
-
+    private metadataCtx: OfflineAudioContext;
     private isSynthesisCancelled: boolean = false;
 
     constructor() {
         this.controller = new PlaybackController();
         this.scheduler = this.controller.getScheduler();
+
+        // Shared context for metadata decoding (lightweight)
+        // Match the sample rate of the main audio context to avoid resampling during decoding
+        const mainCtx = this.scheduler.getAudioContext();
+        this.metadataCtx = new OfflineAudioContext(1, 1, mainCtx.sampleRate);
 
         // Initialize Worker
         this.worker = new Worker(new URL('../workers/tts-worker.ts', import.meta.url), {
@@ -471,23 +474,32 @@ export class AudioEngine {
                     currentTime += duration;
                 }
             } else {
-                const validTokens = chunkTokens.filter(t => t.type === 'word');
-                const totalWeight = validTokens.length;
+                // Calculate total weight including gaps to prevent drift
+                const totalWeight = chunkTokens.reduce((sum, t) => {
+                    if (t.type === 'word') return sum + Math.max(1, (t.normText || t.text || "").length);
+                    if (t.type === 'punct') return sum + 3; // Weight for punctuation pauses
+                    if (t.type === 'newline') return sum + 6; // Weight for paragraph breaks
+                    return sum + 1; // Spaces
+                }, 0);
 
                 if (totalWeight > 0) {
-                    const timePerToken = duration / totalWeight;
-
                     for (const token of chunkTokens) {
-                        if (token.type === 'word') {
-                            this.currentTimeline.entries.push({
-                                tokenId: token.tokenId,
-                                tokenIndex: token.index,
-                                tStartSec: currentTime,
-                                tEndSec: currentTime + timePerToken
-                            });
-                            currentTime += timePerToken;
-                        }
+                        const weight = (token.type === 'word') ? Math.max(1, (token.normText || token.text || "").length) :
+                            (token.type === 'punct') ? 3 :
+                                (token.type === 'newline') ? 6 : 1;
+
+                        const tokenDuration = (weight / totalWeight) * duration;
+                        this.currentTimeline.entries.push({
+                            tokenId: token.tokenId,
+                            tokenIndex: token.index,
+                            tStartSec: currentTime,
+                            tEndSec: currentTime + tokenDuration
+                        });
+                        currentTime += tokenDuration;
                     }
+                } else {
+                    // Fallback if no weights found
+                    currentTime += duration;
                 }
             }
 
@@ -655,6 +667,14 @@ export class AudioEngine {
         if (sameVoice && sameSpeed && sameStrategy && sameChunkSize) {
             // No synthesis needed
             return;
+        }
+
+        if (wasPlaying) {
+            try {
+                await this.controller.pause();
+            } catch (e) {
+                console.warn('[AudioEngine] Failed to pause before resynthesis', e);
+            }
         }
 
         // Otherwise need partial or full replan

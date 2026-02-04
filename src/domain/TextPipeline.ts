@@ -92,31 +92,14 @@ export class TextPipeline {
 
       case 'punct':
         {
-          // Map punctuation to spoken equivalents or silence
-          const punctMap: Record<string, string> = {
-            '.': '',
-            ',': '',
-            '!': '',
-            '?': '',
-            ';': '',
-            ':': '',
-            '-': '',
-            '—': '',
-            '–': '',
-            '"': '',
-            "'": '',
-            '(': '',
-            ')': '',
-            '[': '',
-            ']': '',
-            '{': '',
-            '}': '',
-            '\u2018': '',
-            '\u2019': '',
-            '\u201C': '',
-            '\u201D': '',
-          };
-          return punctMap[text] || '';
+          // Keep prosody-relevant punctuation for natural TTS output
+          const prosodyPunct = /[.,!?;:]/;
+          if (prosodyPunct.test(text)) {
+            return text;
+          }
+
+          // Map other punctuation to empty string
+          return '';
         }
 
       case 'space':

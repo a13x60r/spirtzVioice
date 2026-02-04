@@ -6,8 +6,8 @@ const SETTINGS_KEY = 'user_settings';
 const DEFAULT_SETTINGS: Settings = {
     voiceId: 'default',
     speedWpm: 250,
-    strategy: 'TOKEN',
-    chunkSize: 5,
+    strategy: 'CHUNK',
+    chunkSize: 8,
     lookaheadSec: 20,
     mode: 'RSVP',
     pauseRules: {

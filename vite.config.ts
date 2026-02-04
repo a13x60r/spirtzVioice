@@ -28,6 +28,8 @@ export default defineConfig({
         },
     },
     server: {
+        port: 5180,
+        strictPort: false,
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp',
@@ -35,6 +37,8 @@ export default defineConfig({
         },
     },
     preview: {
+        port: 5180,
+        strictPort: false,
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',
             'Cross-Origin-Embedder-Policy': 'require-corp',

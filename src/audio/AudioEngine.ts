@@ -4,6 +4,7 @@ import { VOICE_REGISTRY } from './VoiceRegistry';
 import { AudioScheduler } from './AudioScheduler';
 import { PlaybackController } from './PlaybackController';
 import { PlanEngine } from '@domain/PlanEngine';
+import { computeDelayMs } from '../lib/timing';
 import type { RenderPlan, Timeline, Token, Settings, VoicePackage } from '@spec/types';
 import type { ChunkCompleteResponse, WorkerResponse, LoadVoiceRequest } from '@workers/tts-protocol';
 
@@ -454,8 +455,11 @@ export class AudioEngine {
 
         while (this.nextChunkIndex < this.currentPlan.chunks.length) {
             const chunk = this.currentPlan.chunks[this.nextChunkIndex];
-            const duration = await this.getChunkDuration(chunk.chunkHash);
-            if (duration === undefined) break;
+            const audioDuration = await this.getChunkDuration(chunk.chunkHash);
+            if (audioDuration === undefined) break;
+
+            const targetDelaySec = computeDelayMs(chunk.chunkText, this.currentPlan.speedWpm) / 1000;
+            const duration = Math.max(audioDuration, targetDelaySec);
 
             const chunkStartSec = this.chunkCumulativeTime;
             const chunkEndSec = chunkStartSec + duration;

@@ -1,0 +1,91 @@
+## P0 - Make it usable for students (core behavior)
+
+- [x] Add chunked Focus mode (phrase/clause RSVP)
+  - [x] src/lib/segment.ts: implement segmentTextToChunks(text: string): Chunk[]
+  - [x] rules: split on .?!;: + comma before conjunctions (and|but|or|so|because|however|therefore|although|while)
+  - [x] merge chunks <3 words into next
+  - [x] cap chunk length 12-15 words (split at nearest punctuation/space)
+  - [x] src/lib/readerModel.ts: represent reading units as Chunk { id, text, startOffset, endOffset, sentenceId, paraId }
+- [x] Replace constant WPM delay with adaptive timing
+  - [x] src/lib/timing.ts: computeDelayMs(chunkText, baseWpm, opts)
+  - [x] baseMsPerWord = 60000 / baseWpm
+  - [x] delay = baseMsPerWord*words + punctPause + sentenceEndPause + longWordBonus
+  - [x] punct: comma +120ms, ;: +200ms, .?! +450ms
+  - [x] longWordBonus: +35ms per word length >=9
+- [ ] Add panic exit to Paging view at exact location
+  - [ ] src/routes/reader/PagingView.tsx (or equivalent)
+  - [ ] src/routes/reader/FocusView.tsx: button + long-press on center to open paging at paraId + startOffset
+  - [ ] ensure bidirectional: paging -> resume focus at nearest chunk
+
+## P1 - Orientation layer (fix "where am I?")
+
+- [ ] Ghost context lines
+  - [ ] FocusView: render previous chunk (faint), current chunk (primary), next chunk (faint)
+  - [ ] keep anchor fixed; no motion; only opacity transition <=100ms
+- [ ] Structural progress
+  - [ ] src/components/Progress.tsx
+  - [ ] show Chapter -> Section label
+  - [ ] progress within chapter (0-100%)
+  - [ ] derive chapter/section from document model metadata
+
+## P2 - Controls that work (mobile + desktop)
+
+- [ ] Speed controls: presets + numeric
+  - [ ] presets: 180 / 240 / 300 / 360 (+ "Custom")
+  - [ ] show WPM value next to control
+  - [ ] hard cap slider range (e.g., 120-450) for Focus mode
+- [ ] Rewind granularity
+  - [ ] controls: back 1 chunk, back 1 sentence, back 10 seconds (fallback)
+  - [ ] src/lib/navigation.ts: prevChunk(), prevSentence(), rewindByMs(ms)
+- [ ] Keyboard shortcuts + help overlay
+  - [ ] ? opens overlay
+  - [ ] Space: play/pause
+  - [ ] Left/Right: prev/next chunk
+  - [ ] Shift+Left/Right: prev/next sentence
+  - [ ] +/-: speed
+  - [ ] Esc: open paging
+
+## P3 - Adaptivity (behavior-driven, no eye tracking)
+
+- [ ] Auto-slowdown on struggle
+  - [ ] src/lib/adapt.ts
+  - [ ] track rewindsLast30s
+  - [ ] if >=2: baseWpm *= 0.9 (min floor 140)
+  - [ ] if stable 2 mins with 0 rewinds: baseWpm *= 1.03 (cap 360)
+- [ ] Fatigue nudges
+  - [ ] if session > 20 min: suggest break OR switch to paging
+  - [ ] never block reading
+
+## P4 - Persistence + offline (PWA-grade)
+
+- [ ] Persist exact reading state (every page/chunk)
+  - [ ] src/storage/db.ts (IndexedDB via Dexie or native)
+  - [ ] store: docId, mode, chapterId, paraId, chunkIndex, offset
+  - [ ] baseWpm, preset, theme, lastUpdated
+  - [ ] resume reliably
+- [ ] Cache segmentation results
+  - [ ] store per docId+paraId -> chunks[]
+  - [ ] avoid re-segmenting on every open
+- [ ] Service worker caching
+  - [ ] cache app shell + document text + user prefs
+  - [ ] ensure offline open last book works
+
+## P5 - Student study affordances (minimal but high ROI)
+
+- [ ] Mark/highlight buffer from Focus mode
+  - [ ] tap star -> save current chunk range
+  - [ ] paging view renders highlights from saved ranges
+- [ ] Quick note at current sentence
+  - [ ] note anchored to paraId + offsetRange
+  - [ ] searchable later
+- [ ] Copy current sentence / cite
+  - [ ] one-click copy with surrounding context (prev+next sentence optional)
+
+## P6 - Accessibility & comfort
+
+- [ ] Typography controls
+  - [ ] font size, line height, font family
+- [ ] ORP highlight toggle + intensity
+- [ ] Theme
+  - [ ] calm low-contrast theme option
+  - [ ] reduce glare, keep contrast AA+

@@ -16,6 +16,8 @@ import { ParagraphView } from './views/ParagraphView';
 import type { ReaderView } from './views/ViewInterface';
 import { TextPipeline } from '@domain/TextPipeline';
 import { AppInstaller } from './AppInstaller';
+import { FocusView } from './views/FocusView';
+import { buildReaderChunks, mapTokensToChunks, type ReaderChunk } from '../lib/readerModel';
 
 const HEADER_ICONS = {
     library: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v15H6c-1.1 0-2-.9-2-2V5zm2 0v13h9V5H6z"/><path d="M18 6h2v14c0 1.1-.9 2-2 2H8v-2h10V6z"/></svg>`,
@@ -32,6 +34,7 @@ export class ReaderShell {
     private currentView!: ReaderView;
     private rsvpView: RSVPView;
     private paragraphView: ParagraphView;
+    private focusView: FocusView;
     private settings!: Settings;
     private initialized: boolean = false;
     private destroyed: boolean = false;
@@ -50,6 +53,8 @@ export class ReaderShell {
     private documentList!: DocumentList;
     private currentDocId: string | null = null;
     private currentTokens: Token[] = [];
+    private currentChunks: ReaderChunk[] = [];
+    private tokenChunkMap: number[] = [];
 
     constructor(containerId: string) {
         const el = document.getElementById(containerId);
@@ -59,6 +64,7 @@ export class ReaderShell {
         this.audioEngine = new AudioEngine();
         this.rsvpView = new RSVPView();
         this.paragraphView = new ParagraphView();
+        this.focusView = new FocusView();
 
         // Initial setup for TS - actually init in renderShell
         this.keepAliveAudio = new Audio();
@@ -221,7 +227,7 @@ export class ReaderShell {
 
         // View toggle
         this.container.querySelector('#btn-toggle-view')?.addEventListener('click', () => {
-            const newMode = this.settings.mode === 'RSVP' ? 'PARAGRAPH' : 'RSVP';
+            const newMode = this.getNextMode(this.settings.mode);
             this.switchView(newMode);
         });
     }
@@ -454,6 +460,8 @@ export class ReaderShell {
 
         const tokens = TextPipeline.tokenize(ttsText);
         this.currentTokens = tokens;
+        this.currentChunks = buildReaderChunks(ttsText);
+        this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
 
         const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length, language);
         this.currentDocId = doc.id;
@@ -538,6 +546,8 @@ export class ReaderShell {
         const textForTts = doc.ttsText || doc.originalText;
         const tokens = TextPipeline.tokenize(textForTts);
         this.currentTokens = tokens;
+        this.currentChunks = buildReaderChunks(textForTts);
+        this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
 
         if (doc.voiceId && doc.voiceId !== 'default') {
             this.settings.voiceId = doc.voiceId;
@@ -564,7 +574,7 @@ export class ReaderShell {
         this.updateMediaMetadata(doc.title);
     }
 
-    private switchView(mode: 'RSVP' | 'PARAGRAPH') {
+    private switchView(mode: 'RSVP' | 'PARAGRAPH' | 'FOCUS') {
         this.isReaderActive = true;
 
         if (this.currentView) this.currentView.unmount();
@@ -580,6 +590,8 @@ export class ReaderShell {
 
         if (mode === 'RSVP') {
             this.currentView = this.rsvpView;
+        } else if (mode === 'FOCUS') {
+            this.currentView = this.focusView;
         } else {
             this.currentView = this.paragraphView;
         }
@@ -589,12 +601,21 @@ export class ReaderShell {
         // Force update to render content
         const controller = this.audioEngine.getController();
         // If we have tokens, make sure we render them
-        if (this.currentTokens.length > 0 || (this.currentView instanceof ParagraphView)) {
+        if (this.currentView instanceof FocusView) {
+            const tokenIndex = controller.getCurrentTokenIndex();
+            const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+            this.currentView.update(chunkIndex, this.currentChunks);
+        } else if (this.currentTokens.length > 0 || (this.currentView instanceof ParagraphView)) {
             this.currentView.update(controller.getCurrentTokenIndex(), this.currentTokens);
         }
 
         const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
-        if (toggleBtn) toggleBtn.style.display = 'inline-block';
+        if (toggleBtn) {
+            toggleBtn.style.display = 'inline-block';
+            const nextMode = this.getNextMode(mode);
+            toggleBtn.title = `Switch to ${nextMode}`;
+            toggleBtn.setAttribute('aria-label', `Switch to ${nextMode}`);
+        }
     }
 
     private startUiLoop() {
@@ -701,7 +722,10 @@ export class ReaderShell {
         const SAVE_INTERVAL = 2000; // Save every 2 seconds max
 
         controller.onTokenChanged = (index) => {
-            if (this.currentView) {
+            if (this.currentView instanceof FocusView) {
+                const chunkIndex = this.tokenChunkMap[index] ?? 0;
+                this.currentView.update(chunkIndex, this.currentChunks);
+            } else if (this.currentView) {
                 this.currentView.update(index, this.currentTokens);
             }
 
@@ -864,5 +888,11 @@ export class ReaderShell {
         if (match) return match.id;
 
         return null;
+    }
+
+    private getNextMode(current: 'RSVP' | 'PARAGRAPH' | 'FOCUS'): 'RSVP' | 'PARAGRAPH' | 'FOCUS' {
+        if (current === 'RSVP') return 'FOCUS';
+        if (current === 'FOCUS') return 'PARAGRAPH';
+        return 'RSVP';
     }
 }

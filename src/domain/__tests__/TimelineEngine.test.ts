@@ -46,7 +46,9 @@ describe('TimelineEngine', () => {
             text: 'Hello',
             normText: 'hello',
             type: 'word',
-            sentenceId: 0
+            sentenceId: 0,
+            startOffset: 0,
+            endOffset: 5
         }
     ];
 
@@ -94,7 +96,9 @@ describe('TimelineEngine', () => {
                 text: 'World',
                 normText: 'world',
                 type: 'word',
-                sentenceId: 0
+                sentenceId: 0,
+                startOffset: 6,
+                endOffset: 11
             }
         ];
 

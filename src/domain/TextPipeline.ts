@@ -53,6 +53,8 @@ export class TextPipeline {
             normText: this.normalizeForTTS(text, tokenType),
             type: tokenType,
             sentenceId,
+            startOffset: position,
+            endOffset: position + text.length,
           };
 
           tokens.push(token);

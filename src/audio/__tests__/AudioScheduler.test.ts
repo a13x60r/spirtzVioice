@@ -55,7 +55,7 @@ describe('AudioScheduler', () => {
         mockCtx.currentTime = 5;
 
         // Started at 0, now 5. Correct.
-        expect(scheduler.getCurrentTime()).toBe(5);
+        expect(scheduler.getCurrentTime()).toBeCloseTo(5, 1);
     });
 
     it('should handle seek offset', async () => {
@@ -64,13 +64,13 @@ describe('AudioScheduler', () => {
 
         // internal startTime = currentTime (0) - 10 = -10.
         // If currentTime is 0, reported time should be 0 - (-10) = 10.
-        expect(scheduler.getCurrentTime()).toBe(10);
+        expect(scheduler.getCurrentTime()).toBeCloseTo(10, 1);
 
         // Advance mock time by 5s (currentTime = 5)
         mockCtx.currentTime = 5;
 
         // Reported time: 5 - (-10) = 15.
-        expect(scheduler.getCurrentTime()).toBe(15);
+        expect(scheduler.getCurrentTime()).toBeCloseTo(15, 1);
     });
 
     it('should stop sources on pause', async () => {

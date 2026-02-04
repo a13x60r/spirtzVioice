@@ -66,7 +66,6 @@ export class SettingsPanel {
 
     mount() {
         // Generate options
-        // Generate options
         const languages = Array.from(new Set(this.voices.map(v => v.lang))).sort();
 
         const getLangName = (code: string) => {
@@ -131,8 +130,11 @@ export class SettingsPanel {
                         </section>
 
                         <section class="settings-group">
-                            <h3>Strategy</h3>
-                            <div class="radio-group">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <h3>Strategy</h3>
+                                <span class="info-badge" title="Determines how the text is divided for synthesis and highlighting.">i</span>
+                            </div>
+                            <div class="radio-group" style="display: flex; gap: 1rem; flex-wrap: wrap;">
                                 <label>
                                     <input type="radio" name="strategy" value="TOKEN" ${this.currentSettings.strategy === 'TOKEN' ? 'checked' : ''}> 
                                     Word by Word
@@ -142,6 +144,11 @@ export class SettingsPanel {
                                     Chunked (Natural)
                                 </label>
                             </div>
+                            <p class="info-text">
+                                <strong>Word by Word:</strong> Highlights each word as it's spoken. Best for focus.
+                                <br>
+                                <strong>Chunked:</strong> Groups words into phrases. Better for natural speech rhythm.
+                            </p>
                         </section>
 
                         <section class="settings-group">
@@ -160,7 +167,10 @@ export class SettingsPanel {
                         </section>
 
                         <section class="settings-group">
-                            <h3>Skip Intervals</h3>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <h3>Skip Intervals</h3>
+                                <span class="info-badge" title="Configure how much text is skipped when using previous/next controls.">i</span>
+                            </div>
                             <div class="range-control">
                                 <label style="font-size: 0.8rem; color: var(--color-text-secondary);">Seek (Seconds)</label>
                                 <input type="range" min="5" max="60" step="5" id="skip-seek" value="${this.currentSettings.skipSettings?.seekSec || 10}">
@@ -176,6 +186,8 @@ export class SettingsPanel {
                                 <input type="range" min="1" max="10" step="1" id="skip-sentences" value="${this.currentSettings.skipSettings?.sentenceCount || 1}">
                                 <span id="skip-sentences-value">${this.currentSettings.skipSettings?.sentenceCount || 1}</span>
                             </div>
+                            <div class="range-control">
+                                <label style="font-size: 0.8rem; color: var(--color-text-secondary);">Paragraphs</label>
                                 <input type="range" min="1" max="5" step="1" id="skip-paragraphs" value="${this.currentSettings.skipSettings?.paragraphCount || 1}">
                                 <span id="skip-paragraphs-value">${this.currentSettings.skipSettings?.paragraphCount || 1}</span>
                             </div>

@@ -42,7 +42,7 @@ export class DocumentStore {
     /**
      * Update reading progress
      */
-    async updateProgress(id: string, tokenIndex: number, speedWpm?: number, mode?: 'RSVP' | 'PARAGRAPH') {
+    async updateProgress(id: string, tokenIndex: number, speedWpm?: number, mode?: 'RSVP' | 'PARAGRAPH' | 'FOCUS') {
         const updateData: Partial<DocumentEntity> = {
             progressTokenIndex: tokenIndex,
             lastReadAt: Date.now()

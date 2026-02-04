@@ -21,9 +21,9 @@ describe('ParagraphView', () => {
     it('should render tokens for plain text', () => {
         view.setDocumentContext('Hello world', 'text');
         const tokens: Token[] = [
-            { tokenId: '1', index: 0, text: 'Hello', normText: 'hello', type: 'word', sentenceId: 0 },
-            { tokenId: '2', index: 1, text: ' ', normText: '', type: 'space', sentenceId: 0 },
-            { tokenId: '3', index: 2, text: 'world', normText: 'world', type: 'word', sentenceId: 0 }
+            { tokenId: '1', index: 0, text: 'Hello', normText: 'hello', type: 'word', sentenceId: 0, startOffset: 0, endOffset: 5 },
+            { tokenId: '2', index: 1, text: ' ', normText: '', type: 'space', sentenceId: 0, startOffset: 5, endOffset: 6 },
+            { tokenId: '3', index: 2, text: 'world', normText: 'world', type: 'word', sentenceId: 0, startOffset: 6, endOffset: 11 }
         ];
 
         view.update(0, tokens);
@@ -55,7 +55,7 @@ describe('ParagraphView', () => {
 
     it('should clear content when setDocumentContext is called', () => {
         view.setDocumentContext('First', 'text');
-        view.update(0, [{ tokenId: '1', index: 0, text: 'First', normText: 'first', type: 'word', sentenceId: 0 }]);
+        view.update(0, [{ tokenId: '1', index: 0, text: 'First', normText: 'first', type: 'word', sentenceId: 0, startOffset: 0, endOffset: 5 }]);
         expect(container.textContent).toContain('First');
 
         view.setDocumentContext('Second', 'text');

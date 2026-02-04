@@ -30,7 +30,7 @@ describe('TextPipeline', () => {
             const tokens = TextPipeline.tokenize(text);
 
             expect(tokens[0].normText).toBe('hello');
-            expect(tokens[1].normText).toBe(''); // Punctuation normalized to empty string
+            expect(tokens[1].normText).toBe('!'); // Prosody punctuation preserved
         });
 
         it('should assign sentence IDs correctly', () => {

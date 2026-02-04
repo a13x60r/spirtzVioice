@@ -1,4 +1,4 @@
-export type ReaderMode = "RSVP" | "PARAGRAPH";
+export type ReaderMode = "RSVP" | "PARAGRAPH" | "FOCUS";
 export type Strategy = "TOKEN" | "CHUNK";
 
 export type TokenType = "word" | "punct" | "space" | "newline";
@@ -17,6 +17,8 @@ export interface Token {
     normText: string;
     type: TokenType;
     sentenceId: number;
+    startOffset: number;
+    endOffset: number;
 }
 
 export interface PauseRules {

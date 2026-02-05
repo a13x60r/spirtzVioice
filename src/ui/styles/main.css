@@ -756,6 +756,13 @@ body {
     color: var(--color-text-secondary);
 }
 
+.settings-footer {
+    margin-top: var(--spacing-md);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    text-align: right;
+}
+
 .info-text {
     font-size: 0.75rem;
     color: var(--color-text-secondary);

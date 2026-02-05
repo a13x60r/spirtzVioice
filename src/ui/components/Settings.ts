@@ -14,6 +14,8 @@ export interface SettingsCallbacks {
     onSkipSettingsChange: (settings: { seekSec: number, wordCount: number, sentenceCount: number, paragraphCount: number, mediaSkipBackUnit: 'word' | 'sentence' | 'paragraph' | 'seek', mediaSkipFwdUnit: 'word' | 'sentence' | 'paragraph' | 'seek' }) => void;
 }
 
+import { APP_VERSION } from '../../constants/version';
+
 const CLOSE_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.71 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29 10.59 10.6l6.3-6.3z"/></svg>`;
 
 export class SettingsPanel {
@@ -258,6 +260,10 @@ export class SettingsPanel {
                                 </select>
                             </div>
                         </section>
+
+                        <div class="settings-footer">
+                            Version ${APP_VERSION}
+                        </div>
                     </div>
                 </div>
             </div>

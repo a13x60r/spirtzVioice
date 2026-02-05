@@ -11,7 +11,7 @@ An offline-first reader app with exact text-to-speech synchronization supporting
 - 📱 **Offline-First PWA**: Works completely offline after initial install with service worker caching
 - 🎨 **Comfort Controls**: Calm theme, typography controls, and ORP intensity toggle for RSVP + Focus
 - ⚡ **Web Worker TTS**: Non-blocking synthesis for smooth UI
-- 🔊 **Enhanced Controls**: WPM presets, numeric input, rewind granularity, and responsive playback
+- 🔊 **Enhanced Controls**: WPM presets, numeric input, rewind granularity, and direct view buttons
 - ⌨️ **Keyboard Shortcuts**: Playback, chunk/sentence navigation, and help overlay
 - 📝 **Study Affordances**: Highlight buffer, sentence notes, and one-click copy/cite with notes sidebar
 

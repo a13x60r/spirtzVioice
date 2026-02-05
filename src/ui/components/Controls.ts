@@ -19,7 +19,7 @@ const ICONS = {
 };
 
 const WPM_PRESETS = [180, 240, 300, 360];
-const DEFAULT_WPM_RANGE = { min: 200, max: 1300 };
+const DEFAULT_WPM_RANGE = { min: 200, max: 1400 };
 
 export class Controls {
     private container: HTMLElement;
@@ -29,6 +29,7 @@ export class Controls {
     private onHighlight: () => void;
     private onNote: () => void;
     private onCopySentence: () => void;
+    private onViewChange: (mode: 'RSVP' | 'FOCUS' | 'PARAGRAPH') => void;
     private onSpeedChange: (rate: number) => void;
     private onWpmChange: (wpm: number) => void;
     private onVolumeChange: (volume: number) => void;
@@ -58,6 +59,7 @@ export class Controls {
             onHighlight: () => void;
             onNote: () => void;
             onCopySentence: () => void;
+            onViewChange: (mode: 'RSVP' | 'FOCUS' | 'PARAGRAPH') => void;
             onSpeedChange: (rate: number) => void;
             onWpmChange: (wpm: number) => void;
             onVolumeChange: (volume: number) => void;
@@ -73,6 +75,7 @@ export class Controls {
         this.onHighlight = callbacks.onHighlight;
         this.onNote = callbacks.onNote;
         this.onCopySentence = callbacks.onCopySentence;
+        this.onViewChange = callbacks.onViewChange;
         this.onSpeedChange = callbacks.onSpeedChange;
         this.onWpmChange = callbacks.onWpmChange;
         this.onVolumeChange = callbacks.onVolumeChange;
@@ -90,16 +93,21 @@ export class Controls {
                 </div>
                 
                 <div class="controls-row">
+                    <div class="view-switch-group" id="view-switch-group" aria-label="View mode">
+                        <button class="btn btn-secondary btn-sm" data-view="RSVP" aria-label="RSVP view">RSVP</button>
+                        <button class="btn btn-secondary btn-sm" data-view="FOCUS" aria-label="Focus view">Focus</button>
+                        <button class="btn btn-secondary btn-sm" data-view="PARAGRAPH" aria-label="Paragraph view">Paragraph</button>
+                    </div>
                     <div class="speed-control-group" id="speed-control-group">
                         <div class="speed-control">
                             <label for="speed-input" title="Playback Rate (Instant)">R</label>
-                            <input type="range" id="speed-input" min="0.5" max="2.0" step="0.1" value="${initialRate}">
+                            <input type="range" id="speed-input" min="0.5" max="2.0" step="0.1" value="${initialRate}" aria-label="Playback rate">
                             <span id="speed-val-display">${initialRate.toFixed(1)}x</span>
                         </div>
                         <div class="speed-control">
                             <label for="wpm-input" title="Synthesis WPM (Re-generates Audio)">W</label>
-                            <input type="range" id="wpm-input" min="${DEFAULT_WPM_RANGE.min}" max="${DEFAULT_WPM_RANGE.max}" step="10" value="${initialWpm}">
-                            <input type="number" id="wpm-input-number" min="${DEFAULT_WPM_RANGE.min}" max="${DEFAULT_WPM_RANGE.max}" step="10" value="${initialWpm}" class="wpm-number-input">
+                            <input type="range" id="wpm-input" min="${DEFAULT_WPM_RANGE.min}" max="${DEFAULT_WPM_RANGE.max}" step="10" value="${initialWpm}" aria-label="Words per minute">
+                            <input type="number" id="wpm-input-number" min="${DEFAULT_WPM_RANGE.min}" max="${DEFAULT_WPM_RANGE.max}" step="10" value="${initialWpm}" class="wpm-number-input" aria-label="Words per minute number input">
                         </div>
                         <div class="wpm-presets" id="wpm-presets">
                             ${WPM_PRESETS.map(value => `<button class="btn btn-secondary btn-sm wpm-preset" data-wpm="${value}">${value}</button>`).join('')}
@@ -107,28 +115,28 @@ export class Controls {
                         </div>
                          <div class="speed-control">
                             <div title="Volume" class="icon-label">${ICONS.volume}</div>
-                            <input type="range" id="volume-input" min="0" max="1" step="0.05" value="${initialVolume}">
+                            <input type="range" id="volume-input" min="0" max="1" step="0.05" value="${initialVolume}" aria-label="Volume">
                         </div>
                     </div>
 
                     <div class="playback-buttons">
-                        <button class="btn btn-secondary btn-icon" id="highlight-buffer" title="Highlight Buffer">${ICONS.highlight}</button>
-                        <button class="btn btn-secondary btn-icon" id="note-sentence" title="Add Note">${ICONS.note}</button>
-                        <button class="btn btn-secondary btn-icon" id="copy-sentence" title="Copy Sentence">${ICONS.copy}</button>
-                        <button class="btn btn-secondary btn-icon" id="skip-chunk-back" title="Prev Chunk">${ICONS.skipChunkBack}</button>
-                        <button class="btn btn-secondary btn-icon" id="skip-para-back" title="Prev Paragraph">${ICONS.skipParaBack}</button>
-                        <button class="btn btn-secondary btn-icon" id="skip-sent-back" title="Prev Sentence">${ICONS.skipSentBack}</button>
-                        <button class="btn btn-secondary btn-icon" id="skip-word-back" title="Prev Word">${ICONS.skipWordBack}</button>
+                        <button class="btn btn-secondary btn-icon" id="highlight-buffer" title="Highlight Buffer" aria-label="Highlight buffer">${ICONS.highlight}</button>
+                        <button class="btn btn-secondary btn-icon" id="note-sentence" title="Add Note" aria-label="Add note">${ICONS.note}</button>
+                        <button class="btn btn-secondary btn-icon" id="copy-sentence" title="Copy Sentence" aria-label="Copy sentence">${ICONS.copy}</button>
+                        <button class="btn btn-secondary btn-icon" id="skip-chunk-back" title="Prev Chunk" aria-label="Previous chunk">${ICONS.skipChunkBack}</button>
+                        <button class="btn btn-secondary btn-icon" id="skip-para-back" title="Prev Paragraph" aria-label="Previous paragraph">${ICONS.skipParaBack}</button>
+                        <button class="btn btn-secondary btn-icon" id="skip-sent-back" title="Prev Sentence" aria-label="Previous sentence">${ICONS.skipSentBack}</button>
+                        <button class="btn btn-secondary btn-icon" id="skip-word-back" title="Prev Word" aria-label="Previous word">${ICONS.skipWordBack}</button>
                         
-                        <button class="btn btn-secondary btn-icon" id="seek-back" title="Rewind 10s">${ICONS.seekBack}</button>
-                        <button class="btn btn-icon btn-lg" id="play-pause" title="Play/Pause">${ICONS.play}</button>
-                        <button class="btn btn-secondary btn-icon" id="seek-fwd" title="Forward 10s">${ICONS.seekFwd}</button>
+                        <button class="btn btn-secondary btn-icon" id="seek-back" title="Rewind 10s" aria-label="Rewind 10 seconds">${ICONS.seekBack}</button>
+                        <button class="btn btn-icon btn-lg" id="play-pause" title="Play/Pause" aria-label="Play or pause">${ICONS.play}</button>
+                        <button class="btn btn-secondary btn-icon" id="seek-fwd" title="Forward 10s" aria-label="Forward 10 seconds">${ICONS.seekFwd}</button>
 
-                        <button class="btn btn-secondary btn-icon" id="skip-word-fwd" title="Next Word">${ICONS.skipWordFwd}</button>
-                        <button class="btn btn-secondary btn-icon" id="skip-sent-fwd" title="Next Sentence">${ICONS.skipSentFwd}</button>
-                        <button class="btn btn-secondary btn-icon" id="skip-para-fwd" title="Next Paragraph">${ICONS.skipParaFwd}</button>
+                        <button class="btn btn-secondary btn-icon" id="skip-word-fwd" title="Next Word" aria-label="Next word">${ICONS.skipWordFwd}</button>
+                        <button class="btn btn-secondary btn-icon" id="skip-sent-fwd" title="Next Sentence" aria-label="Next sentence">${ICONS.skipSentFwd}</button>
+                        <button class="btn btn-secondary btn-icon" id="skip-para-fwd" title="Next Paragraph" aria-label="Next paragraph">${ICONS.skipParaFwd}</button>
                         
-                        <button class="btn btn-secondary btn-icon" id="toggle-speed" title="Tune Speed/Audio">${ICONS.tune}</button>
+                        <button class="btn btn-secondary btn-icon" id="toggle-speed" title="Tune Speed/Audio" aria-label="Tune speed and audio">${ICONS.tune}</button>
                     </div>
 
                     <div class="time-display" id="time-display">0:00 / 0:00</div>
@@ -194,6 +202,16 @@ export class Controls {
         this.container.querySelector('#highlight-buffer')?.addEventListener('click', () => this.onHighlight());
         this.container.querySelector('#note-sentence')?.addEventListener('click', () => this.onNote());
         this.container.querySelector('#copy-sentence')?.addEventListener('click', () => this.onCopySentence());
+
+        this.container.querySelectorAll('#view-switch-group button').forEach(button => {
+            button.addEventListener('click', () => {
+                const target = button as HTMLButtonElement;
+                const mode = target.dataset.view as 'RSVP' | 'FOCUS' | 'PARAGRAPH' | undefined;
+                if (!mode) return;
+                this.setActiveView(mode);
+                this.onViewChange(mode);
+            });
+        });
 
         this.speedInput.addEventListener('input', (e) => {
             const val = parseFloat((e.target as HTMLInputElement).value);
@@ -284,6 +302,14 @@ export class Controls {
     updateSpeed(rate: number, wpm: number) {
         this.setPlaybackRate(rate);
         this.setWpm(wpm);
+    }
+
+    setActiveView(mode: 'RSVP' | 'FOCUS' | 'PARAGRAPH') {
+        this.container.querySelectorAll('#view-switch-group button').forEach(button => {
+            const target = button as HTMLButtonElement;
+            const view = target.dataset.view;
+            target.classList.toggle('active', view === mode);
+        });
     }
 
     setWpmRange(min: number, max: number): number {

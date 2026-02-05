@@ -514,6 +514,18 @@ body {
     align-items: center;
 }
 
+.view-switch-group {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+.view-switch-group .btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+
 .playback-buttons {
     display: flex;
     gap: var(--spacing-sm);
@@ -1219,6 +1231,7 @@ input[type="range"]:active::-moz-range-thumb {
     background: var(--color-primary);
     transition: width 0.15s ease;
 }
+
 
 .structure-percent {
     font-size: 0.8rem;

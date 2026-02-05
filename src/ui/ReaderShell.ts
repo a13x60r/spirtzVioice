@@ -34,7 +34,7 @@ const HEADER_ICONS = {
     install: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M5 20h14v-2H5v2z"/><path d="M12 2v12l4-4 1.4 1.4L12 17.8 6.6 11.4 8 10l4 4V2h0z"/></svg>`
 };
 
-const DEFAULT_WPM_RANGE = { min: 200, max: 1300 };
+const DEFAULT_WPM_RANGE = { min: 200, max: 1400 };
 const FOCUS_WPM_RANGE = { min: 120, max: 450 };
 
 export class ReaderShell {
@@ -213,7 +213,6 @@ export class ReaderShell {
                     <div>
                         <button class="btn btn-secondary btn-icon" id="btn-library" title="Library" aria-label="Library">${HEADER_ICONS.library}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-new-text" title="New Document" aria-label="New Document">${HEADER_ICONS.newDoc}</button>
-                        <button class="btn btn-secondary btn-icon" id="btn-toggle-view" title="Switch View" aria-label="Switch View">${HEADER_ICONS.switchView}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-install-app" title="Install App" aria-label="Install App" style="display: none;">${HEADER_ICONS.install}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-settings" title="Settings" aria-label="Settings">${HEADER_ICONS.settings}</button>
                     </div>
@@ -257,11 +256,6 @@ export class ReaderShell {
             await this.appInstaller?.promptInstall();
         });
 
-        // View toggle
-        this.container.querySelector('#btn-toggle-view')?.addEventListener('click', () => {
-            const newMode = this.getNextMode(this.settings.mode);
-            this.switchView(newMode);
-        });
     }
 
     private async loadInitialState() {
@@ -375,6 +369,7 @@ export class ReaderShell {
             onHighlight: () => this.handleHighlightBuffer(),
             onNote: () => this.handleAddNote(),
             onCopySentence: () => this.handleCopySentence(),
+            onViewChange: (mode) => this.switchView(mode),
             onSpeedChange: (rate) => this.handleRateChange(rate),
             onWpmChange: (wpm) => this.handleWpmChange(wpm),
             onVolumeChange: (vol) => this.audioEngine.setVolume(vol)
@@ -388,6 +383,8 @@ export class ReaderShell {
         this.applyTheme(initialTheme);
         this.applyTypography();
         this.applyOrpSettings();
+
+        this.controls.setActiveView(this.settings.mode);
 
         const progressMount = this.container.querySelector('#structure-progress-mount') as HTMLElement;
         this.progress = new Progress(progressMount);
@@ -640,8 +637,6 @@ export class ReaderShell {
         this.textInput.mount();
         this.progress.setVisible(false);
 
-        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
-        if (toggleBtn) toggleBtn.style.display = 'none';
     }
 
     private async showDocumentList() {
@@ -652,8 +647,6 @@ export class ReaderShell {
         await this.documentList.mount();
         this.progress.setVisible(false);
 
-        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
-        if (toggleBtn) toggleBtn.style.display = 'none';
     }
 
     private async resumeDocument(docId: string) {
@@ -777,6 +770,8 @@ export class ReaderShell {
 
         this.currentView.mount(this.viewContainer);
 
+        this.controls.setActiveView(mode);
+
         // Force update to render content
         const controller = this.audioEngine.getController();
         // If we have tokens, make sure we render them
@@ -799,13 +794,6 @@ export class ReaderShell {
         this.progress.updatePosition(initialOffset);
         this.progress.setVisible(true);
 
-        const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
-        if (toggleBtn) {
-            toggleBtn.style.display = 'inline-block';
-            const nextMode = this.getNextMode(mode);
-            toggleBtn.title = `Switch to ${nextMode}`;
-            toggleBtn.setAttribute('aria-label', `Switch to ${nextMode}`);
-        }
     }
 
     private startUiLoop() {
@@ -1513,9 +1501,4 @@ export class ReaderShell {
         return result;
     }
 
-    private getNextMode(current: 'RSVP' | 'PARAGRAPH' | 'FOCUS'): 'RSVP' | 'PARAGRAPH' | 'FOCUS' {
-        if (current === 'RSVP') return 'FOCUS';
-        if (current === 'FOCUS') return 'PARAGRAPH';
-        return 'RSVP';
-    }
 }

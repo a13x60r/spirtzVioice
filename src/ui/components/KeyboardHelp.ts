@@ -1,4 +1,4 @@
-const CLOSE_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.71 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29 10.59 10.6l6.3-6.3z"/></svg>`;
+import { ICONS } from '../icons';
 
 export class KeyboardHelp {
     private container: HTMLElement;
@@ -17,7 +17,7 @@ export class KeyboardHelp {
                 <div class="help-modal">
                     <header class="help-header">
                         <h2>Keyboard Shortcuts</h2>
-                        <button class="btn btn-secondary btn-icon" id="close-help" title="Close" aria-label="Close">${CLOSE_ICON}</button>
+                        <button class="btn btn-secondary btn-icon" id="close-help" title="Close" aria-label="Close">${ICONS.close}</button>
                     </header>
                     <div class="help-content">
                         <div class="help-row"><span class="help-key">?</span><span class="help-desc">Toggle this help</span></div>

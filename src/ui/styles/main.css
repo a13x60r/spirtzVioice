@@ -30,6 +30,9 @@
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
 
+    /* Icons */
+    --icon-size: 20px;
+
     /* RSVP Specifics */
     --rsvp-font-size: 3.5rem;
     --rsvp-font-size-mobile: 2.5rem;
@@ -87,6 +90,13 @@ body {
     line-height: 1.5;
     height: 100vh;
     overflow: hidden;
+}
+
+.ui-icon {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    display: block;
+    fill: currentColor;
 }
 
 #app {
@@ -703,29 +713,58 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 100;
+    padding: var(--spacing-md);
 }
 
 .settings-modal {
     background: var(--color-bg);
-    padding: var(--spacing-lg);
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    max-height: 90vh;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: 1px solid var(--color-border);
+    background: linear-gradient(to bottom, var(--color-bg), var(--color-bg-secondary));
+}
+
+.settings-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.settings-header .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.settings-header .btn-icon:hover {
+    background: var(--color-bg-secondary);
+    transform: scale(1.05);
 }
 
 .settings-content {
     overflow-y: auto;
-    padding-right: var(--spacing-xs);
-    /* Improve scrollbar appearance */
+    padding: var(--spacing-xl);
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
 }
@@ -734,33 +773,84 @@ body {
     width: 6px;
 }
 
+.settings-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 .settings-content::-webkit-scrollbar-thumb {
     background-color: var(--color-border);
     border-radius: 3px;
 }
 
-.settings-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-lg);
+.settings-group {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-xl);
+    border-bottom: 1px solid var(--color-border);
 }
 
-.settings-group {
-    margin-bottom: var(--spacing-lg);
+.settings-group:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
 .settings-group h3 {
-    font-size: var(--font-size-base);
-    margin-bottom: var(--spacing-sm);
-    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
 .settings-footer {
-    margin-top: var(--spacing-md);
-    font-size: 0.8rem;
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: 0.75rem;
     color: var(--color-text-secondary);
     text-align: right;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+}
+
+/* Settings Modal - Mobile Responsive */
+@media (max-width: 600px) {
+    .settings-modal-overlay {
+        padding: var(--spacing-sm);
+        align-items: flex-end;
+    }
+
+    .settings-modal {
+        max-height: 90vh;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .settings-header {
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .settings-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .settings-content {
+        padding: var(--spacing-lg);
+    }
+
+    .settings-group {
+        margin-bottom: var(--spacing-lg);
+        padding-bottom: var(--spacing-lg);
+    }
+
+    .settings-group h3 {
+        font-size: 0.8rem;
+    }
+
+    .settings-footer {
+        padding: var(--spacing-sm) var(--spacing-lg);
+    }
 }
 
 .info-text {

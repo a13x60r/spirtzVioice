@@ -6,6 +6,7 @@ An offline-first reader app with exact text-to-speech synchronization supporting
 
 - ✨ **Exact Text↔Voice Sync**: Audio clock drives precise token highlighting
 - 📖 **Three Display Modes**: RSVP (single token), Focus (chunked phrases), and Paragraph (full text) with instant switching
+- 🧭 **Focus Orientation**: Ghost context lines plus panic exit to paging for precise location jumps
 - 🎯 **Two Synthesis Strategies**: TOKEN (per-word) and CHUNK (multi-word) with runtime switching
 - 📱 **Offline-First PWA**: Works completely offline after initial install
 - 🎨 **Modern UI**: Responsive design with dark mode support

@@ -50,7 +50,12 @@ export interface Settings {
     gpuPreference?: GpuPreference;  // GPU selection hint: 'high-performance' (discrete) or 'low-power' (integrated)
     playbackRate?: number; // 0.5x to 2.0x (default 1.0)
     textSize?: number; // Scale factor (e.g., 1.0, 1.2)
-    darkMode?: boolean; // True for dark, false for light
+    darkMode?: boolean; // Deprecated, use theme
+    theme?: 'default' | 'calm' | 'dark';
+    readerFontFamily?: string;
+    readerLineHeight?: number;
+    orpEnabled?: boolean;
+    orpIntensity?: number; // 0..1
     language: string; // Default 'en-US'
     skipSettings?: SkipSettings;
 }

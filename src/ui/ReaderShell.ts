@@ -278,6 +278,12 @@ export class ReaderShell {
                 mode: 'RSVP',
                 pauseRules: { punctPauseMs: 400, paragraphPauseMs: 600 },
                 tokenizerVersion: '1',
+                textSize: 1.0,
+                theme: 'default',
+                readerFontFamily: 'literata',
+                readerLineHeight: 1.6,
+                orpEnabled: true,
+                orpIntensity: 1.0,
                 language: 'en-US',
                 skipSettings: {
                     seekSec: 10,
@@ -290,10 +296,11 @@ export class ReaderShell {
             };
         }
 
-        // Apply display settings
-        // Apply display settings
-        if (this.settings.darkMode) document.documentElement.classList.add('dark-mode');
-        if (this.settings.textSize) document.documentElement.style.setProperty('--font-size-base', `${16 * this.settings.textSize}px`);
+        const theme = this.settings.theme || (this.settings.darkMode ? 'dark' : 'default');
+        this.settings.theme = theme;
+        this.applyTheme(theme);
+        this.applyTypography();
+        this.applyOrpSettings();
     }
 
     private async setupComponents() {
@@ -375,6 +382,12 @@ export class ReaderShell {
 
         const initialRange = this.settings.mode === 'FOCUS' ? FOCUS_WPM_RANGE : DEFAULT_WPM_RANGE;
         this.controls.setWpmRange(initialRange.min, initialRange.max);
+
+        const initialTheme = this.settings.theme || (this.settings.darkMode ? 'dark' : 'default');
+        this.settings.theme = initialTheme;
+        this.applyTheme(initialTheme);
+        this.applyTypography();
+        this.applyOrpSettings();
 
         const progressMount = this.container.querySelector('#structure-progress-mount') as HTMLElement;
         this.progress = new Progress(progressMount);
@@ -478,14 +491,37 @@ export class ReaderShell {
                     defaultSettings.textSize = scale;
                     this.settings.textSize = scale;
                     settingsStore.saveSettings({ textSize: scale });
-                    document.documentElement.style.setProperty('--font-size-base', `${16 * scale}px`);
+                    this.applyTypography();
                 },
-                onDarkModeChange: async (enabled) => {
-                    defaultSettings.darkMode = enabled;
-                    this.settings.darkMode = enabled;
-                    settingsStore.saveSettings({ darkMode: enabled });
-                    if (enabled) document.documentElement.classList.add('dark-mode');
-                    else document.documentElement.classList.remove('dark-mode');
+                onThemeChange: async (theme) => {
+                    defaultSettings.theme = theme;
+                    this.settings.theme = theme;
+                    settingsStore.saveSettings({ theme });
+                    this.applyTheme(theme);
+                },
+                onFontFamilyChange: async (fontFamily) => {
+                    defaultSettings.readerFontFamily = fontFamily;
+                    this.settings.readerFontFamily = fontFamily;
+                    settingsStore.saveSettings({ readerFontFamily: fontFamily });
+                    this.applyTypography();
+                },
+                onLineHeightChange: async (lineHeight) => {
+                    defaultSettings.readerLineHeight = lineHeight;
+                    this.settings.readerLineHeight = lineHeight;
+                    settingsStore.saveSettings({ readerLineHeight: lineHeight });
+                    this.applyTypography();
+                },
+                onOrpToggle: async (enabled) => {
+                    defaultSettings.orpEnabled = enabled;
+                    this.settings.orpEnabled = enabled;
+                    settingsStore.saveSettings({ orpEnabled: enabled });
+                    this.applyOrpSettings();
+                },
+                onOrpIntensityChange: async (intensity) => {
+                    defaultSettings.orpIntensity = intensity;
+                    this.settings.orpIntensity = intensity;
+                    settingsStore.saveSettings({ orpIntensity: intensity });
+                    this.applyOrpSettings();
                 },
                 onSkipSettingsChange: async (skipSettings) => {
                     this.settings.skipSettings = skipSettings;
@@ -747,7 +783,7 @@ export class ReaderShell {
         if (this.currentView instanceof FocusView) {
             const tokenIndex = controller.getCurrentTokenIndex();
             const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
-            this.currentView.update(chunkIndex, this.currentChunks);
+            this.currentView.update(chunkIndex, this.currentChunks, tokenIndex, this.currentTokens);
         } else if (this.currentTokens.length > 0 || (this.currentView instanceof ParagraphView)) {
             this.currentView.update(controller.getCurrentTokenIndex(), this.currentTokens);
         }
@@ -882,7 +918,7 @@ export class ReaderShell {
         controller.onTokenChanged = (index) => {
             if (this.currentView instanceof FocusView) {
                 const chunkIndex = this.tokenChunkMap[index] ?? 0;
-                this.currentView.update(chunkIndex, this.currentChunks);
+                this.currentView.update(chunkIndex, this.currentChunks, index, this.currentTokens);
             } else if (this.currentView) {
                 this.currentView.update(index, this.currentTokens);
             }
@@ -1197,6 +1233,39 @@ export class ReaderShell {
 
     private getActiveWpmRange() {
         return this.settings.mode === 'FOCUS' ? FOCUS_WPM_RANGE : DEFAULT_WPM_RANGE;
+    }
+
+    private applyTheme(theme: 'default' | 'calm' | 'dark') {
+        const root = document.documentElement;
+        root.classList.remove('theme-default', 'theme-calm', 'theme-dark', 'dark-mode');
+        root.classList.add(`theme-${theme}`);
+    }
+
+    private applyTypography() {
+        const root = document.documentElement;
+        const scale = this.settings.textSize || 1.0;
+        const lineHeight = this.settings.readerLineHeight || 1.6;
+        const fontFamily = this.settings.readerFontFamily || 'literata';
+        const fontMap: Record<string, string> = {
+            literata: '"Literata", "Times New Roman", serif',
+            'source-serif': '"Source Serif 4", "Georgia", serif',
+            atkinson: '"Atkinson Hyperlegible", "Arial", sans-serif'
+        };
+        const family = fontMap[fontFamily] || fontMap.literata;
+
+        root.style.setProperty('--font-size-base', `${16 * scale}px`);
+        root.style.setProperty('--reader-font-size', `${16 * scale}px`);
+        root.style.setProperty('--reader-font-scale', scale.toString());
+        root.style.setProperty('--reader-font-family', family);
+        root.style.setProperty('--reader-line-height', lineHeight.toString());
+    }
+
+    private applyOrpSettings() {
+        const root = document.documentElement;
+        const enabled = this.settings.orpEnabled !== false;
+        const intensity = typeof this.settings.orpIntensity === 'number' ? this.settings.orpIntensity : 1.0;
+        root.style.setProperty('--orp-opacity', Math.max(0, Math.min(1, intensity)).toString());
+        root.classList.toggle('orp-disabled', !enabled);
     }
 
     private handleSpeedShortcut(direction: 1 | -1) {

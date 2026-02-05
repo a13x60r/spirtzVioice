@@ -6,7 +6,11 @@ export interface SettingsCallbacks {
     onSpeedChange: (wpm: number) => void;
     onStrategyChange: (strategy: 'TOKEN' | 'CHUNK') => void;
     onTextSizeChange: (scale: number) => void;
-    onDarkModeChange: (enabled: boolean) => void;
+    onThemeChange: (theme: 'default' | 'calm' | 'dark') => void;
+    onFontFamilyChange: (fontFamily: string) => void;
+    onLineHeightChange: (lineHeight: number) => void;
+    onOrpToggle: (enabled: boolean) => void;
+    onOrpIntensityChange: (intensity: number) => void;
     onSkipSettingsChange: (settings: { seekSec: number, wordCount: number, sentenceCount: number, paragraphCount: number, mediaSkipBackUnit: 'word' | 'sentence' | 'paragraph' | 'seek', mediaSkipFwdUnit: 'word' | 'sentence' | 'paragraph' | 'seek' }) => void;
 }
 
@@ -22,7 +26,11 @@ export class SettingsPanel {
         strategy: string,
         language: string,
         textSize?: number,
-        darkMode?: boolean,
+        theme?: 'default' | 'calm' | 'dark',
+        readerFontFamily?: string,
+        readerLineHeight?: number,
+        orpEnabled?: boolean,
+        orpIntensity?: number,
         skipSettings?: {
             seekSec: number;
             wordCount: number;
@@ -43,7 +51,11 @@ export class SettingsPanel {
             strategy: string,
             language: string,
             textSize?: number,
-            darkMode?: boolean,
+            theme?: 'default' | 'calm' | 'dark',
+            readerFontFamily?: string,
+            readerLineHeight?: number,
+            orpEnabled?: boolean,
+            orpIntensity?: number,
             skipSettings?: {
                 seekSec: number;
                 wordCount: number;
@@ -87,6 +99,11 @@ export class SettingsPanel {
         const voiceOptions = filteredVoices.map(v =>
             `<option value="${v.id}" ${v.id === this.currentSettings.voiceId ? 'selected' : ''}>${v.name}${v.isInstalled ? '' : ' (Download)'}</option>`
         ).join('');
+
+        const themeValue = this.currentSettings.theme || 'default';
+        const fontValue = this.currentSettings.readerFontFamily || 'literata';
+        const lineHeightValue = this.currentSettings.readerLineHeight || 1.6;
+        const orpIntensityValue = this.currentSettings.orpIntensity ?? 1;
 
         const selectedVoice = this.voices.find(v => v.id === this.currentSettings.voiceId);
         const needsDownload = selectedVoice && !selectedVoice.isInstalled;
@@ -153,16 +170,46 @@ export class SettingsPanel {
 
                         <section class="settings-group">
                             <h3>Display</h3>
-                            <div style="margin-bottom: 1rem;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                    <input type="checkbox" id="dark-mode-toggle" ${this.currentSettings.darkMode ? 'checked' : ''}>
-                                    Dark Mode
-                                </label>
+                            <div class="range-control" style="margin-bottom: 0.75rem;">
+                                <label for="theme-select" style="font-size: 0.9rem; color: var(--color-text-secondary);">Theme</label>
+                                <select id="theme-select" class="input">
+                                    <option value="default" ${themeValue === 'default' ? 'selected' : ''}>Default</option>
+                                    <option value="calm" ${themeValue === 'calm' ? 'selected' : ''}>Calm</option>
+                                    <option value="dark" ${themeValue === 'dark' ? 'selected' : ''}>Dark</option>
+                                </select>
+                            </div>
+                            <div class="range-control" style="margin-bottom: 0.75rem;">
+                                <label for="font-family-select" style="font-size: 0.9rem; color: var(--color-text-secondary);">Font</label>
+                                <select id="font-family-select" class="input">
+                                    <option value="literata" ${fontValue === 'literata' ? 'selected' : ''}>Literata</option>
+                                    <option value="source-serif" ${fontValue === 'source-serif' ? 'selected' : ''}>Source Serif 4</option>
+                                    <option value="atkinson" ${fontValue === 'atkinson' ? 'selected' : ''}>Atkinson Hyperlegible</option>
+                                </select>
+                            </div>
+                            <div class="range-control" style="margin-bottom: 0.75rem;">
+                                <label for="line-height-range" style="font-size: 0.9rem; color: var(--color-text-secondary);">Line Height</label>
+                                <input type="range" min="1.2" max="2.2" step="0.05" id="line-height-range" value="${lineHeightValue}">
+                                <span id="line-height-value">${lineHeightValue.toFixed(2)}</span>
                             </div>
                             <div class="range-control">
                                 <label for="text-size-range" style="font-size: 0.9rem; color: var(--color-text-secondary);">Text Size</label>
                                 <input type="range" min="0.5" max="2.0" step="0.1" id="text-size-range" value="${this.currentSettings.textSize || 1.0}">
                                 <span id="text-size-value">${this.currentSettings.textSize || 1.0}x</span>
+                            </div>
+                        </section>
+
+                        <section class="settings-group">
+                            <h3>ORP Highlight</h3>
+                            <div style="margin-bottom: 0.75rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="orp-toggle" ${this.currentSettings.orpEnabled !== false ? 'checked' : ''}>
+                                    Enable ORP
+                                </label>
+                            </div>
+                            <div class="range-control">
+                                <label for="orp-intensity" style="font-size: 0.9rem; color: var(--color-text-secondary);">Intensity</label>
+                                <input type="range" min="0" max="1" step="0.05" id="orp-intensity" value="${orpIntensityValue}">
+                                <span id="orp-intensity-value">${orpIntensityValue.toFixed(2)}</span>
                             </div>
                         </section>
 
@@ -273,10 +320,42 @@ export class SettingsPanel {
             });
         });
 
-        // Dark Mode
-        const darkModeToggle = this.container.querySelector('#dark-mode-toggle') as HTMLInputElement;
-        darkModeToggle?.addEventListener('change', () => {
-            this.callbacks.onDarkModeChange(darkModeToggle.checked);
+        const themeSelect = this.container.querySelector('#theme-select') as HTMLSelectElement;
+        themeSelect?.addEventListener('change', () => {
+            const val = themeSelect.value as 'default' | 'calm' | 'dark';
+            this.currentSettings.theme = val;
+            this.callbacks.onThemeChange(val);
+        });
+
+        const fontFamilySelect = this.container.querySelector('#font-family-select') as HTMLSelectElement;
+        fontFamilySelect?.addEventListener('change', () => {
+            const val = fontFamilySelect.value;
+            this.currentSettings.readerFontFamily = val;
+            this.callbacks.onFontFamilyChange(val);
+        });
+
+        const lineHeightRange = this.container.querySelector('#line-height-range') as HTMLInputElement;
+        const lineHeightValue = this.container.querySelector('#line-height-value');
+        lineHeightRange?.addEventListener('input', () => {
+            const val = parseFloat(lineHeightRange.value);
+            this.currentSettings.readerLineHeight = val;
+            if (lineHeightValue) lineHeightValue.textContent = val.toFixed(2);
+            this.callbacks.onLineHeightChange(val);
+        });
+
+        const orpToggle = this.container.querySelector('#orp-toggle') as HTMLInputElement;
+        orpToggle?.addEventListener('change', () => {
+            this.currentSettings.orpEnabled = orpToggle.checked;
+            this.callbacks.onOrpToggle(orpToggle.checked);
+        });
+
+        const orpIntensity = this.container.querySelector('#orp-intensity') as HTMLInputElement;
+        const orpIntensityValue = this.container.querySelector('#orp-intensity-value');
+        orpIntensity?.addEventListener('input', () => {
+            const val = parseFloat(orpIntensity.value);
+            this.currentSettings.orpIntensity = val;
+            if (orpIntensityValue) orpIntensityValue.textContent = val.toFixed(2);
+            this.callbacks.onOrpIntensityChange(val);
         });
 
         // Text Size

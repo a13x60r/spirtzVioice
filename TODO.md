@@ -84,9 +84,9 @@
 
 ## P6 - Accessibility & comfort
 
-- [ ] Typography controls
-  - [ ] font size, line height, font family
-- [ ] ORP highlight toggle + intensity
-- [ ] Theme
-  - [ ] calm low-contrast theme option
-  - [ ] reduce glare, keep contrast AA+
+- [x] Typography controls
+  - [x] font size, line height, font family
+- [x] ORP highlight toggle + intensity
+- [x] Theme
+  - [x] calm low-contrast theme option
+  - [x] reduce glare, keep contrast AA+

@@ -17,7 +17,12 @@ const DEFAULT_SETTINGS: Settings = {
     tokenizerVersion: '1',
     playbackRate: 1.0,
     textSize: 1.0,
-    darkMode: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
+    theme: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default',
+    readerFontFamily: 'literata',
+    readerLineHeight: 1.6,
+    orpEnabled: true,
+    orpIntensity: 1.0,
+    darkMode: undefined,
     language: 'en-US',
     skipSettings: {
         seekSec: 10,
@@ -45,7 +50,11 @@ export class SettingsStore {
         }
 
         // Merge with defaults to handle new fields in future
-        return { ...DEFAULT_SETTINGS, ...saved };
+        const merged = { ...DEFAULT_SETTINGS, ...saved };
+        if (!merged.theme && merged.darkMode) {
+            merged.theme = 'dark';
+        }
+        return merged;
     }
 
     /**

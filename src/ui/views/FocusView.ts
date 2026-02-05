@@ -1,5 +1,7 @@
 import type { ReaderChunk } from '../../lib/readerModel';
 import type { ReaderView } from './ViewInterface';
+import type { Token } from '@spec/types';
+import { getOrpLettersOnly, splitForHighlight } from '../../utils/orp';
 
 export class FocusView implements ReaderView {
     private container: HTMLElement | null = null;
@@ -7,6 +9,7 @@ export class FocusView implements ReaderView {
     private chunkEl: HTMLElement | null = null;
     private nextChunkEl: HTMLElement | null = null;
     private currentChunkIndex: number = -1;
+    private currentTokenIndex: number = -1;
     private focusContainer: HTMLElement | null = null;
     private pagingBtn: HTMLButtonElement | null = null;
     private longPressTimer: number | null = null;
@@ -98,19 +101,63 @@ export class FocusView implements ReaderView {
         }
     }
 
-    update(chunkIndex: number, chunks: ReaderChunk[]): void {
+    update(chunkIndex: number, chunks: ReaderChunk[], tokenIndex?: number, tokens?: Token[]): void {
         if (!this.chunkEl || !this.prevChunkEl || !this.nextChunkEl || !chunks || chunks.length === 0) return;
-        if (this.currentChunkIndex === chunkIndex) return;
+        if (this.currentChunkIndex === chunkIndex && this.currentTokenIndex === (tokenIndex ?? -1)) return;
         this.currentChunkIndex = chunkIndex;
+        this.currentTokenIndex = tokenIndex ?? -1;
 
         const chunk = chunks[chunkIndex];
         const prevChunk = chunkIndex > 0 ? chunks[chunkIndex - 1] : null;
         const nextChunk = chunkIndex < chunks.length - 1 ? chunks[chunkIndex + 1] : null;
-        if (chunk) {
-            this.prevChunkEl.textContent = prevChunk?.text ?? '';
-            this.chunkEl.textContent = chunk.text;
-            this.nextChunkEl.textContent = nextChunk?.text ?? '';
+        if (!chunk) return;
+
+        this.prevChunkEl.textContent = prevChunk?.text ?? '';
+        this.nextChunkEl.textContent = nextChunk?.text ?? '';
+
+        const token = tokens && tokenIndex !== undefined ? tokens[tokenIndex] : undefined;
+        if (token && token.startOffset >= chunk.startOffset && token.endOffset <= chunk.endOffset) {
+            const relStart = Math.max(0, token.startOffset - chunk.startOffset);
+            const relEnd = Math.max(relStart, token.endOffset - chunk.startOffset);
+            const before = chunk.text.slice(0, relStart);
+            const word = chunk.text.slice(relStart, relEnd);
+            const after = chunk.text.slice(relEnd);
+
+            const orpResult = getOrpLettersOnly(word);
+            const [prefix, mid, suffix] = splitForHighlight(word, orpResult.orpIndex);
+            this.chunkEl.innerHTML = '';
+            const beforeEl = document.createElement('span');
+            beforeEl.className = 'focus-prefix';
+            beforeEl.textContent = before;
+            const wordPrefix = document.createElement('span');
+            wordPrefix.className = 'focus-prefix';
+            wordPrefix.textContent = prefix;
+            const orpEl = document.createElement('span');
+            orpEl.className = 'focus-orp';
+            orpEl.textContent = mid;
+            const wordSuffix = document.createElement('span');
+            wordSuffix.className = 'focus-suffix';
+            wordSuffix.textContent = suffix;
+            const afterEl = document.createElement('span');
+            afterEl.className = 'focus-suffix';
+            afterEl.textContent = after;
+            this.chunkEl.append(beforeEl, wordPrefix, orpEl, wordSuffix, afterEl);
+            return;
         }
+
+        const orpResult = getOrpLettersOnly(chunk.text);
+        const [prefix, mid, suffix] = splitForHighlight(chunk.text, orpResult.orpIndex);
+        this.chunkEl.innerHTML = '';
+        const prefixEl = document.createElement('span');
+        prefixEl.className = 'focus-prefix';
+        prefixEl.textContent = prefix;
+        const orpEl = document.createElement('span');
+        orpEl.className = 'focus-orp';
+        orpEl.textContent = mid;
+        const suffixEl = document.createElement('span');
+        suffixEl.className = 'focus-suffix';
+        suffixEl.textContent = suffix;
+        this.chunkEl.append(prefixEl, orpEl, suffixEl);
     }
 
     setTheme(_theme: string): void {

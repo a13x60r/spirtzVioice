@@ -67,14 +67,9 @@ export class RSVPView implements ReaderView {
 
             // Visual cue for punctuation? (kept from previous code, though color is now managed by CSS classes mostly)
             if (token.type === 'punct') {
-                this.wordContainer.style.color = 'var(--color-text-secondary)';
-                // Ensure ORP doesn't stay red for punctuation-only tokens if desired, 
-                // but usually red pivot is fine. 
-                // If we want to dim the RED color too:
-                this.orpEl.style.color = 'var(--color-text-secondary)';
+                this.wordContainer.classList.add('rsvp-punct');
             } else {
-                this.wordContainer.style.color = 'var(--color-text)';
-                this.orpEl.style.color = 'var(--color-error)';
+                this.wordContainer.classList.remove('rsvp-punct');
             }
         }
     }

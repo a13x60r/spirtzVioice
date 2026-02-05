@@ -35,9 +35,9 @@
   - [x] presets: 180 / 240 / 300 / 360 (+ "Custom")
   - [x] show WPM value next to control
   - [x] hard cap slider range (e.g., 120-450) for Focus mode
-- [ ] Rewind granularity
-  - [ ] controls: back 1 chunk, back 1 sentence, back 10 seconds (fallback)
-  - [ ] src/lib/navigation.ts: prevChunk(), prevSentence(), rewindByMs(ms)
+- [x] Rewind granularity
+  - [x] controls: back 1 chunk, back 1 sentence, back 10 seconds (fallback)
+  - [x] src/lib/navigation.ts: prevChunk(), prevSentence(), rewindByMs(ms)
 - [ ] Keyboard shortcuts + help overlay
   - [ ] ? opens overlay
   - [ ] Space: play/pause

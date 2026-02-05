@@ -18,6 +18,7 @@ import { TextPipeline } from '@domain/TextPipeline';
 import { AppInstaller } from './AppInstaller';
 import { FocusView } from './views/FocusView';
 import { buildReaderChunks, mapTokensToChunks, type ReaderChunk } from '../lib/readerModel';
+import { prevChunk, prevSentence, rewindByMs } from '../lib/navigation';
 import { Progress } from './components/Progress';
 
 const HEADER_ICONS = {
@@ -311,11 +312,28 @@ export class ReaderShell {
 
                 const step = direction > 0 ? 1 : -1;
 
+                if (type === 'chunk') {
+                    if (!this.currentChunks.length) return;
+                    const tokenIndex = controller.getCurrentTokenIndex();
+                    const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+                    const targetChunkIndex = prevChunk(chunkIndex, this.currentChunks);
+                    const targetChunk = this.currentChunks[targetChunkIndex];
+                    if (!targetChunk) return;
+                    const targetIndex = this.findTokenIndexForOffset(targetChunk.startOffset, tokenIndex);
+                    controller.seekByToken(targetIndex);
+                    return;
+                }
+
                 for (let i = 0; i < count; i++) {
                     if (type === 'word') {
                         controller.skipWord(step, tokens);
                     } else if (type === 'sentence') {
-                        controller.skipSentence(step, tokens);
+                        if (step === -1) {
+                            const targetIndex = prevSentence(controller.getCurrentTokenIndex(), tokens);
+                            controller.seekByToken(targetIndex);
+                        } else {
+                            controller.skipSentence(step, tokens);
+                        }
                     } else if (type === 'paragraph') {
                         controller.skipParagraph(step, tokens);
                     }
@@ -807,7 +825,11 @@ export class ReaderShell {
 
                 if (unit === 'seek') {
                     const val = (this.settings.skipSettings?.seekSec || 10);
-                    controller.seek(direction * val);
+                    const scheduler = controller.getScheduler();
+                    const current = scheduler.getCurrentTime();
+                    const duration = controller.getDuration();
+                    const target = rewindByMs(current, val * 1000 * (direction === -1 ? 1 : -1), duration);
+                    controller.seek(target - current);
                     return;
                 }
 
@@ -817,7 +839,14 @@ export class ReaderShell {
 
                 for (let i = 0; i < count; i++) {
                     if (unit === 'word') controller.skipWord(direction, this.currentTokens);
-                    else if (unit === 'sentence') controller.skipSentence(direction, this.currentTokens);
+                    else if (unit === 'sentence') {
+                        if (direction === -1) {
+                            const targetIndex = prevSentence(controller.getCurrentTokenIndex(), this.currentTokens);
+                            controller.seekByToken(targetIndex);
+                        } else {
+                            controller.skipSentence(direction, this.currentTokens);
+                        }
+                    }
                     else controller.skipParagraph(direction, this.currentTokens);
                 }
             };
@@ -911,7 +940,10 @@ export class ReaderShell {
                                     this.settings.skipSettings?.paragraphCount) || 1;
                             for (let i = 0; i < count; i++) {
                                 if (unit === 'word') controller.skipWord(-1, this.currentTokens);
-                                else if (unit === 'sentence') controller.skipSentence(-1, this.currentTokens);
+                                else if (unit === 'sentence') {
+                                    const targetIndex = prevSentence(controller.getCurrentTokenIndex(), this.currentTokens);
+                                    controller.seekByToken(targetIndex);
+                                }
                                 else controller.skipParagraph(-1, this.currentTokens);
                             }
                         }

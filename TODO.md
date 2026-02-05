@@ -22,18 +22,19 @@
 - [x] Ghost context lines
   - [x] FocusView: render previous chunk (faint), current chunk (primary), next chunk (faint)
   - [x] keep anchor fixed; no motion; only opacity transition <=100ms
-- [ ] Structural progress
-  - [ ] src/components/Progress.tsx
-  - [ ] show Chapter -> Section label
-  - [ ] progress within chapter (0-100%)
-  - [ ] derive chapter/section from document model metadata
+  - [x] tests: FocusView ghost lines
+- [x] Structural progress
+  - [x] src/components/Progress.tsx
+  - [x] show Chapter -> Section label
+  - [x] progress within chapter (0-100%)
+  - [x] derive chapter/section from document model metadata
 
 ## P2 - Controls that work (mobile + desktop)
 
-- [ ] Speed controls: presets + numeric
-  - [ ] presets: 180 / 240 / 300 / 360 (+ "Custom")
-  - [ ] show WPM value next to control
-  - [ ] hard cap slider range (e.g., 120-450) for Focus mode
+- [x] Speed controls: presets + numeric
+  - [x] presets: 180 / 240 / 300 / 360 (+ "Custom")
+  - [x] show WPM value next to control
+  - [x] hard cap slider range (e.g., 120-450) for Focus mode
 - [ ] Rewind granularity
   - [ ] controls: back 1 chunk, back 1 sentence, back 10 seconds (fallback)
   - [ ] src/lib/navigation.ts: prevChunk(), prevSentence(), rewindByMs(ms)

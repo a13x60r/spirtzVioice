@@ -18,6 +18,7 @@ import { TextPipeline } from '@domain/TextPipeline';
 import { AppInstaller } from './AppInstaller';
 import { FocusView } from './views/FocusView';
 import { buildReaderChunks, mapTokensToChunks, type ReaderChunk } from '../lib/readerModel';
+import { Progress } from './components/Progress';
 
 const HEADER_ICONS = {
     library: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v15H6c-1.1 0-2-.9-2-2V5zm2 0v13h9V5H6z"/><path d="M18 6h2v14c0 1.1-.9 2-2 2H8v-2h10V6z"/></svg>`,
@@ -26,6 +27,9 @@ const HEADER_ICONS = {
     settings: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.7.22l2.39-.96c.5.4 1.04.71 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.23 1.13-.54 1.63-.94l2.39.96c.27.11.56.02.7-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5S10.07 8.5 12 8.5s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>`,
     install: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M5 20h14v-2H5v2z"/><path d="M12 2v12l4-4 1.4 1.4L12 17.8 6.6 11.4 8 10l4 4V2h0z"/></svg>`
 };
+
+const DEFAULT_WPM_RANGE = { min: 200, max: 1300 };
+const FOCUS_WPM_RANGE = { min: 120, max: 450 };
 
 export class ReaderShell {
     private container: HTMLElement;
@@ -51,6 +55,7 @@ export class ReaderShell {
     private textInput!: TextInput;
     private loadingOverlay!: LoadingOverlay;
     private documentList!: DocumentList;
+    private progress!: Progress;
     private currentDocId: string | null = null;
     private currentTokens: Token[] = [];
     private currentChunks: ReaderChunk[] = [];
@@ -194,6 +199,8 @@ export class ReaderShell {
                         <button class="btn btn-secondary btn-icon" id="btn-settings" title="Settings" aria-label="Settings">${HEADER_ICONS.settings}</button>
                     </div>
                 </header>
+
+                <div id="structure-progress-mount"></div>
                 
                 <main class="main-view" id="view-container">
                     <!-- Views or Text Input mounted here -->
@@ -318,6 +325,13 @@ export class ReaderShell {
             onWpmChange: (wpm) => this.handleWpmChange(wpm),
             onVolumeChange: (vol) => this.audioEngine.setVolume(vol)
         }, this.settings.playbackRate || 1.0, this.settings.speedWpm || 250, 1.0);
+
+        const initialRange = this.settings.mode === 'FOCUS' ? FOCUS_WPM_RANGE : DEFAULT_WPM_RANGE;
+        this.controls.setWpmRange(initialRange.min, initialRange.max);
+
+        const progressMount = this.container.querySelector('#structure-progress-mount') as HTMLElement;
+        this.progress = new Progress(progressMount);
+        this.progress.setVisible(false);
 
         // Settings
         const settingsMount = this.container.querySelector('#settings-mount') as HTMLElement;
@@ -486,6 +500,13 @@ export class ReaderShell {
         });
 
         this.paragraphView.setDocumentContext(originalText, contentType);
+        this.progress.setDocumentContext({
+            title,
+            originalText,
+            ttsText,
+            contentType
+        });
+        this.progress.setVisible(true);
 
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
@@ -522,6 +543,7 @@ export class ReaderShell {
         if (this.currentView) this.currentView.unmount();
         this.documentList.unmount();
         this.textInput.mount();
+        this.progress.setVisible(false);
 
         const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
         if (toggleBtn) toggleBtn.style.display = 'none';
@@ -533,6 +555,7 @@ export class ReaderShell {
         if (this.currentView) this.currentView.unmount();
         this.textInput.unmount();
         await this.documentList.mount();
+        this.progress.setVisible(false);
 
         const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
         if (toggleBtn) toggleBtn.style.display = 'none';
@@ -570,6 +593,14 @@ export class ReaderShell {
             this.loadingOverlay.setProgress(p);
             if (msg) this.loadingOverlay.setText(msg);
         });
+
+        this.progress.setDocumentContext({
+            title: doc.title,
+            originalText: doc.originalText,
+            ttsText: textForTts,
+            contentType: doc.contentType || 'text'
+        });
+        this.progress.setVisible(true);
 
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
@@ -611,6 +642,17 @@ export class ReaderShell {
         } else if (this.currentTokens.length > 0 || (this.currentView instanceof ParagraphView)) {
             this.currentView.update(controller.getCurrentTokenIndex(), this.currentTokens);
         }
+
+        const range = mode === 'FOCUS' ? FOCUS_WPM_RANGE : DEFAULT_WPM_RANGE;
+        const clampedWpm = this.controls.setWpmRange(range.min, range.max);
+        if (clampedWpm !== this.settings.speedWpm) {
+            void this.handleWpmChange(clampedWpm);
+        }
+
+        const initialTokenIndex = controller.getCurrentTokenIndex();
+        const initialOffset = this.currentTokens[initialTokenIndex]?.startOffset ?? 0;
+        this.progress.updatePosition(initialOffset);
+        this.progress.setVisible(true);
 
         const toggleBtn = this.container.querySelector('#btn-toggle-view') as HTMLElement;
         if (toggleBtn) {
@@ -731,6 +773,9 @@ export class ReaderShell {
             } else if (this.currentView) {
                 this.currentView.update(index, this.currentTokens);
             }
+
+            const offset = this.currentTokens[index]?.startOffset ?? 0;
+            this.progress.updatePosition(offset);
 
             // Auto-save progress
             if (this.currentDocId) {

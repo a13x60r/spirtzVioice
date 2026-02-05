@@ -14,6 +14,9 @@ const ICONS = {
     tune: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>`
 };
 
+const WPM_PRESETS = [180, 240, 300, 360];
+const DEFAULT_WPM_RANGE = { min: 200, max: 1300 };
+
 export class Controls {
     private container: HTMLElement;
     private onPlayPause: () => void;
@@ -29,8 +32,9 @@ export class Controls {
     private wpmInput!: HTMLInputElement;       // WPM
     private volumeInput!: HTMLInputElement;    // Volume
     private speedDisplay!: HTMLSpanElement;    // Rate Display
-    private wpmDisplay!: HTMLSpanElement;      // WPM Display
+    private wpmNumberInput!: HTMLInputElement; // WPM Numeric
     private timeDisplay!: HTMLDivElement;
+    private wpmPresetButtons: HTMLButtonElement[] = [];
 
     // State tracking for efficient updates
     private lastIsPlaying: boolean | null = null;
@@ -62,6 +66,7 @@ export class Controls {
 
         this.render(initialRate, initialWpm, initialVolume);
         this.bindEvents();
+        this.setWpm(initialWpm);
     }
 
     private render(initialRate: number, initialWpm: number, initialVolume: number) {
@@ -80,8 +85,12 @@ export class Controls {
                         </div>
                         <div class="speed-control">
                             <label for="wpm-input" title="Synthesis WPM (Re-generates Audio)">W</label>
-                            <input type="range" id="wpm-input" min="200" max="1300" step="10" value="${initialWpm}">
-                            <span id="wpm-val-display">${initialWpm}</span>
+                            <input type="range" id="wpm-input" min="${DEFAULT_WPM_RANGE.min}" max="${DEFAULT_WPM_RANGE.max}" step="10" value="${initialWpm}">
+                            <input type="number" id="wpm-input-number" min="${DEFAULT_WPM_RANGE.min}" max="${DEFAULT_WPM_RANGE.max}" step="10" value="${initialWpm}" class="wpm-number-input">
+                        </div>
+                        <div class="wpm-presets" id="wpm-presets">
+                            ${WPM_PRESETS.map(value => `<button class="btn btn-secondary btn-sm wpm-preset" data-wpm="${value}">${value}</button>`).join('')}
+                            <button class="btn btn-secondary btn-sm wpm-preset" data-wpm="custom">Custom</button>
                         </div>
                          <div class="speed-control">
                             <div title="Volume" class="icon-label">${ICONS.volume}</div>
@@ -134,11 +143,12 @@ export class Controls {
         this.playBtn = this.container.querySelector('#play-pause')!;
         this.speedInput = this.container.querySelector('#speed-input')!;
         this.wpmInput = this.container.querySelector('#wpm-input')!;
+        this.wpmNumberInput = this.container.querySelector('#wpm-input-number')!;
         this.volumeInput = this.container.querySelector('#volume-input')!;
         this.progressBar = this.container.querySelector('#progress-fill')!;
         this.timeDisplay = this.container.querySelector('#time-display')!;
         this.speedDisplay = this.container.querySelector('#speed-val-display')!;
-        this.wpmDisplay = this.container.querySelector('#wpm-val-display')!;
+        this.wpmPresetButtons = Array.from(this.container.querySelectorAll('.wpm-preset')) as HTMLButtonElement[];
     }
 
     private bindEvents() {
@@ -172,13 +182,44 @@ export class Controls {
 
         this.wpmInput.addEventListener('change', (e) => {
             const val = parseInt((e.target as HTMLInputElement).value, 10);
-            this.wpmDisplay.textContent = val.toString();
+            this.updateWpmInputs(val, false);
             this.onWpmChange(val);
         });
 
         this.wpmInput.addEventListener('input', (e) => {
             const val = parseInt((e.target as HTMLInputElement).value, 10);
-            this.wpmDisplay.textContent = val.toString();
+            this.updateWpmInputs(val, false);
+        });
+
+        this.wpmNumberInput.addEventListener('input', (e) => {
+            const val = parseInt((e.target as HTMLInputElement).value, 10);
+            if (Number.isNaN(val)) return;
+            this.updateWpmInputs(val, false);
+        });
+
+        this.wpmNumberInput.addEventListener('change', (e) => {
+            const val = parseInt((e.target as HTMLInputElement).value, 10);
+            if (Number.isNaN(val)) return;
+            const clamped = this.clampWpm(val);
+            this.updateWpmInputs(clamped, false);
+            this.onWpmChange(clamped);
+        });
+
+        this.wpmPresetButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget as HTMLButtonElement;
+                const value = target.dataset.wpm || '';
+                if (value === 'custom') {
+                    this.wpmNumberInput.focus();
+                    this.setPresetActive(null);
+                    return;
+                }
+                const presetValue = parseInt(value, 10);
+                if (Number.isNaN(presetValue)) return;
+                const clamped = this.clampWpm(presetValue);
+                this.updateWpmInputs(clamped, true);
+                this.onWpmChange(clamped);
+            });
         });
 
         this.volumeInput.addEventListener('input', (e) => {
@@ -216,12 +257,53 @@ export class Controls {
     }
 
     setWpm(wpm: number) {
-        if (this.wpmInput) this.wpmInput.value = wpm.toString();
-        if (this.wpmDisplay) this.wpmDisplay.textContent = wpm.toString();
+        this.updateWpmInputs(wpm, false);
     }
 
     updateSpeed(rate: number, wpm: number) {
         this.setPlaybackRate(rate);
         this.setWpm(wpm);
+    }
+
+    setWpmRange(min: number, max: number): number {
+        this.wpmInput.min = min.toString();
+        this.wpmInput.max = max.toString();
+        this.wpmNumberInput.min = min.toString();
+        this.wpmNumberInput.max = max.toString();
+
+        const current = parseInt(this.wpmNumberInput.value, 10);
+        const clamped = this.clampWpm(Number.isNaN(current) ? min : current);
+        this.updateWpmInputs(clamped, false);
+        return clamped;
+    }
+
+    private updateWpmInputs(value: number, userInitiated: boolean) {
+        const clamped = this.clampWpm(value);
+        this.wpmInput.value = clamped.toString();
+        this.wpmNumberInput.value = clamped.toString();
+        this.setPresetActive(userInitiated ? clamped : this.getPresetMatch(clamped));
+    }
+
+    private clampWpm(value: number): number {
+        const min = parseInt(this.wpmInput.min, 10);
+        const max = parseInt(this.wpmInput.max, 10);
+        const safeMin = Number.isNaN(min) ? DEFAULT_WPM_RANGE.min : min;
+        const safeMax = Number.isNaN(max) ? DEFAULT_WPM_RANGE.max : max;
+        return Math.min(safeMax, Math.max(safeMin, value));
+    }
+
+    private setPresetActive(value: number | null) {
+        const presetMatch = this.getPresetMatch(value ?? null);
+        this.wpmPresetButtons.forEach(btn => {
+            const dataValue = btn.dataset.wpm || '';
+            const isCustom = dataValue === 'custom';
+            const isActive = presetMatch === null ? isCustom : dataValue === presetMatch.toString();
+            btn.classList.toggle('active', isActive);
+        });
+    }
+
+    private getPresetMatch(value: number | null): number | null {
+        if (value === null) return null;
+        return WPM_PRESETS.includes(value) ? value : null;
     }
 }

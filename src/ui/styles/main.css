@@ -517,6 +517,29 @@ body {
     font-size: 0.9rem;
 }
 
+.wpm-number-input {
+    width: 72px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.wpm-presets {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+}
+
+.wpm-preset.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
 .speed-control input[type="range"] {
     width: 80px;
 }
@@ -1142,4 +1165,47 @@ input[type="range"]:active::-moz-range-thumb {
     color: var(--color-primary);
     font-size: 0.9rem;
     align-self: flex-end;
+}
+
+.structure-progress-hidden {
+    display: none;
+}
+
+.structure-progress {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--spacing-xs) var(--spacing-md);
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.structure-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.structure-bar {
+    grid-column: 1 / -1;
+    height: 4px;
+    background: var(--color-border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.structure-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--color-primary);
+    transition: width 0.15s ease;
+}
+
+.structure-percent {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
 }

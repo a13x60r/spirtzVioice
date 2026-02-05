@@ -61,6 +61,10 @@ export class ReaderShell {
     private progress!: Progress;
     private keyboardHelp!: KeyboardHelp;
     private isHelpOpen: boolean = false;
+    private fatigueNudgeEl: HTMLElement | null = null;
+    private fatigueActiveMs: number = 0;
+    private fatigueLastTickMs: number | null = null;
+    private fatigueNudgeShown: boolean = false;
     private currentDocId: string | null = null;
     private currentTokens: Token[] = [];
     private currentChunks: ReaderChunk[] = [];
@@ -215,6 +219,8 @@ export class ReaderShell {
                 
                 <footer class="controls-area" id="controls-mount">
                 </footer>
+
+                <div id="fatigue-nudge" class="fatigue-nudge fatigue-nudge-hidden"></div>
                 
                 <div id="settings-mount"></div>
                 <div id="help-mount"></div>
@@ -362,6 +368,9 @@ export class ReaderShell {
         const progressMount = this.container.querySelector('#structure-progress-mount') as HTMLElement;
         this.progress = new Progress(progressMount);
         this.progress.setVisible(false);
+
+        this.fatigueNudgeEl = this.container.querySelector('#fatigue-nudge');
+        this.renderFatigueNudge();
 
         const helpMount = this.container.querySelector('#help-mount') as HTMLElement;
         this.keyboardHelp = new KeyboardHelp(helpMount, () => this.setHelpVisible(false));
@@ -541,6 +550,7 @@ export class ReaderShell {
             contentType
         });
         this.progress.setVisible(true);
+        this.resetFatigueNudge();
 
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
@@ -635,6 +645,7 @@ export class ReaderShell {
             contentType: doc.contentType || 'text'
         });
         this.progress.setVisible(true);
+        this.resetFatigueNudge();
 
         this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
@@ -822,6 +833,10 @@ export class ReaderShell {
 
             this.maybeAdaptSpeed();
         };
+
+        controller.onTimeUpdate = () => {
+            this.trackSessionTick();
+        };
     }
     private setupMediaSession() {
         if ('mediaSession' in navigator) {
@@ -910,6 +925,66 @@ export class ReaderShell {
     private setHelpVisible(visible: boolean) {
         this.isHelpOpen = visible;
         this.keyboardHelp.setVisible(visible);
+    }
+
+    private renderFatigueNudge() {
+        if (!this.fatigueNudgeEl) return;
+        this.fatigueNudgeEl.innerHTML = `
+            <div class="fatigue-nudge-content" role="status" aria-live="polite">
+                <div class="fatigue-text">
+                    You have been reading for a while. Want a quick break or switch to paging?
+                </div>
+                <div class="fatigue-actions">
+                    <button class="btn btn-secondary" id="fatigue-dismiss">Maybe later</button>
+                    <button class="btn btn-secondary" id="fatigue-paging">Open paging</button>
+                </div>
+            </div>
+        `;
+
+        this.fatigueNudgeEl.querySelector('#fatigue-dismiss')?.addEventListener('click', () => {
+            this.hideFatigueNudge();
+        });
+        this.fatigueNudgeEl.querySelector('#fatigue-paging')?.addEventListener('click', () => {
+            this.hideFatigueNudge();
+            this.openPagingFromShortcut();
+        });
+    }
+
+    private showFatigueNudge() {
+        if (!this.fatigueNudgeEl || this.fatigueNudgeShown) return;
+        this.fatigueNudgeShown = true;
+        this.fatigueNudgeEl.classList.remove('fatigue-nudge-hidden');
+    }
+
+    private hideFatigueNudge() {
+        if (!this.fatigueNudgeEl) return;
+        this.fatigueNudgeEl.classList.add('fatigue-nudge-hidden');
+    }
+
+    private resetFatigueNudge() {
+        this.fatigueActiveMs = 0;
+        this.fatigueLastTickMs = null;
+        this.fatigueNudgeShown = false;
+        this.hideFatigueNudge();
+    }
+
+    private trackSessionTick() {
+        if (this.fatigueNudgeShown) return;
+        const now = Date.now();
+        if (this.fatigueLastTickMs === null) {
+            this.fatigueLastTickMs = now;
+            return;
+        }
+
+        const delta = now - this.fatigueLastTickMs;
+        this.fatigueLastTickMs = now;
+        if (delta <= 0) return;
+        if (delta > 5000) return;
+
+        this.fatigueActiveMs += delta;
+        if (this.fatigueActiveMs >= 20 * 60 * 1000) {
+            this.showFatigueNudge();
+        }
     }
 
     private noteRewind() {

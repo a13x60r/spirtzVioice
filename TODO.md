@@ -53,9 +53,9 @@
   - [x] track rewindsLast30s
   - [x] if >=2: baseWpm *= 0.9 (min floor 140)
   - [x] if stable 2 mins with 0 rewinds: baseWpm *= 1.03 (cap 360)
-- [ ] Fatigue nudges
-  - [ ] if session > 20 min: suggest break OR switch to paging
-  - [ ] never block reading
+- [x] Fatigue nudges
+  - [x] if session > 20 min: suggest break OR switch to paging
+  - [x] never block reading
 
 ## P4 - Persistence + offline (PWA-grade)
 

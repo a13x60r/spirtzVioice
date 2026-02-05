@@ -29,6 +29,21 @@ export class AudioStore {
     }
 
     /**
+     * Delete a chunk from DB
+     */
+    async deleteChunk(hash: string): Promise<void> {
+        await db.audioChunks.delete(hash);
+    }
+
+    /**
+     * Delete multiple chunks from DB
+     */
+    async deleteChunks(hashes: string[]): Promise<void> {
+        if (hashes.length === 0) return;
+        await db.audioChunks.bulkDelete(hashes);
+    }
+
+    /**
      * Get just the duration of a chunk (faster than fetching blob)
      */
     async getDuration(hash: string): Promise<number | undefined> {

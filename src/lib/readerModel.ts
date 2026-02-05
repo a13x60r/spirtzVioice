@@ -16,7 +16,7 @@ export interface ParagraphSlice {
     startOffset: number;
 }
 
-export function buildReaderChunks(text: string): ReaderChunk[] {
+export function buildReaderChunks(text: string, language: string = 'en'): ReaderChunk[] {
     const paragraphs = splitParagraphs(text);
     const chunks: ReaderChunk[] = [];
 
@@ -24,7 +24,7 @@ export function buildReaderChunks(text: string): ReaderChunk[] {
     let paraId = 0;
 
     for (const para of paragraphs) {
-        const segmentChunks = segmentTextToChunks(para.text);
+        const segmentChunks = segmentTextToChunks(para.text, language);
 
         for (const segment of segmentChunks) {
             const globalStart = para.startOffset + segment.startOffset;
@@ -50,8 +50,8 @@ export function buildReaderChunks(text: string): ReaderChunk[] {
     return chunks;
 }
 
-export function buildReaderChunksForParagraph(para: ParagraphSlice, sentenceId: number, paraId: number): ReaderChunk[] {
-    const segmentChunks = segmentTextToChunks(para.text);
+export function buildReaderChunksForParagraph(para: ParagraphSlice, sentenceId: number, paraId: number, language: string = 'en'): ReaderChunk[] {
+    const segmentChunks = segmentTextToChunks(para.text, language);
     const chunks: ReaderChunk[] = [];
 
     let localSentenceId = sentenceId;

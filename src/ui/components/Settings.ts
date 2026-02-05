@@ -136,6 +136,7 @@ export class SettingsPanel {
                                     <button class="btn btn-primary" id="install-voice" ${this.isInstalling ? 'disabled' : ''}>
                                         ${this.isInstalling ? 'Downloading...' : 'Download Voice'}
                                     </button>
+                                    <p class="info-text">This voice must be downloaded before it can be used.</p>
                                 ` : ''}
                             </div>
                         </section>

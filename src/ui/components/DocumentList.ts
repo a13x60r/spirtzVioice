@@ -159,6 +159,9 @@ export class DocumentList {
             ? Math.min(100, Math.round((doc.progressTokenIndex / wordCount) * 100))
             : 0;
         const isSelected = this.selectedIds.has(doc.id);
+        const language = doc.language || '';
+        const flag = this.getLanguageFlag(language);
+        const languageLabel = this.getLanguageLabel(language);
 
         return `
             <div class="document-item ${isSelected ? 'selected' : ''}" data-id="${doc.id}">
@@ -166,7 +169,10 @@ export class DocumentList {
                     <input type="checkbox" id="select-${doc.id}" ${isSelected ? 'checked' : ''}>
                 </div>
                 <div class="document-info">
-                    <h3 class="document-title">${this.escapeHtml(doc.title)}</h3>
+                    <h3 class="document-title">
+                        <span class="language-flag" title="${languageLabel}">${flag}</span>
+                        ${this.escapeHtml(doc.title)}
+                    </h3>
                     <div class="document-meta">
                         <span>${wordCount.toLocaleString()} tokens</span>
                         <span>•</span>
@@ -189,6 +195,43 @@ export class DocumentList {
                 </div>
             </div>
         `;
+    }
+
+    private getLanguageFlag(language: string): string {
+        const base = language.split('-')[0].toLowerCase();
+        switch (base) {
+            case 'en':
+                return '🇺🇸';
+            case 'de':
+                return '🇩🇪';
+            case 'ru':
+                return '🇷🇺';
+            case 'es':
+                return '🇪🇸';
+            case 'fr':
+                return '🇫🇷';
+            default:
+                return '🌐';
+        }
+    }
+
+    private getLanguageLabel(language: string): string {
+        if (!language) return 'Language not set';
+        const base = language.split('-')[0].toLowerCase();
+        switch (base) {
+            case 'en':
+                return 'English';
+            case 'de':
+                return 'German';
+            case 'ru':
+                return 'Russian';
+            case 'es':
+                return 'Spanish';
+            case 'fr':
+                return 'French';
+            default:
+                return language;
+        }
     }
 
     private confirmDelete(doc: DocumentEntity) {

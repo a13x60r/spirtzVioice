@@ -5,12 +5,12 @@ import type { ReaderChunk } from '../lib/readerModel';
 const buildCacheId = (docId: string, paraId: number) => `${docId}:${paraId}`;
 
 export class SegmentCacheStore {
-    async getChunks(docId: string, paraId: number, paragraphText: string): Promise<ReaderChunk[] | null> {
+    async getChunks(docId: string, paraId: number, paragraphText: string, language: string = 'en'): Promise<ReaderChunk[] | null> {
         const id = buildCacheId(docId, paraId);
         const cached = await db.segmentCache.get(id);
         if (!cached) return null;
 
-        const hash = hashText(paragraphText);
+        const hash = hashText(`${language}|${paragraphText}`);
         if (cached.paragraphHash !== hash) return null;
 
         return cached.chunks.map(chunk => ({
@@ -23,13 +23,13 @@ export class SegmentCacheStore {
         }));
     }
 
-    async setChunks(docId: string, paraId: number, paragraphText: string, chunks: ReaderChunk[]) {
+    async setChunks(docId: string, paraId: number, paragraphText: string, chunks: ReaderChunk[], language: string = 'en') {
         const now = Date.now();
         const entity: SegmentCacheEntity = {
             id: buildCacheId(docId, paraId),
             docId,
             paraId,
-            paragraphHash: hashText(paragraphText),
+            paragraphHash: hashText(`${language}|${paragraphText}`),
             chunks: chunks.map(chunk => ({
                 text: chunk.text,
                 startOffset: chunk.startOffset,

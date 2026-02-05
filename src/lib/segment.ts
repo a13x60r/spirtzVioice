@@ -6,13 +6,17 @@ export interface SegmentChunk {
 
 const WORD_REGEX = /[\p{L}\p{N}''\u2019]+/gu;
 const SENTENCE_END_REGEX = /[.!?]/g;
-const CONJUNCTION_REGEX = /,\s+(and|but|or|so|because|however|therefore|although|while)\b/gi;
+const CONJUNCTIONS: Record<string, string[]> = {
+    en: ['and', 'but', 'or', 'so', 'because', 'however', 'therefore', 'although', 'while'],
+    de: ['und', 'aber', 'oder', 'denn', 'weil', 'jedoch', 'deshalb', 'obwohl', 'während'],
+    ru: ['и', 'но', 'или', 'так', 'потому что', 'однако', 'поэтому', 'хотя', 'пока']
+};
 
 const MIN_WORDS = 3;
 const SOFT_MAX_WORDS = 12;
 const HARD_MAX_WORDS = 15;
 
-export function segmentTextToChunks(text: string): SegmentChunk[] {
+export function segmentTextToChunks(text: string, language: string = 'en'): SegmentChunk[] {
     if (!text || text.trim().length === 0) return [];
 
     const splitPoints = new Set<number>();
@@ -21,7 +25,8 @@ export function segmentTextToChunks(text: string): SegmentChunk[] {
         splitPoints.add((match.index ?? 0) + match[0].length);
     }
 
-    for (const match of text.matchAll(CONJUNCTION_REGEX)) {
+    const conjunctionRegex = getConjunctionRegex(language);
+    for (const match of text.matchAll(conjunctionRegex)) {
         splitPoints.add((match.index ?? 0) + 1);
     }
 
@@ -44,6 +49,13 @@ export function segmentTextToChunks(text: string): SegmentChunk[] {
     const merged = mergeSmallChunks(text, baseChunks);
     const capped = capChunkLength(text, merged);
     return mergeSmallChunks(text, capped);
+}
+
+function getConjunctionRegex(language: string): RegExp {
+    const base = language.split('-')[0].toLowerCase();
+    const list = CONJUNCTIONS[base] || CONJUNCTIONS.en;
+    const pattern = list.map(entry => entry.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    return new RegExp(`,\\s+(?:${pattern})(?=\\s|$)`, 'giu');
 }
 
 function buildChunk(text: string, start: number, end: number): SegmentChunk | null {

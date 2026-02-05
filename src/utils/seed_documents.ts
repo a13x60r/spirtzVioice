@@ -50,6 +50,17 @@ Ein schnelles, privates und leistungsfähiges Tool, das Lesen mit Augen und Ohre
     ];
 
     const pending = seeds.filter(seed => !existing.some(d => d.title === seed.title));
+    const existingSeeds = seeds
+        .map(seed => ({ seed, doc: existing.find(d => d.title === seed.title) }))
+        .filter(item => item.doc);
+
+    for (const item of existingSeeds) {
+        const doc = item.doc!;
+        if (doc.language !== item.seed.language) {
+            await documentStore.updateLanguage(doc.id, item.seed.language);
+        }
+    }
+
     if (!pending.length) return;
 
     console.log("Seeding welcome documents...");

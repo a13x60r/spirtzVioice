@@ -648,7 +648,7 @@ export class AudioEngine {
         }));
     }
 
-    async updateSettings(settings: Settings, onProgress?: (percent: number, message?: string) => void) {
+    async updateSettings(settings: Settings, onProgress?: (percent: number, message?: string) => void, forceResynthesis: boolean = false) {
         if (!this.currentPlan || !this.currentTokens.length) return;
 
         const wasPlaying = this.controller.getState() === 'PLAYING';
@@ -668,9 +668,13 @@ export class AudioEngine {
             this.scheduler.setPlaybackRate(settings.playbackRate);
         }
 
-        if (sameVoice && sameSpeed && sameStrategy && sameChunkSize) {
+        if (!forceResynthesis && sameVoice && sameSpeed && sameStrategy && sameChunkSize) {
             // No synthesis needed
             return;
+        }
+
+        if (forceResynthesis) {
+            await this.clearCurrentPlanAudioCache();
         }
 
         if (wasPlaying) {
@@ -697,5 +701,14 @@ export class AudioEngine {
             // Explicitly update cursor and UI without playing
             this.controller.seekByToken(currentTokenIndex);
         }
+    }
+
+    private async clearCurrentPlanAudioCache() {
+        if (!this.currentPlan) return;
+        const hashes = this.currentPlan.chunks.map(chunk => chunk.chunkHash);
+        await audioStore.deleteChunks(hashes);
+        this.pendingDurations.clear();
+        this.chunkTimeline = [];
+        this.bufferedChunks.clear();
     }
 }

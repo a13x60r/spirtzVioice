@@ -14,6 +14,8 @@ An offline-first reader app with exact text-to-speech synchronization supporting
 - 🔊 **Enhanced Controls**: WPM presets, numeric input, rewind granularity, and direct view buttons
 - ⌨️ **Keyboard Shortcuts**: Playback, chunk/sentence navigation, and help overlay
 - 📝 **Study Affordances**: Highlight buffer, sentence notes, and one-click copy/cite with notes sidebar
+- 🌍 **Language Aware**: Library flags, localized welcome docs, and language-based voice selection
+- ⚠️ **Voice Install Alerts**: Clear prompts when a voice needs downloading
 
 ## Quick Start
 

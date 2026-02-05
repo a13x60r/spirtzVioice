@@ -136,6 +136,20 @@ export class AppDatabase extends Dexie {
         this.version(8).stores({
             annotations: 'id, docId, startOffset, paraId'
         });
+
+        // Version 9: Re-declare full schema to preserve voice packages
+        this.version(9).stores({
+            documents: 'id, title, lastReadAt, language, lastUpdated',
+            settings: 'id',
+            audioCache: 'id, lastAccessMs, chunkHash',
+            audioChunks: 'id',
+            plans: 'planId, docId',
+            timelines: 'planId',
+            voicePackages: 'voiceId, lang',
+            voiceAssets: 'id, voiceId',
+            segmentCache: 'id, docId, paraId',
+            annotations: 'id, docId, startOffset, paraId'
+        });
     }
 }
 

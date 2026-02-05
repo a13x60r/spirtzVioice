@@ -64,6 +64,8 @@ export class ReaderShell {
     private progress!: Progress;
     private keyboardHelp!: KeyboardHelp;
     private isHelpOpen: boolean = false;
+    private voiceWarningEl: HTMLElement | null = null;
+    private voiceWarningInstallId: string | null = null;
     private fatigueNudgeEl: HTMLElement | null = null;
     private fatigueActiveMs: number = 0;
     private fatigueLastTickMs: number | null = null;
@@ -72,6 +74,7 @@ export class ReaderShell {
     private currentDocId: string | null = null;
     private currentDocTitle: string = '';
     private currentTtsText: string = '';
+    private currentLanguage: string = 'en-US';
     private currentAnnotations: AnnotationEntity[] = [];
     private currentTokens: Token[] = [];
     private currentChunks: ReaderChunk[] = [];
@@ -219,6 +222,8 @@ export class ReaderShell {
                 </header>
 
                 <div id="structure-progress-mount"></div>
+
+                <div id="voice-warning" class="voice-warning voice-warning-hidden"></div>
                 
                 <main class="main-view" id="view-container">
                     <!-- Views or Text Input mounted here -->
@@ -390,6 +395,8 @@ export class ReaderShell {
         this.progress = new Progress(progressMount);
         this.progress.setVisible(false);
 
+        this.voiceWarningEl = this.container.querySelector('#voice-warning');
+
         this.fatigueNudgeEl = this.container.querySelector('#fatigue-nudge');
         this.renderFatigueNudge();
 
@@ -454,13 +461,22 @@ export class ReaderShell {
                         const voices = await this.audioEngine.getAvailableVoices();
                         this.settingsPanel.setVoices(voices);
 
-                        // If it was the selected voice, trigger synthesis
-                        if (this.settings.voiceId === voiceId) {
+                        const installedVoice = voices.find(v => v.id === voiceId);
+                        const currentLang = (this.currentLanguage || '').toLowerCase();
+                        const currentBase = currentLang.split('-')[0];
+                        const voiceLang = installedVoice?.lang.toLowerCase() || '';
+                        const matchesLanguage = Boolean(currentBase && voiceLang.startsWith(currentBase));
+
+                        if (installedVoice && (this.settings.voiceId === voiceId || matchesLanguage)) {
+                            this.settings.voiceId = voiceId;
+                            if (this.currentDocId) {
+                                await documentStore.updateSettings(this.currentDocId, voiceId, this.settings.speedWpm);
+                            }
                             this.loadingOverlay.setText('Initializing voice...');
                             await this.audioEngine.updateSettings(this.settings, (p, msg) => {
                                 this.loadingOverlay.setProgress(p);
                                 if (msg) this.loadingOverlay.setText(msg);
-                            });
+                            }, true);
                         }
                     } catch (e: any) {
                         alert("Failed to download voice: " + e.message);
@@ -566,9 +582,13 @@ export class ReaderShell {
         this.currentTokens = tokens;
         this.currentDocTitle = title;
         this.currentTtsText = ttsText;
+        this.currentLanguage = language || this.settings.language;
+        if (language) {
+            this.settings.language = language;
+        }
 
         const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length, language);
-        this.currentChunks = await this.buildChunksWithCache(doc.id, ttsText);
+        this.currentChunks = await this.buildChunksWithCache(doc.id, ttsText, this.currentLanguage);
         this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
         this.currentDocId = doc.id;
         this.currentAnnotations = [];
@@ -582,6 +602,7 @@ export class ReaderShell {
                 this.settings.voiceId = voiceId;
                 await documentStore.updateSettings(doc.id, voiceId, this.settings.speedWpm);
             }
+            await this.warnIfVoiceMissing(language, voiceId ?? null);
         }
 
         await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p, msg) => {
@@ -656,22 +677,31 @@ export class ReaderShell {
         this.currentDocId = docId;
         this.currentDocTitle = doc.title;
         this.currentTtsText = doc.ttsText || doc.originalText;
+        this.currentLanguage = doc.language || this.settings.language;
+        if (doc.language) {
+            this.settings.language = doc.language;
+        }
         this.paragraphView.setDocumentContext(doc.originalText, doc.contentType || 'text');
         this.loadingOverlay.show('Loading Document...', () => this.audioEngine.cancelSynthesis());
 
         const textForTts = doc.ttsText || doc.originalText;
         const tokens = TextPipeline.tokenize(textForTts);
         this.currentTokens = tokens;
-        this.currentChunks = await this.buildChunksWithCache(doc.id, textForTts);
+        this.currentChunks = await this.buildChunksWithCache(doc.id, textForTts, this.currentLanguage);
         this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
 
-        if (doc.voiceId && doc.voiceId !== 'default') {
-            this.settings.voiceId = doc.voiceId;
-        } else if (doc.language) {
-            const voiceId = await this.selectVoiceForLanguage(doc.language);
-            if (voiceId) {
-                this.settings.voiceId = voiceId;
+        if (doc.language) {
+            const preferredVoice = await this.selectVoiceForLanguage(doc.language);
+            const voiceMatches = doc.voiceId ? await this.voiceMatchesLanguage(doc.voiceId, doc.language) : false;
+            if (preferredVoice && (!doc.voiceId || doc.voiceId === 'default' || !voiceMatches)) {
+                this.settings.voiceId = preferredVoice;
+                await documentStore.updateSettings(doc.id, preferredVoice, this.settings.speedWpm);
+            } else if (doc.voiceId && doc.voiceId !== 'default') {
+                this.settings.voiceId = doc.voiceId;
             }
+            await this.warnIfVoiceMissing(doc.language, preferredVoice ?? doc.voiceId ?? null);
+        } else if (doc.voiceId && doc.voiceId !== 'default') {
+            this.settings.voiceId = doc.voiceId;
         }
 
         if (doc.speedWpm) {
@@ -716,14 +746,14 @@ export class ReaderShell {
         }
     }
 
-    private async buildChunksWithCache(docId: string, text: string): Promise<ReaderChunk[]> {
+    private async buildChunksWithCache(docId: string, text: string, language: string): Promise<ReaderChunk[]> {
         const paragraphs = splitParagraphs(text);
         const chunks: ReaderChunk[] = [];
         let sentenceId = 0;
 
         for (let paraId = 0; paraId < paragraphs.length; paraId++) {
             const para = paragraphs[paraId];
-            const cached = await segmentCacheStore.getChunks(docId, paraId, para.text);
+            const cached = await segmentCacheStore.getChunks(docId, paraId, para.text, language);
             if (cached && cached.length > 0) {
                 chunks.push(...cached);
                 const lastSentenceId = cached[cached.length - 1].sentenceId;
@@ -731,7 +761,7 @@ export class ReaderShell {
                 continue;
             }
 
-            const paraChunks = buildReaderChunksForParagraph(para, sentenceId, paraId);
+            const paraChunks = buildReaderChunksForParagraph(para, sentenceId, paraId, language);
             chunks.push(...paraChunks);
             if (paraChunks.length > 0) {
                 const lastSentenceId = paraChunks[paraChunks.length - 1].sentenceId;
@@ -739,10 +769,20 @@ export class ReaderShell {
             } else {
                 sentenceId += 1;
             }
-            await segmentCacheStore.setChunks(docId, paraId, para.text, paraChunks);
+            await segmentCacheStore.setChunks(docId, paraId, para.text, paraChunks, language);
         }
 
         return chunks;
+    }
+
+    private async voiceMatchesLanguage(voiceId: string, langCode: string): Promise<boolean> {
+        const voices = await this.audioEngine.getAvailableVoices();
+        const voice = voices.find(v => v.id === voiceId);
+        if (!voice) return false;
+        const normalized = langCode.toLowerCase();
+        const baseLang = normalized.split('-')[0];
+        const voiceLang = voice.lang.toLowerCase();
+        return voiceLang.startsWith(normalized) || voiceLang.startsWith(baseLang);
     }
 
     private switchView(mode: 'RSVP' | 'PARAGRAPH' | 'FOCUS') {
@@ -1256,6 +1296,94 @@ export class ReaderShell {
         root.classList.toggle('orp-disabled', !enabled);
     }
 
+    private showVoiceWarning(message: string) {
+        if (!this.voiceWarningEl) return;
+        this.voiceWarningEl.innerHTML = `
+            <div class="voice-warning-content">
+                <div class="voice-warning-text">
+                    <div class="voice-warning-title">Voice not installed</div>
+                    <div>${message}</div>
+                </div>
+                <div class="voice-warning-actions">
+                    <button class="btn btn-secondary btn-sm" id="voice-warning-download" ${this.voiceWarningInstallId ? '' : 'disabled'}>
+                        Download Voice
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="voice-warning-settings">Open Settings</button>
+                    <button class="btn btn-secondary btn-sm" id="voice-warning-dismiss">Dismiss</button>
+                </div>
+            </div>
+        `;
+        this.voiceWarningEl.classList.remove('voice-warning-hidden');
+        this.voiceWarningEl.querySelector('#voice-warning-settings')?.addEventListener('click', () => {
+            this.settingsPanel.mount();
+        });
+        this.voiceWarningEl.querySelector('#voice-warning-download')?.addEventListener('click', async () => {
+            if (!this.voiceWarningInstallId) return;
+            const btn = this.voiceWarningEl?.querySelector('#voice-warning-download') as HTMLButtonElement | null;
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Downloading...';
+            }
+            try {
+                await this.audioEngine.installVoice(this.voiceWarningInstallId);
+                this.settings.voiceId = this.voiceWarningInstallId;
+                if (this.currentDocId) {
+                    await documentStore.updateSettings(this.currentDocId, this.voiceWarningInstallId, this.settings.speedWpm);
+                }
+                await this.audioEngine.updateSettings(this.settings, undefined, true);
+                this.hideVoiceWarning();
+            } catch {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Download Voice';
+                }
+            }
+        });
+        this.voiceWarningEl.querySelector('#voice-warning-dismiss')?.addEventListener('click', () => {
+            this.voiceWarningEl?.classList.add('voice-warning-hidden');
+        });
+    }
+
+    private hideVoiceWarning() {
+        this.voiceWarningEl?.classList.add('voice-warning-hidden');
+    }
+
+    private async warnIfVoiceMissing(language: string, voiceId: string | null) {
+        if (!language) return;
+        const voices = await this.audioEngine.getAvailableVoices();
+        const voice = voiceId ? voices.find(v => v.id === voiceId) : undefined;
+        if (!voice) {
+            this.voiceWarningInstallId = null;
+            this.showVoiceWarning(`${this.formatLanguageLabel(language)} voice is not available. Using English voice for now.`);
+            return;
+        }
+        if (!voice.isInstalled) {
+            this.voiceWarningInstallId = voice.id;
+            this.showVoiceWarning(`${voice.name} (${this.formatLanguageLabel(language)}) is not installed. Using English voice for now.`);
+        } else {
+            this.voiceWarningInstallId = null;
+            this.hideVoiceWarning();
+        }
+    }
+
+    private formatLanguageLabel(language: string): string {
+        const base = language.split('-')[0].toLowerCase();
+        switch (base) {
+            case 'de':
+                return 'German';
+            case 'ru':
+                return 'Russian';
+            case 'es':
+                return 'Spanish';
+            case 'fr':
+                return 'French';
+            case 'en':
+                return 'English';
+            default:
+                return language;
+        }
+    }
+
     private handleSpeedShortcut(direction: 1 | -1) {
         const delta = 10;
         const range = this.getActiveWpmRange();
@@ -1437,12 +1565,23 @@ export class ReaderShell {
 
     private async selectVoiceForLanguage(langCode: string): Promise<string | null> {
         const voices = await this.audioEngine.getAvailableVoices();
-        // Priority 1: Installed voice matching language
-        let match = voices.find(v => v.lang.startsWith(langCode) && v.isInstalled);
+        const normalized = langCode.toLowerCase();
+        const baseLang = normalized.split('-')[0];
+
+        // Priority 1: Installed voice matching full language
+        let match = voices.find(v => v.lang.toLowerCase().startsWith(normalized) && v.isInstalled);
         if (match) return match.id;
 
-        // Priority 2: Any voice matching language
-        match = voices.find(v => v.lang.startsWith(langCode));
+        // Priority 2: Installed voice matching base language
+        match = voices.find(v => v.lang.toLowerCase().startsWith(baseLang) && v.isInstalled);
+        if (match) return match.id;
+
+        // Priority 3: Any voice matching full language
+        match = voices.find(v => v.lang.toLowerCase().startsWith(normalized));
+        if (match) return match.id;
+
+        // Priority 4: Any voice matching base language
+        match = voices.find(v => v.lang.toLowerCase().startsWith(baseLang));
         if (match) return match.id;
 
         return null;

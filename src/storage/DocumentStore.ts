@@ -95,6 +95,16 @@ export class DocumentStore {
     }
 
     /**
+     * Update document language
+     */
+    async updateLanguage(id: string, language: string) {
+        await db.documents.update(id, {
+            language,
+            lastUpdated: Date.now()
+        });
+    }
+
+    /**
      * Delete multiple documents and related data
      */
     async bulkDeleteDocuments(ids: string[]) {

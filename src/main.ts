@@ -1,4 +1,5 @@
 import { ReaderShell } from './ui/ReaderShell';
+import { registerSW } from 'virtual:pwa-register';
 
 declare global {
     interface Window {
@@ -22,3 +23,15 @@ if (import.meta.hot) {
 }
 
 console.log('Spirtz Voice mounted.');
+
+if (import.meta.env.PROD) {
+    registerSW({
+        immediate: true,
+        onOfflineReady() {
+            console.log('Spirtz Voice ready for offline use.');
+        },
+        onNeedRefresh() {
+            console.log('Spirtz Voice update available.');
+        }
+    });
+}

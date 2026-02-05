@@ -113,8 +113,11 @@ export default defineConfig({
                 enabled: false // Disable SW in dev to eliminate it as a variable for fetch errors
             },
             workbox: {
+                cleanupOutdatedCaches: true,
                 maximumFileSizeToCacheInBytes: 100000000, // 100MB to support large Voice Models
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,json,wasm,data,onnx}'],
+                navigateFallback: 'index.html',
+                navigateFallbackDenylist: [/^\/assets\//, /\/manifest\.webmanifest$/],
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

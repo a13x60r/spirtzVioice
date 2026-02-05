@@ -67,9 +67,9 @@
 - [x] Cache segmentation results
   - [x] store per docId+paraId -> chunks[]
   - [x] avoid re-segmenting on every open
-- [ ] Service worker caching
-  - [ ] cache app shell + document text + user prefs
-  - [ ] ensure offline open last book works
+- [x] Service worker caching
+  - [x] cache app shell + document text + user prefs
+  - [x] ensure offline open last book works
 
 ## P5 - Student study affordances (minimal but high ROI)
 

@@ -1297,6 +1297,85 @@ input[type="range"]:active::-moz-range-thumb {
     flex-shrink: 0;
 }
 
+.paragraph-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: var(--spacing-lg);
+    align-items: start;
+}
+
+.notes-panel {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    border-radius: 10px;
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 70vh;
+    position: sticky;
+    top: var(--spacing-md);
+}
+
+.notes-panel-hidden {
+    display: none;
+}
+
+.notes-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notes-panel-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    overflow: auto;
+}
+
+.notes-item {
+    text-align: left;
+    padding: var(--spacing-sm);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.notes-item:hover {
+    border-color: var(--color-primary);
+}
+
+.notes-item-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 2px;
+}
+
+.notes-item-text {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+}
+
+.notes-empty {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+}
+
+.highlight-span {
+    background: rgba(255, 214, 102, 0.6);
+    border-radius: 4px;
+    padding: 0 2px;
+}
+
+.note-span {
+    background: rgba(100, 181, 246, 0.35);
+    border-bottom: 2px solid rgba(100, 181, 246, 0.8);
+    border-radius: 4px;
+    padding: 0 2px;
+}
+
 @media (max-width: 600px) {
     .fatigue-nudge-content {
         flex-direction: column;
@@ -1306,6 +1385,15 @@ input[type="range"]:active::-moz-range-thumb {
     .fatigue-actions {
         width: 100%;
         justify-content: flex-end;
+    }
+
+    .paragraph-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .notes-panel {
+        position: static;
+        max-height: none;
     }
 }
 

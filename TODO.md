@@ -73,14 +73,14 @@
 
 ## P5 - Student study affordances (minimal but high ROI)
 
-- [ ] Mark/highlight buffer from Focus mode
-  - [ ] tap star -> save current chunk range
-  - [ ] paging view renders highlights from saved ranges
-- [ ] Quick note at current sentence
-  - [ ] note anchored to paraId + offsetRange
-  - [ ] searchable later
-- [ ] Copy current sentence / cite
-  - [ ] one-click copy with surrounding context (prev+next sentence optional)
+- [x] Mark/highlight buffer from Focus mode
+  - [x] tap star -> save current chunk range
+  - [x] paging view renders highlights from saved ranges
+- [x] Quick note at current sentence
+  - [x] note anchored to paraId + offsetRange
+  - [x] searchable later
+- [x] Copy current sentence / cite
+  - [x] one-click copy with surrounding context (prev+next sentence optional)
 
 ## P6 - Accessibility & comfort
 

@@ -23,6 +23,8 @@ import { createAdaptState, evaluateAdaptation, recordRewind } from '../lib/adapt
 import { Progress } from './components/Progress';
 import { KeyboardHelp } from './components/KeyboardHelp';
 import { segmentCacheStore } from '../storage/SegmentCacheStore';
+import { annotationStore } from '../storage/AnnotationStore';
+import type { AnnotationEntity } from '../storage/Database';
 
 const HEADER_ICONS = {
     library: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v15H6c-1.1 0-2-.9-2-2V5zm2 0v13h9V5H6z"/><path d="M18 6h2v14c0 1.1-.9 2-2 2H8v-2h10V6z"/></svg>`,
@@ -68,6 +70,9 @@ export class ReaderShell {
     private fatigueNudgeShown: boolean = false;
     private scrollSaveTimer: number | null = null;
     private currentDocId: string | null = null;
+    private currentDocTitle: string = '';
+    private currentTtsText: string = '';
+    private currentAnnotations: AnnotationEntity[] = [];
     private currentTokens: Token[] = [];
     private currentChunks: ReaderChunk[] = [];
     private tokenChunkMap: number[] = [];
@@ -360,6 +365,9 @@ export class ReaderShell {
                     }
                 }
             },
+            onHighlight: () => this.handleHighlightBuffer(),
+            onNote: () => this.handleAddNote(),
+            onCopySentence: () => this.handleCopySentence(),
             onSpeedChange: (rate) => this.handleRateChange(rate),
             onWpmChange: (wpm) => this.handleWpmChange(wpm),
             onVolumeChange: (vol) => this.audioEngine.setVolume(vol)
@@ -523,11 +531,14 @@ export class ReaderShell {
 
         const tokens = TextPipeline.tokenize(ttsText);
         this.currentTokens = tokens;
+        this.currentDocTitle = title;
+        this.currentTtsText = ttsText;
 
         const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length, language);
         this.currentChunks = await this.buildChunksWithCache(doc.id, ttsText);
         this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
         this.currentDocId = doc.id;
+        this.currentAnnotations = [];
 
         await documentStore.updateSettings(doc.id, this.settings.voiceId, this.settings.speedWpm);
 
@@ -546,6 +557,7 @@ export class ReaderShell {
         });
 
         this.paragraphView.setDocumentContext(originalText, contentType);
+        this.paragraphView.setAnnotations([], null);
         this.progress.setDocumentContext({
             title,
             originalText,
@@ -613,6 +625,8 @@ export class ReaderShell {
         if (!doc) return;
 
         this.currentDocId = docId;
+        this.currentDocTitle = doc.title;
+        this.currentTtsText = doc.ttsText || doc.originalText;
         this.paragraphView.setDocumentContext(doc.originalText, doc.contentType || 'text');
         this.loadingOverlay.show('Loading Document...', () => this.audioEngine.cancelSynthesis());
 
@@ -663,6 +677,8 @@ export class ReaderShell {
         this.switchView(this.settings.mode);
         this.setupPlaybackListeners();
         this.updateMediaMetadata(doc.title);
+
+        await this.loadAnnotations(docId);
 
         if (this.settings.mode === 'PARAGRAPH' && doc.progressScrollTop !== undefined) {
             window.setTimeout(() => {
@@ -1036,6 +1052,117 @@ export class ReaderShell {
         this.fatigueActiveMs += delta;
         if (this.fatigueActiveMs >= 20 * 60 * 1000) {
             this.showFatigueNudge();
+        }
+    }
+
+    private async loadAnnotations(docId: string) {
+        this.currentAnnotations = await annotationStore.getAnnotations(docId);
+        this.updateParagraphAnnotations();
+    }
+
+    private updateParagraphAnnotations() {
+        const ranges = this.currentAnnotations.map(annotation => ({
+            id: annotation.id,
+            type: annotation.type,
+            startOffset: annotation.startOffset,
+            endOffset: annotation.endOffset,
+            text: annotation.type === 'note'
+                ? annotation.text
+                : this.buildSnippet(annotation.startOffset, annotation.endOffset)
+        }));
+
+        this.paragraphView.setAnnotations(ranges, (id) => this.handleAnnotationSelect(id));
+    }
+
+    private handleAnnotationSelect(id: string) {
+        const annotation = this.currentAnnotations.find(item => item.id === id);
+        if (!annotation) return;
+        const controller = this.audioEngine.getController();
+        const fallback = controller.getCurrentTokenIndex();
+        const tokenIndex = this.findTokenIndexForOffset(annotation.startOffset, fallback);
+        if (!(this.currentView instanceof ParagraphView)) {
+            this.switchView('PARAGRAPH');
+        }
+        controller.seekByToken(tokenIndex);
+        if (this.currentView instanceof ParagraphView) {
+            this.currentView.update(tokenIndex, this.currentTokens);
+        }
+    }
+
+    private buildSnippet(start: number, end: number) {
+        const text = this.currentTtsText || '';
+        const raw = text.slice(start, Math.min(end, start + 140));
+        return raw.replace(/\s+/g, ' ').trim();
+    }
+
+    private getSentenceRange() {
+        const controller = this.audioEngine.getController();
+        const tokenIndex = controller.getCurrentTokenIndex();
+        const token = this.currentTokens[tokenIndex];
+        if (!token) return null;
+        const sentenceId = token.sentenceId;
+        const sentenceTokens = this.currentTokens.filter(t => t.sentenceId === sentenceId);
+        if (!sentenceTokens.length) return null;
+        const startToken = sentenceTokens[0];
+        const endToken = sentenceTokens[sentenceTokens.length - 1];
+        return {
+            startOffset: startToken.startOffset,
+            endOffset: endToken.endOffset
+        };
+    }
+
+    private getHighlightRange() {
+        if (!this.currentChunks.length) return null;
+        const controller = this.audioEngine.getController();
+        const tokenIndex = controller.getCurrentTokenIndex();
+        const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+        const prevIndex = Math.max(0, chunkIndex - 1);
+        const nextIndex = Math.min(this.currentChunks.length - 1, chunkIndex + 1);
+        const startOffset = this.currentChunks[prevIndex].startOffset;
+        const endOffset = this.currentChunks[nextIndex].endOffset;
+        return { startOffset, endOffset };
+    }
+
+    private async handleHighlightBuffer() {
+        if (!this.currentDocId) return;
+        const range = this.getHighlightRange();
+        if (!range) return;
+        const controller = this.audioEngine.getController();
+        const tokenIndex = controller.getCurrentTokenIndex();
+        const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+        const paraId = this.currentChunks[chunkIndex]?.paraId;
+        await annotationStore.addHighlight(this.currentDocId, range.startOffset, range.endOffset, paraId);
+        await this.loadAnnotations(this.currentDocId);
+    }
+
+    private async handleAddNote() {
+        if (!this.currentDocId) return;
+        const range = this.getSentenceRange();
+        if (!range) return;
+        const text = window.prompt('Add a note for this sentence:');
+        if (!text) return;
+        const controller = this.audioEngine.getController();
+        const tokenIndex = controller.getCurrentTokenIndex();
+        const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+        const paraId = this.currentChunks[chunkIndex]?.paraId;
+        await annotationStore.addNote(this.currentDocId, range.startOffset, range.endOffset, text.trim(), paraId);
+        await this.loadAnnotations(this.currentDocId);
+    }
+
+    private async handleCopySentence() {
+        const range = this.getSentenceRange();
+        if (!range) return;
+        const sentence = this.currentTtsText.slice(range.startOffset, range.endOffset).replace(/\s+/g, ' ').trim();
+        const payload = `${sentence} — ${this.currentDocTitle}`.trim();
+        try {
+            await navigator.clipboard.writeText(payload);
+        } catch {
+            const textarea = document.createElement('textarea');
+            textarea.value = payload;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            textarea.remove();
         }
     }
 

@@ -9,6 +9,9 @@ const ICONS = {
     skipParaBack: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`, // Skip Previous
     skipParaFwd: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`, // Skip Next
     skipChunkBack: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7 6h2v12H7zM11 8h6v2h-6zm0 4h6v2h-6zm0 4h6v2h-6z"/></svg>`,
+    highlight: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-3.6L6 21l1.5-7.5L2 9h7z"/></svg>`,
+    note: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M4 4h12l4 4v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm11 1v4h4"/></svg>`,
+    copy: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm4 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h12v14z"/></svg>`,
     seekBack: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/><text x="12" y="18" font-size="6" text-anchor="middle" fill="currentColor">10</text></svg>`, // Replay 10 (Custom approx)
     seekFwd: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/><text x="12" y="18" font-size="6" text-anchor="middle" fill="currentColor">10</text></svg>`, // Fwd 10
     volume: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`,
@@ -23,6 +26,9 @@ export class Controls {
     private onPlayPause: () => void;
     private onSeek: (offset: number) => void;
     private onSkip: (type: 'word' | 'sentence' | 'paragraph' | 'chunk', direction: 1 | -1) => void;
+    private onHighlight: () => void;
+    private onNote: () => void;
+    private onCopySentence: () => void;
     private onSpeedChange: (rate: number) => void;
     private onWpmChange: (wpm: number) => void;
     private onVolumeChange: (volume: number) => void;
@@ -49,6 +55,9 @@ export class Controls {
             onPlayPause: () => void;
             onSeek: (offset: number) => void;
             onSkip: (type: 'word' | 'sentence' | 'paragraph' | 'chunk', direction: 1 | -1) => void;
+            onHighlight: () => void;
+            onNote: () => void;
+            onCopySentence: () => void;
             onSpeedChange: (rate: number) => void;
             onWpmChange: (wpm: number) => void;
             onVolumeChange: (volume: number) => void;
@@ -61,6 +70,9 @@ export class Controls {
         this.onPlayPause = callbacks.onPlayPause;
         this.onSeek = callbacks.onSeek;
         this.onSkip = callbacks.onSkip;
+        this.onHighlight = callbacks.onHighlight;
+        this.onNote = callbacks.onNote;
+        this.onCopySentence = callbacks.onCopySentence;
         this.onSpeedChange = callbacks.onSpeedChange;
         this.onWpmChange = callbacks.onWpmChange;
         this.onVolumeChange = callbacks.onVolumeChange;
@@ -100,6 +112,9 @@ export class Controls {
                     </div>
 
                     <div class="playback-buttons">
+                        <button class="btn btn-secondary btn-icon" id="highlight-buffer" title="Highlight Buffer">${ICONS.highlight}</button>
+                        <button class="btn btn-secondary btn-icon" id="note-sentence" title="Add Note">${ICONS.note}</button>
+                        <button class="btn btn-secondary btn-icon" id="copy-sentence" title="Copy Sentence">${ICONS.copy}</button>
                         <button class="btn btn-secondary btn-icon" id="skip-chunk-back" title="Prev Chunk">${ICONS.skipChunkBack}</button>
                         <button class="btn btn-secondary btn-icon" id="skip-para-back" title="Prev Paragraph">${ICONS.skipParaBack}</button>
                         <button class="btn btn-secondary btn-icon" id="skip-sent-back" title="Prev Sentence">${ICONS.skipSentBack}</button>
@@ -176,6 +191,9 @@ export class Controls {
         this.container.querySelector('#skip-chunk-back')?.addEventListener('click', () => this.onSkip('chunk', -1));
         this.container.querySelector('#skip-para-back')?.addEventListener('click', () => this.onSkip('paragraph', -1));
         this.container.querySelector('#skip-para-fwd')?.addEventListener('click', () => this.onSkip('paragraph', 1));
+        this.container.querySelector('#highlight-buffer')?.addEventListener('click', () => this.onHighlight());
+        this.container.querySelector('#note-sentence')?.addEventListener('click', () => this.onNote());
+        this.container.querySelector('#copy-sentence')?.addEventListener('click', () => this.onCopySentence());
 
         this.speedInput.addEventListener('input', (e) => {
             const val = parseFloat((e.target as HTMLInputElement).value);

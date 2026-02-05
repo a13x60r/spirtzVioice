@@ -63,6 +63,17 @@ export interface SegmentCacheEntity {
     lastUpdated: number;
 }
 
+export interface AnnotationEntity {
+    id: string; // uuid
+    docId: string;
+    type: 'highlight' | 'note';
+    startOffset: number;
+    endOffset: number;
+    paraId?: number;
+    text?: string;
+    createdAt: number;
+}
+
 export class AppDatabase extends Dexie {
     documents!: Table<DocumentEntity, string>;
     settings!: Table<SettingsEntity, string>;
@@ -71,6 +82,7 @@ export class AppDatabase extends Dexie {
     plans!: Table<PlanEntity, string>;
     timelines!: Table<TimelineEntity, string>;
     segmentCache!: Table<SegmentCacheEntity, string>;
+    annotations!: Table<AnnotationEntity, string>;
     voicePackages!: Table<VoicePackage, string>;
     voiceAssets!: Table<VoiceAssetEntity, string>;
 
@@ -113,6 +125,16 @@ export class AppDatabase extends Dexie {
         // Version 6: Cache segmentation results per paragraph
         this.version(6).stores({
             segmentCache: 'id, docId, paraId'
+        });
+
+        // Version 7: Annotations (highlights/notes)
+        this.version(7).stores({
+            annotations: 'id, docId, startOffset'
+        });
+
+        // Version 8: Add paraId index to annotations
+        this.version(8).stores({
+            annotations: 'id, docId, startOffset, paraId'
         });
     }
 }

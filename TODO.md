@@ -48,11 +48,11 @@
 
 ## P3 - Adaptivity (behavior-driven, no eye tracking)
 
-- [ ] Auto-slowdown on struggle
-  - [ ] src/lib/adapt.ts
-  - [ ] track rewindsLast30s
-  - [ ] if >=2: baseWpm *= 0.9 (min floor 140)
-  - [ ] if stable 2 mins with 0 rewinds: baseWpm *= 1.03 (cap 360)
+- [x] Auto-slowdown on struggle
+  - [x] src/lib/adapt.ts
+  - [x] track rewindsLast30s
+  - [x] if >=2: baseWpm *= 0.9 (min floor 140)
+  - [x] if stable 2 mins with 0 rewinds: baseWpm *= 1.03 (cap 360)
 - [ ] Fatigue nudges
   - [ ] if session > 20 min: suggest break OR switch to paging
   - [ ] never block reading

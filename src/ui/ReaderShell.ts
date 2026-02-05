@@ -19,6 +19,7 @@ import { AppInstaller } from './AppInstaller';
 import { FocusView } from './views/FocusView';
 import { buildReaderChunks, mapTokensToChunks, type ReaderChunk } from '../lib/readerModel';
 import { prevChunk, prevSentence, rewindByMs } from '../lib/navigation';
+import { createAdaptState, evaluateAdaptation, recordRewind } from '../lib/adapt';
 import { Progress } from './components/Progress';
 import { KeyboardHelp } from './components/KeyboardHelp';
 
@@ -64,6 +65,7 @@ export class ReaderShell {
     private currentTokens: Token[] = [];
     private currentChunks: ReaderChunk[] = [];
     private tokenChunkMap: number[] = [];
+    private adaptState = createAdaptState();
 
     constructor(containerId: string) {
         const el = document.getElementById(containerId);
@@ -305,6 +307,7 @@ export class ReaderShell {
             onSeek: (offset) => {
                 const multiplier = offset > 0 ? 1 : -1;
                 const seekVal = (this.settings.skipSettings?.seekSec || 10) * multiplier;
+                if (seekVal < 0) this.noteRewind();
                 controller.seek(seekVal);
             },
             onSkip: (type, direction) => {
@@ -319,6 +322,7 @@ export class ReaderShell {
 
                 if (type === 'chunk') {
                     if (!this.currentChunks.length) return;
+                    if (direction === -1) this.noteRewind();
                     const tokenIndex = controller.getCurrentTokenIndex();
                     const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
                     const targetChunkIndex = prevChunk(chunkIndex, this.currentChunks);
@@ -331,8 +335,10 @@ export class ReaderShell {
 
                 for (let i = 0; i < count; i++) {
                     if (type === 'word') {
+                        if (step === -1) this.noteRewind();
                         controller.skipWord(step, tokens);
                     } else if (type === 'sentence') {
+                        if (step === -1) this.noteRewind();
                         if (step === -1) {
                             const targetIndex = prevSentence(controller.getCurrentTokenIndex(), tokens);
                             controller.seekByToken(targetIndex);
@@ -340,6 +346,7 @@ export class ReaderShell {
                             controller.skipSentence(step, tokens);
                         }
                     } else if (type === 'paragraph') {
+                        if (step === -1) this.noteRewind();
                         controller.skipParagraph(step, tokens);
                     }
                 }
@@ -812,6 +819,8 @@ export class ReaderShell {
                     lastSaveTime = now;
                 }
             }
+
+            this.maybeAdaptSpeed();
         };
     }
     private setupMediaSession() {
@@ -838,6 +847,7 @@ export class ReaderShell {
                     const current = scheduler.getCurrentTime();
                     const duration = controller.getDuration();
                     const target = rewindByMs(current, val * 1000 * (direction === -1 ? 1 : -1), duration);
+                    if (direction === -1) this.noteRewind();
                     controller.seek(target - current);
                     return;
                 }
@@ -850,13 +860,17 @@ export class ReaderShell {
                     if (unit === 'word') controller.skipWord(direction, this.currentTokens);
                     else if (unit === 'sentence') {
                         if (direction === -1) {
+                            this.noteRewind();
                             const targetIndex = prevSentence(controller.getCurrentTokenIndex(), this.currentTokens);
                             controller.seekByToken(targetIndex);
                         } else {
                             controller.skipSentence(direction, this.currentTokens);
                         }
                     }
-                    else controller.skipParagraph(direction, this.currentTokens);
+                    else {
+                        if (direction === -1) this.noteRewind();
+                        controller.skipParagraph(direction, this.currentTokens);
+                    }
                 }
             };
 
@@ -868,6 +882,7 @@ export class ReaderShell {
             // Optional: Seek
             navigator.mediaSession.setActionHandler('seekbackward', () => {
                 const val = (this.settings.skipSettings?.seekSec || 10);
+                this.noteRewind();
                 controller.seek(-val);
             });
             navigator.mediaSession.setActionHandler('seekforward', () => {
@@ -895,6 +910,18 @@ export class ReaderShell {
     private setHelpVisible(visible: boolean) {
         this.isHelpOpen = visible;
         this.keyboardHelp.setVisible(visible);
+    }
+
+    private noteRewind() {
+        recordRewind(Date.now(), this.adaptState);
+    }
+
+    private maybeAdaptSpeed() {
+        const now = Date.now();
+        const result = evaluateAdaptation(now, this.settings.speedWpm, this.adaptState);
+        if (result && result.nextWpm !== this.settings.speedWpm) {
+            void this.handleWpmChange(result.nextWpm);
+        }
     }
 
     private getActiveWpmRange() {
@@ -983,6 +1010,7 @@ export class ReaderShell {
 
                         if (unit === 'seek') {
                             const val = (this.settings.skipSettings?.seekSec || 10);
+                            this.noteRewind();
                             controller.seek(-val);
                         } else {
                             const count = (unit === 'word' ? this.settings.skipSettings?.wordCount :
@@ -991,10 +1019,14 @@ export class ReaderShell {
                             for (let i = 0; i < count; i++) {
                                 if (unit === 'word') controller.skipWord(-1, this.currentTokens);
                                 else if (unit === 'sentence') {
+                                    this.noteRewind();
                                     const targetIndex = prevSentence(controller.getCurrentTokenIndex(), this.currentTokens);
                                     controller.seekByToken(targetIndex);
                                 }
-                                else controller.skipParagraph(-1, this.currentTokens);
+                                else {
+                                    this.noteRewind();
+                                    controller.skipParagraph(-1, this.currentTokens);
+                                }
                             }
                         }
                     }
@@ -1007,10 +1039,12 @@ export class ReaderShell {
                     e.preventDefault();
                     if (!this.currentTokens.length || !this.currentChunks.length) return;
                     if (e.shiftKey) {
+                        this.noteRewind();
                         const targetIndex = prevSentence(controller.getCurrentTokenIndex(), this.currentTokens);
                         controller.seekByToken(targetIndex);
                         return;
                     }
+                    this.noteRewind();
                     const tokenIndex = controller.getCurrentTokenIndex();
                     const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
                     const targetChunkIndex = prevChunk(chunkIndex, this.currentChunks);

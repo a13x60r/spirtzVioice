@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { FocusView } from './FocusView';
 import type { ReaderChunk } from '../../lib/readerModel';
+import type { Token } from '@spec/types';
 
 describe('FocusView', () => {
     let view: FocusView;
@@ -91,5 +92,25 @@ describe('FocusView', () => {
         expect(prev?.textContent).toBe('');
         expect(current?.textContent).toBe('First chunk');
         expect(next?.textContent).toBe('Second chunk');
+    });
+
+    it('aligns ORP with active token within a chunk', () => {
+        const chunks: ReaderChunk[] = [
+            { id: '1', text: 'Hello world', startOffset: 0, endOffset: 11, sentenceId: 0, paraId: 0 }
+        ];
+        const tokens: Token[] = [
+            { index: 0, tokenId: 't0', text: 'Hello', normText: 'hello', startOffset: 0, endOffset: 5, type: 'word', sentenceId: 0 },
+            { index: 1, tokenId: 't1', text: 'world', normText: 'world', startOffset: 6, endOffset: 11, type: 'word', sentenceId: 0 }
+        ];
+
+        view.update(0, chunks, 0, tokens);
+        let focusChunk = container.querySelector('#focus-chunk') as HTMLElement;
+        let orp = focusChunk.querySelector('.focus-orp') as HTMLElement;
+        expect(orp?.textContent).toBe('e');
+
+        view.update(0, chunks, 1, tokens);
+        focusChunk = container.querySelector('#focus-chunk') as HTMLElement;
+        orp = focusChunk.querySelector('.focus-orp') as HTMLElement;
+        expect(orp?.textContent).toBe('o');
     });
 });

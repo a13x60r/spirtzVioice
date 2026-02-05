@@ -1209,3 +1209,66 @@ input[type="range"]:active::-moz-range-thumb {
     color: var(--color-text-secondary);
     font-variant-numeric: tabular-nums;
 }
+
+.help-hidden {
+    display: none;
+}
+
+.help-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 110;
+}
+
+.help-modal {
+    background: var(--color-bg);
+    padding: var(--spacing-lg);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.help-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.help-content {
+    display: grid;
+    gap: var(--spacing-sm);
+}
+
+.help-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.help-key {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+}
+
+.help-desc {
+    color: var(--color-text-secondary);
+}
+
+@media (max-width: 600px) {
+    .help-row {
+        grid-template-columns: 120px 1fr;
+    }
+}

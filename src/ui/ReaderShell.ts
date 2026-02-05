@@ -20,6 +20,7 @@ import { FocusView } from './views/FocusView';
 import { buildReaderChunks, mapTokensToChunks, type ReaderChunk } from '../lib/readerModel';
 import { prevChunk, prevSentence, rewindByMs } from '../lib/navigation';
 import { Progress } from './components/Progress';
+import { KeyboardHelp } from './components/KeyboardHelp';
 
 const HEADER_ICONS = {
     library: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v15H6c-1.1 0-2-.9-2-2V5zm2 0v13h9V5H6z"/><path d="M18 6h2v14c0 1.1-.9 2-2 2H8v-2h10V6z"/></svg>`,
@@ -57,6 +58,8 @@ export class ReaderShell {
     private loadingOverlay!: LoadingOverlay;
     private documentList!: DocumentList;
     private progress!: Progress;
+    private keyboardHelp!: KeyboardHelp;
+    private isHelpOpen: boolean = false;
     private currentDocId: string | null = null;
     private currentTokens: Token[] = [];
     private currentChunks: ReaderChunk[] = [];
@@ -169,6 +172,7 @@ export class ReaderShell {
         this.textInput?.unmount();
         this.documentList?.unmount();
         this.settingsPanel?.unmount();
+        this.keyboardHelp?.unmount();
 
         const overlay = document.querySelector('.loading-overlay');
         if (overlay) overlay.remove();
@@ -211,6 +215,7 @@ export class ReaderShell {
                 </footer>
                 
                 <div id="settings-mount"></div>
+                <div id="help-mount"></div>
             </div>
         `;
 
@@ -350,6 +355,10 @@ export class ReaderShell {
         const progressMount = this.container.querySelector('#structure-progress-mount') as HTMLElement;
         this.progress = new Progress(progressMount);
         this.progress.setVisible(false);
+
+        const helpMount = this.container.querySelector('#help-mount') as HTMLElement;
+        this.keyboardHelp = new KeyboardHelp(helpMount, () => this.setHelpVisible(false));
+        this.setHelpVisible(false);
 
         // Settings
         const settingsMount = this.container.querySelector('#settings-mount') as HTMLElement;
@@ -883,6 +892,33 @@ export class ReaderShell {
         }
     }
 
+    private setHelpVisible(visible: boolean) {
+        this.isHelpOpen = visible;
+        this.keyboardHelp.setVisible(visible);
+    }
+
+    private getActiveWpmRange() {
+        return this.settings.mode === 'FOCUS' ? FOCUS_WPM_RANGE : DEFAULT_WPM_RANGE;
+    }
+
+    private handleSpeedShortcut(direction: 1 | -1) {
+        const delta = 10;
+        const range = this.getActiveWpmRange();
+        const target = Math.min(range.max, Math.max(range.min, this.settings.speedWpm + delta * direction));
+        if (target === this.settings.speedWpm) return;
+        void this.handleWpmChange(target);
+    }
+
+    private openPagingFromShortcut() {
+        if (this.currentView instanceof FocusView) {
+            void this.handleFocusPanicExit();
+            return;
+        }
+        if (!(this.currentView instanceof ParagraphView)) {
+            this.switchView('PARAGRAPH');
+        }
+    }
+
     private setupKeyboardShortcuts() {
         window.addEventListener('keydown', (e) => {
             const controller = this.audioEngine.getController();
@@ -890,6 +926,20 @@ export class ReaderShell {
             // Ignore if in input field
             const target = e.target as HTMLElement;
             if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+            if (this.isHelpOpen) {
+                if (e.key === 'Escape' || e.key === '?' || (e.code === 'Slash' && e.shiftKey)) {
+                    e.preventDefault();
+                    this.setHelpVisible(false);
+                }
+                return;
+            }
+
+            if (e.key === '?' || (e.code === 'Slash' && e.shiftKey)) {
+                e.preventDefault();
+                this.setHelpVisible(true);
+                return;
+            }
 
             switch (e.code) {
                 case 'Space':
@@ -952,6 +1002,53 @@ export class ReaderShell {
                 case 'MediaStop':
                     controller.pause();
                     controller.seekByToken(0);
+                    break;
+                case 'ArrowLeft': {
+                    e.preventDefault();
+                    if (!this.currentTokens.length || !this.currentChunks.length) return;
+                    if (e.shiftKey) {
+                        const targetIndex = prevSentence(controller.getCurrentTokenIndex(), this.currentTokens);
+                        controller.seekByToken(targetIndex);
+                        return;
+                    }
+                    const tokenIndex = controller.getCurrentTokenIndex();
+                    const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+                    const targetChunkIndex = prevChunk(chunkIndex, this.currentChunks);
+                    const targetChunk = this.currentChunks[targetChunkIndex];
+                    if (!targetChunk) return;
+                    const targetIndex = this.findTokenIndexForOffset(targetChunk.startOffset, tokenIndex);
+                    controller.seekByToken(targetIndex);
+                    break;
+                }
+                case 'ArrowRight': {
+                    e.preventDefault();
+                    if (!this.currentTokens.length || !this.currentChunks.length) return;
+                    if (e.shiftKey) {
+                        controller.skipSentence(1, this.currentTokens);
+                        return;
+                    }
+                    const tokenIndex = controller.getCurrentTokenIndex();
+                    const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+                    const targetChunkIndex = Math.min(this.currentChunks.length - 1, chunkIndex + 1);
+                    const targetChunk = this.currentChunks[targetChunkIndex];
+                    if (!targetChunk) return;
+                    const targetIndex = this.findTokenIndexForOffset(targetChunk.startOffset, tokenIndex);
+                    controller.seekByToken(targetIndex);
+                    break;
+                }
+                case 'Equal':
+                case 'NumpadAdd':
+                    e.preventDefault();
+                    this.handleSpeedShortcut(1);
+                    break;
+                case 'Minus':
+                case 'NumpadSubtract':
+                    e.preventDefault();
+                    this.handleSpeedShortcut(-1);
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    this.openPagingFromShortcut();
                     break;
             }
         });

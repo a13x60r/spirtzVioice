@@ -38,13 +38,13 @@
 - [x] Rewind granularity
   - [x] controls: back 1 chunk, back 1 sentence, back 10 seconds (fallback)
   - [x] src/lib/navigation.ts: prevChunk(), prevSentence(), rewindByMs(ms)
-- [ ] Keyboard shortcuts + help overlay
-  - [ ] ? opens overlay
-  - [ ] Space: play/pause
-  - [ ] Left/Right: prev/next chunk
-  - [ ] Shift+Left/Right: prev/next sentence
-  - [ ] +/-: speed
-  - [ ] Esc: open paging
+- [x] Keyboard shortcuts + help overlay
+  - [x] ? opens overlay
+  - [x] Space: play/pause
+  - [x] Left/Right: prev/next chunk
+  - [x] Shift+Left/Right: prev/next sentence
+  - [x] +/-: speed
+  - [x] Esc: open paging
 
 ## P3 - Adaptivity (behavior-driven, no eye tracking)
 

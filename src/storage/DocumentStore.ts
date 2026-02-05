@@ -16,7 +16,12 @@ export class DocumentStore {
             language,
             createdAt: Date.now(),
             lastReadAt: Date.now(),
+            lastUpdated: Date.now(),
             progressTokenIndex: 0,
+            progressOffset: 0,
+            progressChunkIndex: 0,
+            progressParaId: 0,
+            progressScrollTop: 0,
             voiceId: 'default',
             speedWpm: 200 // Default speed
         };
@@ -43,18 +48,37 @@ export class DocumentStore {
      * Update reading progress
      */
     async updateProgress(id: string, tokenIndex: number, speedWpm?: number, mode?: 'RSVP' | 'PARAGRAPH' | 'FOCUS') {
-        const updateData: Partial<DocumentEntity> = {
+        await this.updateReadingState(id, {
             progressTokenIndex: tokenIndex,
-            lastReadAt: Date.now()
+            speedWpm,
+            mode
+        });
+    }
+
+    /**
+     * Update detailed reading state
+     */
+    async updateReadingState(id: string, state: {
+        progressTokenIndex: number;
+        progressOffset?: number;
+        progressChunkIndex?: number;
+        progressParaId?: number;
+        progressScrollTop?: number;
+        speedWpm?: number;
+        mode?: 'RSVP' | 'PARAGRAPH' | 'FOCUS';
+    }) {
+        const updateData: Partial<DocumentEntity> = {
+            progressTokenIndex: state.progressTokenIndex,
+            lastReadAt: Date.now(),
+            lastUpdated: Date.now()
         };
 
-        if (speedWpm !== undefined) {
-            updateData.speedWpm = speedWpm;
-        }
-
-        if (mode !== undefined) {
-            updateData.mode = mode;
-        }
+        if (state.progressOffset !== undefined) updateData.progressOffset = state.progressOffset;
+        if (state.progressChunkIndex !== undefined) updateData.progressChunkIndex = state.progressChunkIndex;
+        if (state.progressParaId !== undefined) updateData.progressParaId = state.progressParaId;
+        if (state.progressScrollTop !== undefined) updateData.progressScrollTop = state.progressScrollTop;
+        if (state.speedWpm !== undefined) updateData.speedWpm = state.speedWpm;
+        if (state.mode !== undefined) updateData.mode = state.mode;
 
         await db.documents.update(id, updateData);
     }

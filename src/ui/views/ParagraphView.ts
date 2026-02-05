@@ -8,6 +8,7 @@ export class ParagraphView implements ReaderView {
     private contentEl: HTMLElement | null = null;
     private tokenEls: Map<number, HTMLElement> = new Map();
     private activeTokenIndex: number = -1;
+    private onScroll: ((scrollTop: number) => void) | null = null;
 
     // New context
     private originalText: string = '';
@@ -21,10 +22,16 @@ export class ParagraphView implements ReaderView {
             </div>
         `;
         this.contentEl = this.container.querySelector('#paragraph-content');
+        if (this.contentEl) {
+            this.contentEl.addEventListener('scroll', this.handleScroll);
+        }
     }
 
     unmount(): void {
         if (this.container) {
+            if (this.contentEl) {
+                this.contentEl.removeEventListener('scroll', this.handleScroll);
+            }
             this.container.innerHTML = '';
             this.container = null;
             this.contentEl = null;
@@ -120,8 +127,22 @@ export class ParagraphView implements ReaderView {
         }
     }
 
+    getScrollTop(): number {
+        if (!this.contentEl) return 0;
+        return this.contentEl.scrollTop;
+    }
+
+    setScrollTop(value: number) {
+        if (!this.contentEl) return;
+        this.contentEl.scrollTop = value;
+    }
+
     setTheme(_theme: string): void {
         // Theme logic
+    }
+
+    setScrollHandler(handler: ((scrollTop: number) => void) | null) {
+        this.onScroll = handler;
     }
 
     private stripExternalImages(html: string): string {
@@ -147,4 +168,9 @@ export class ParagraphView implements ReaderView {
             return false;
         }
     }
+
+    private handleScroll = () => {
+        if (!this.contentEl || !this.onScroll) return;
+        this.onScroll(this.contentEl.scrollTop);
+    };
 }

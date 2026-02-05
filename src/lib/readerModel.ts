@@ -11,7 +11,7 @@ export interface ReaderChunk {
     paraId: number;
 }
 
-interface ParagraphSlice {
+export interface ParagraphSlice {
     text: string;
     startOffset: number;
 }
@@ -50,6 +50,32 @@ export function buildReaderChunks(text: string): ReaderChunk[] {
     return chunks;
 }
 
+export function buildReaderChunksForParagraph(para: ParagraphSlice, sentenceId: number, paraId: number): ReaderChunk[] {
+    const segmentChunks = segmentTextToChunks(para.text);
+    const chunks: ReaderChunk[] = [];
+
+    let localSentenceId = sentenceId;
+
+    for (const segment of segmentChunks) {
+        const globalStart = para.startOffset + segment.startOffset;
+        const globalEnd = para.startOffset + segment.endOffset;
+        const chunkText = para.text.slice(segment.startOffset, segment.endOffset);
+
+        chunks.push({
+            id: uuidv4(),
+            text: chunkText,
+            startOffset: globalStart,
+            endOffset: globalEnd,
+            sentenceId: localSentenceId,
+            paraId
+        });
+
+        localSentenceId += countSentenceEndings(segment.text);
+    }
+
+    return chunks;
+}
+
 export function mapTokensToChunks(tokens: Token[], chunks: ReaderChunk[]): number[] {
     if (chunks.length === 0) return [];
 
@@ -77,7 +103,7 @@ export function mapTokensToChunks(tokens: Token[], chunks: ReaderChunk[]): numbe
     return mapping;
 }
 
-function splitParagraphs(text: string): ParagraphSlice[] {
+export function splitParagraphs(text: string): ParagraphSlice[] {
     if (!text) return [];
 
     const paragraphs: ParagraphSlice[] = [];

@@ -9,7 +9,12 @@ export interface DocumentEntity {
     ttsText?: string; // Cleaned text for TTS (markdown/HTML stripped)
     createdAt: number;
     lastReadAt: number;
+    lastUpdated?: number;
     progressTokenIndex: number;
+    progressOffset?: number;
+    progressChunkIndex?: number;
+    progressParaId?: number;
+    progressScrollTop?: number;
     voiceId: string; // Last used voice
     speedWpm: number; // Last used speed
     contentType: 'text' | 'html' | 'markdown';
@@ -42,6 +47,22 @@ export interface TimelineEntity extends Timeline {
     // planId is key
 }
 
+export interface SegmentCacheEntity {
+    id: string; // docId:paraId
+    docId: string;
+    paraId: number;
+    paragraphHash: string;
+    chunks: {
+        text: string;
+        startOffset: number;
+        endOffset: number;
+        sentenceId: number;
+        paraId: number;
+    }[];
+    createdAt: number;
+    lastUpdated: number;
+}
+
 export class AppDatabase extends Dexie {
     documents!: Table<DocumentEntity, string>;
     settings!: Table<SettingsEntity, string>;
@@ -49,6 +70,7 @@ export class AppDatabase extends Dexie {
     audioChunks!: Table<AudioChunkEntity, string>;
     plans!: Table<PlanEntity, string>;
     timelines!: Table<TimelineEntity, string>;
+    segmentCache!: Table<SegmentCacheEntity, string>;
     voicePackages!: Table<VoicePackage, string>;
     voiceAssets!: Table<VoiceAssetEntity, string>;
 
@@ -77,6 +99,20 @@ export class AppDatabase extends Dexie {
         // Version 4: Add language field to documents
         this.version(4).stores({
             documents: 'id, title, lastReadAt, language'
+        });
+
+        // Version 5: Persist reading state offsets
+        this.version(5).stores({
+            documents: 'id, title, lastReadAt, language, lastUpdated'
+        }).upgrade(tx => {
+            return tx.table('documents').toCollection().modify(doc => {
+                if (!doc.lastUpdated) doc.lastUpdated = doc.lastReadAt || Date.now();
+            });
+        });
+
+        // Version 6: Cache segmentation results per paragraph
+        this.version(6).stores({
+            segmentCache: 'id, docId, paraId'
         });
     }
 }

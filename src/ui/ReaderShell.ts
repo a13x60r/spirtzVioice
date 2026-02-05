@@ -17,11 +17,12 @@ import type { ReaderView } from './views/ViewInterface';
 import { TextPipeline } from '@domain/TextPipeline';
 import { AppInstaller } from './AppInstaller';
 import { FocusView } from './views/FocusView';
-import { buildReaderChunks, mapTokensToChunks, type ReaderChunk } from '../lib/readerModel';
+import { buildReaderChunksForParagraph, mapTokensToChunks, splitParagraphs, type ReaderChunk } from '../lib/readerModel';
 import { prevChunk, prevSentence, rewindByMs } from '../lib/navigation';
 import { createAdaptState, evaluateAdaptation, recordRewind } from '../lib/adapt';
 import { Progress } from './components/Progress';
 import { KeyboardHelp } from './components/KeyboardHelp';
+import { segmentCacheStore } from '../storage/SegmentCacheStore';
 
 const HEADER_ICONS = {
     library: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 5c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v15H6c-1.1 0-2-.9-2-2V5zm2 0v13h9V5H6z"/><path d="M18 6h2v14c0 1.1-.9 2-2 2H8v-2h10V6z"/></svg>`,
@@ -65,6 +66,7 @@ export class ReaderShell {
     private fatigueActiveMs: number = 0;
     private fatigueLastTickMs: number | null = null;
     private fatigueNudgeShown: boolean = false;
+    private scrollSaveTimer: number | null = null;
     private currentDocId: string | null = null;
     private currentTokens: Token[] = [];
     private currentChunks: ReaderChunk[] = [];
@@ -80,6 +82,7 @@ export class ReaderShell {
         this.rsvpView = new RSVPView();
         this.paragraphView = new ParagraphView();
         this.focusView = new FocusView();
+        this.paragraphView.setScrollHandler((scrollTop) => this.handleParagraphScroll(scrollTop));
         this.focusView.setPanicExitHandler(() => {
             this.handleFocusPanicExit();
         });
@@ -520,10 +523,10 @@ export class ReaderShell {
 
         const tokens = TextPipeline.tokenize(ttsText);
         this.currentTokens = tokens;
-        this.currentChunks = buildReaderChunks(ttsText);
-        this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
 
         const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length, language);
+        this.currentChunks = await this.buildChunksWithCache(doc.id, ttsText);
+        this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
         this.currentDocId = doc.id;
 
         await documentStore.updateSettings(doc.id, this.settings.voiceId, this.settings.speedWpm);
@@ -616,7 +619,7 @@ export class ReaderShell {
         const textForTts = doc.ttsText || doc.originalText;
         const tokens = TextPipeline.tokenize(textForTts);
         this.currentTokens = tokens;
-        this.currentChunks = buildReaderChunks(textForTts);
+        this.currentChunks = await this.buildChunksWithCache(doc.id, textForTts);
         this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
 
         if (doc.voiceId && doc.voiceId !== 'default') {
@@ -633,7 +636,16 @@ export class ReaderShell {
             this.controls.setWpm(doc.speedWpm);
         }
 
-        await this.audioEngine.loadDocument(doc.id, tokens, this.settings, doc.progressTokenIndex, (p, msg) => {
+        if (doc.mode) {
+            this.settings.mode = doc.mode;
+        }
+
+        const fallbackIndex = doc.progressTokenIndex ?? 0;
+        const resumeIndex = doc.progressOffset !== undefined
+            ? this.findTokenIndexForOffset(doc.progressOffset, fallbackIndex)
+            : fallbackIndex;
+
+        await this.audioEngine.loadDocument(doc.id, tokens, this.settings, resumeIndex, (p, msg) => {
             this.loadingOverlay.setProgress(p);
             if (msg) this.loadingOverlay.setText(msg);
         });
@@ -651,10 +663,50 @@ export class ReaderShell {
         this.switchView(this.settings.mode);
         this.setupPlaybackListeners();
         this.updateMediaMetadata(doc.title);
+
+        if (this.settings.mode === 'PARAGRAPH' && doc.progressScrollTop !== undefined) {
+            window.setTimeout(() => {
+                this.paragraphView.setScrollTop(doc.progressScrollTop || 0);
+            }, 0);
+        }
+    }
+
+    private async buildChunksWithCache(docId: string, text: string): Promise<ReaderChunk[]> {
+        const paragraphs = splitParagraphs(text);
+        const chunks: ReaderChunk[] = [];
+        let sentenceId = 0;
+
+        for (let paraId = 0; paraId < paragraphs.length; paraId++) {
+            const para = paragraphs[paraId];
+            const cached = await segmentCacheStore.getChunks(docId, paraId, para.text);
+            if (cached && cached.length > 0) {
+                chunks.push(...cached);
+                const lastSentenceId = cached[cached.length - 1].sentenceId;
+                sentenceId = Math.max(sentenceId, lastSentenceId + 1);
+                continue;
+            }
+
+            const paraChunks = buildReaderChunksForParagraph(para, sentenceId, paraId);
+            chunks.push(...paraChunks);
+            if (paraChunks.length > 0) {
+                const lastSentenceId = paraChunks[paraChunks.length - 1].sentenceId;
+                sentenceId = Math.max(sentenceId, lastSentenceId + 1);
+            } else {
+                sentenceId += 1;
+            }
+            await segmentCacheStore.setChunks(docId, paraId, para.text, paraChunks);
+        }
+
+        return chunks;
     }
 
     private switchView(mode: 'RSVP' | 'PARAGRAPH' | 'FOCUS') {
         this.isReaderActive = true;
+
+        if (this.currentDocId) {
+            const tokenIndex = this.audioEngine.getController().getCurrentTokenIndex();
+            documentStore.updateReadingState(this.currentDocId, this.buildReadingState(tokenIndex));
+        }
 
         if (this.currentView) this.currentView.unmount();
         this.textInput.unmount();
@@ -662,10 +714,6 @@ export class ReaderShell {
 
         this.settings.mode = mode;
         settingsStore.saveSettings({ mode });
-
-        if (this.currentDocId) {
-            documentStore.updateProgress(this.currentDocId, this.audioEngine.getController().getCurrentTokenIndex(), this.settings.speedWpm, mode);
-        }
 
         if (mode === 'RSVP') {
             this.currentView = this.rsvpView;
@@ -789,7 +837,11 @@ export class ReaderShell {
         // settingsStore.saveSettings({ speedWpm: wpm });
 
         if (this.currentDocId) {
-            await documentStore.updateProgress(this.currentDocId, this.audioEngine.getController().getCurrentTokenIndex(), wpm, this.settings.mode);
+            const tokenIndex = this.audioEngine.getController().getCurrentTokenIndex();
+            await documentStore.updateReadingState(this.currentDocId, {
+                ...this.buildReadingState(tokenIndex),
+                speedWpm: wpm
+            });
         }
 
         // This triggers re-synthesis
@@ -826,7 +878,7 @@ export class ReaderShell {
             if (this.currentDocId) {
                 const now = Date.now();
                 if (now - lastSaveTime > SAVE_INTERVAL) {
-                    documentStore.updateProgress(this.currentDocId, index, this.settings.speedWpm, this.settings.mode);
+                    documentStore.updateReadingState(this.currentDocId, this.buildReadingState(index));
                     lastSaveTime = now;
                 }
             }
@@ -987,6 +1039,23 @@ export class ReaderShell {
         }
     }
 
+    private handleParagraphScroll(scrollTop: number) {
+        if (!this.currentDocId) return;
+        if (!(this.currentView instanceof ParagraphView)) return;
+
+        if (this.scrollSaveTimer !== null) {
+            window.clearTimeout(this.scrollSaveTimer);
+        }
+
+        this.scrollSaveTimer = window.setTimeout(() => {
+            const tokenIndex = this.audioEngine.getController().getCurrentTokenIndex();
+            const state = this.buildReadingState(tokenIndex);
+            state.progressScrollTop = scrollTop;
+            documentStore.updateReadingState(this.currentDocId as string, state);
+            this.scrollSaveTimer = null;
+        }, 500);
+    }
+
     private noteRewind() {
         recordRewind(Date.now(), this.adaptState);
     }
@@ -1009,6 +1078,25 @@ export class ReaderShell {
         const target = Math.min(range.max, Math.max(range.min, this.settings.speedWpm + delta * direction));
         if (target === this.settings.speedWpm) return;
         void this.handleWpmChange(target);
+    }
+
+    private buildReadingState(tokenIndex: number) {
+        const token = this.currentTokens[tokenIndex];
+        const chunkIndex = this.tokenChunkMap[tokenIndex] ?? 0;
+        const chunk = this.currentChunks[chunkIndex];
+        const scrollTop = this.currentView instanceof ParagraphView
+            ? this.paragraphView.getScrollTop()
+            : undefined;
+
+        return {
+            progressTokenIndex: tokenIndex,
+            progressOffset: token?.startOffset ?? 0,
+            progressChunkIndex: chunkIndex,
+            progressParaId: chunk?.paraId ?? 0,
+            progressScrollTop: scrollTop,
+            speedWpm: this.settings.speedWpm,
+            mode: this.settings.mode
+        };
     }
 
     private openPagingFromShortcut() {

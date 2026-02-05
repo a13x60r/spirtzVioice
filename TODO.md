@@ -59,14 +59,14 @@
 
 ## P4 - Persistence + offline (PWA-grade)
 
-- [ ] Persist exact reading state (every page/chunk)
-  - [ ] src/storage/db.ts (IndexedDB via Dexie or native)
-  - [ ] store: docId, mode, chapterId, paraId, chunkIndex, offset
-  - [ ] baseWpm, preset, theme, lastUpdated
-  - [ ] resume reliably
-- [ ] Cache segmentation results
-  - [ ] store per docId+paraId -> chunks[]
-  - [ ] avoid re-segmenting on every open
+- [x] Persist exact reading state (every page/chunk)
+  - [x] src/storage/db.ts (IndexedDB via Dexie or native)
+  - [x] store: docId, mode, paraId, chunkIndex, offset, scrollTop
+  - [x] baseWpm, theme, lastUpdated
+  - [x] resume reliably
+- [x] Cache segmentation results
+  - [x] store per docId+paraId -> chunks[]
+  - [x] avoid re-segmenting on every open
 - [ ] Service worker caching
   - [ ] cache app shell + document text + user prefs
   - [ ] ensure offline open last book works

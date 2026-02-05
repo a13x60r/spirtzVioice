@@ -38,3 +38,10 @@ workbox-*.js
 # Voice packages (if large)
 public/voices/*.bin
 public/voices/*.dat
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+

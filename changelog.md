@@ -8,10 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Language flags in the library and localized welcome documents (German/Russian).
 - Voice install warning with download action and clearer messaging.
+- **End-to-End Testing**:
+  - Implemented Playwright test infrastructure for reliable release verification.
+  - Added **Visual Regression Tests** covering Library, Reader (all modes), and Settings UI.
+  - Added documentation for running E2E tests and updating snapshots.
 
 ### Fixed
+
 - Language-specific chunking rules for better non-English alignment.
 - Voice matching now respects base language and forces resynthesis after downloads.
 

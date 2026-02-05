@@ -21,6 +21,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "@types/marked": "^5.0.2",
     "@types/node": "^20.11.5",
     "@types/uuid": "^10.0.0",

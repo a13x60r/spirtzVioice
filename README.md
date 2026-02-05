@@ -49,6 +49,16 @@ npm test
 npm run test:coverage
 ```
 
+### End-to-End Testing (Visual)
+
+```bash
+# Run visual regression tests
+npx playwright test visual-regression.spec.ts
+
+# Update baseline screenshots
+npx playwright test visual-regression.spec.ts --update-snapshots
+```
+
 ## Architecture
 
 See [spec/00_README.md](./spec/00_README.md) for detailed architecture documentation.
@@ -75,12 +85,12 @@ See [spec/00_README.md](./spec/00_README.md) for detailed architecture documenta
 spirtz-voice/
 ├── spec/              # Complete specifications
 ├── src/
-│   ├── domain/        # Core business logic
-│   ├── audio/         # Audio scheduling & playback
-│   ├── storage/       # IndexedDB persistence
-│   ├── ui/            # UI components
-│   ├── workers/       # Web Workers (TTS)
-│   └── main.ts        # Entry point
+├── domain/        # Core business logic
+├── audio/         # Audio scheduling & playback
+├── storage/       # IndexedDB persistence
+├── ui/            # UI components
+├── workers/       # Web Workers (TTS)
+└── main.ts        # Entry point
 ├── public/            # Static assets
 └── dist/              # Build output
 ```

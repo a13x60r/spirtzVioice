@@ -29,18 +29,51 @@ export class InfoModal {
 
                     <div class="settings-content">
                         <section class="settings-group">
-                            <h3>About Spirtz Voice</h3>
+                            <h3>👋 Welcome</h3>
                             <p class="info-text">
-                                Spirtz Voice is a high-performance, offline-first reading application that synchronizes text with speech.
-                            </p>
-                            <p class="info-text" style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--color-text-secondary);">
-                                It combines <strong>RSVP (Rapid Serial Visual Presentation)</strong> with exact audio alignment to help you read faster while maintaining focus. All processing and speech synthesis happen locally on your device for maximum privacy and speed.
+                                Spirtz Voice helps you read faster and listen to your documents at the same time. it's 100% offline and private.
                             </p>
                         </section>
 
                         <section class="settings-group">
+                            <h3>📖 Reading Modes</h3>
+                            <div class="info-item">
+                                <strong>Speed Reader (RSVP):</strong>
+                                <p class="info-text">Shows one word at a time in the center. Stops your eyes from moving, letting you read much faster.</p>
+                            </div>
+                            <div class="info-item">
+                                <strong>Paragraph View:</strong>
+                                <p class="info-text">Traditional layout. Highlights words as they are spoken. Great for comprehension.</p>
+                            </div>
+                            <div class="info-item">
+                                <strong>Focus View:</strong>
+                                <p class="info-text">Distraction-free mode. Shuts out everything but the text.</p>
+                            </div>
+                        </section>
+
+                        <section class="settings-group">
+                            <h3>⚡ Speed & Settings</h3>
+                            <div class="info-item">
+                                <strong>WPM (Words Per Minute):</strong>
+                                <p class="info-text">Controls how fast you read. Faster WPM = faster voice and faster flashing words. 250 WPM is a normal reading speed.</p>
+                            </div>
+                        </section>
+
+                        <section class="settings-group">
+                            <h3>⌨️ Shortcuts</h3>
+                            <div class="shortcut-list">
+                                <div class="help-row"><span class="help-key">Space</span><span class="help-desc">Play / Pause</span></div>
+                                <div class="help-row"><span class="help-key">Left / Right</span><span class="help-desc">Prev / Next Chunk</span></div>
+                                <div class="help-row"><span class="help-key">Shift + Left / Right</span><span class="help-desc">Prev / Next Sentence</span></div>
+                                <div class="help-row"><span class="help-key">+ / -</span><span class="help-desc">Increase / Decrease Speed</span></div>
+                                <div class="help-row"><span class="help-key">Esc</span><span class="help-desc">Paging / Exit Focus</span></div>
+                                <div class="help-row"><span class="help-key">?</span><span class="help-desc">Keyboard Help</span></div>
+                            </div>
+                        </section>
+
+                        <section class="settings-group">
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <h3>Web Clipper</h3>
+                                <h3>✂️ Web Clipper</h3>
                                 <span class="info-badge" title="Bookmarket to clip text from other websites to Spirtz Voice.">i</span>
                             </div>
                             <p class="info-text" style="margin-bottom: 1rem;">
@@ -52,20 +85,7 @@ export class InfoModal {
                                 </a>
                             </div>
                             <p class="info-text" style="font-size: 0.8rem; color: var(--color-text-secondary);">
-                                <strong>How to use:</strong><br>
-                                1. Drag the button above to your browser's bookmarks bar.<br>
-                                2. Navigate to any article on the web.<br>
-                                3. Select the text you want to read (or select nothing to clip the whole page).<br>
-                                4. Click the "Clip to Spirtz" bookmark.<br>
-                            </p>
-                        </section>
-                        
-                        <section class="settings-group">
-                            <h3>Shortcuts</h3>
-                             <p class="info-text">
-                                <strong>Space:</strong> Play/Pause<br>
-                                <strong>Left/Right:</strong> Navigation<br>
-                                <strong>Escape:</strong> Switch View / Close
+                                <strong>How to use:</strong> Select text on any webpage and click the "Clip to Spirtz" bookmark to transfer it here.
                             </p>
                         </section>
                     </div>

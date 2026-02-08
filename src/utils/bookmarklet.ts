@@ -1,0 +1,54 @@
+
+export function generateBookmarkletCode(baseUrl: string): string {
+    // This is the modified logic from selection-md.js, adapted to redirect to Spirtz Voice
+    const code = `(() => {
+        const sel = getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+            alert('Please select some text to clip to Spirtz Voice.');
+            return;
+        }
+        const r = sel.getRangeAt(0).cloneRange();
+        const div = document.createElement("div");
+        div.appendChild(r.cloneContents());
+        const esc = t => t.replace(/\\r/g, "").replace(/\\u00a0/g, " ").replace(/[ \\t]+\\n/g, "\\n").replace(/[ \\t]{2,}/g, " ").replace(/\\n{3,}/g, "\\n\\n");
+        const md = (n, ctx = { li: false }) => {
+            if (!n) return "";
+            if (n.nodeType === 3) return n.nodeValue;
+            if (n.nodeType !== 1) return "";
+            const t = n.tagName.toLowerCase();
+            const kids = () => Array.from(n.childNodes).map(c => md(c, ctx)).join("");
+            const txt = () => esc(kids());
+            const block = s => s.trim().replace(/\\n{3,}/g, "\\n\\n");
+            if (t === "br") return "\\n";
+            if (t === "p") return "\\n\\n" + block(txt()) + "\\n\\n";
+            if (t === "div") return "\\n\\n" + block(txt()) + "\\n\\n";
+            if (/^h[1-6]$/.test(t)) return "\\n\\n" + ("#".repeat(+t[1]) + " " + block(txt()).trim()) + "\\n\\n";
+            if (t === "strong" || t === "b") return "**" + txt() + "**";
+            if (t === "em" || t === "i") return "*" + txt() + "*";
+            if (t === "u") return "__" + txt() + "__";
+            if (t === "s" || t === "del" || t === "strike") return "~~" + txt() + "~~";
+            if (t === "code" && n.parentElement && n.parentElement.tagName.toLowerCase() === "pre") return n.textContent.replace(/\\n$/, "");
+            if (t === "code") return "\`" + n.textContent.replace(/\`/g, "\\\`") + "\`";
+            if (t === "pre") { const c = n.querySelector("code"); const body = (c ? c.textContent : n.textContent).replace(/\\n$/, ""); return "\\n\\n\`\`\`\\n" + body + "\\n\`\`\`\\n\\n"; }
+            if (t === "a") { const href = n.getAttribute("href") || ""; const label = block(txt()).trim() || href; return href ? \`[\${label}](\${href})\` : label; }
+            if (t === "img") { const alt = n.getAttribute("alt") || ""; const src = n.getAttribute("src") || ""; return src ? \`![\${alt}](\${src})\` : ""; }
+            if (t === "blockquote") { const inner = block(txt()).trim().split("\\n").map(l => "> " + l).join("\\n"); return "\\n\\n" + inner + "\\n\\n"; }
+            if (t === "ul" || t === "ol") { const isOl = t === "ol"; let i = 1; const out = Array.from(n.children).filter(ch => ch.tagName && ch.tagName.toLowerCase() === "li").map(li => { const body = block(Array.from(li.childNodes).map(c => md(c, { li: true })).join("")).trim().replace(/\\n/g, "\\n    "); const prefix = isOl ? \`\${i++}. \` : "- "; return prefix + body; }).join("\\n"); return "\\n\\n" + out + "\\n\\n"; }
+            if (t === "li") return block(txt()).trim();
+            if (t === "hr") return "\\n\\n---\\n\\n";
+            if (t === "table") { const rows = Array.from(n.querySelectorAll("tr")).map(tr => Array.from(tr.children).map(td => block(esc(td.textContent)).trim())); if (!rows.length) return ""; const head = rows[0]; const body = rows.slice(1); const line = a => "| " + a.map(x => x.replace(/\\|/g, "\\\\|")).join(" | ") + " |"; const sep = "| " + head.map(() => ":---").join(" | ") + " |"; return "\\n\\n" + [line(head), sep, ...body.map(line)].join("\\n") + "\\n\\n"; }
+            return txt();
+        };
+
+        const out = md(div).replace(/[ \\t]+\\n/g, "\\n").replace(/\\n{3,}/g, "\\n\\n").trim();
+        const title = document.title || "Selected Text";
+        
+        const targetUrl = new URL('${baseUrl}');
+        targetUrl.searchParams.set('title', title);
+        targetUrl.searchParams.set('text', out);
+        targetUrl.searchParams.set('url', window.location.href);
+        window.open(targetUrl.toString(), '_blank');
+    })();`;
+
+    return `javascript:${encodeURIComponent(code.replace(/\s+/g, ' ').trim())}`;
+}

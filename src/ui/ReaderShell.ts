@@ -1,3 +1,4 @@
+
 import type { Token, Settings } from '@spec/types';
 import './styles/main.css';
 import { AudioEngine } from '../audio/AudioEngine';
@@ -8,6 +9,7 @@ import { documentStore } from '../storage/DocumentStore';
 import { settingsStore } from '../storage/SettingsStore';
 import { Controls } from './components/Controls';
 import { SettingsPanel } from './components/Settings';
+import { InfoModal } from './components/InfoModal';
 import { TextInput } from './components/TextInput';
 import { DocumentList } from './components/DocumentList';
 import { RSVPView } from './views/RSVPView';
@@ -32,7 +34,8 @@ const HEADER_ICONS = {
     newDoc: ICONS.newDoc,
     switchView: ICONS.switchView,
     settings: ICONS.settings,
-    install: ICONS.install
+    install: ICONS.install,
+    info: ICONS.info
 };
 
 const DEFAULT_WPM_RANGE = { min: 200, max: 1400 };
@@ -59,6 +62,7 @@ export class ReaderShell {
 
     // Components
     private settingsPanel!: SettingsPanel;
+    private infoModal!: InfoModal;
     private textInput!: TextInput;
     private loadingOverlay!: LoadingOverlay;
     private documentList!: DocumentList;
@@ -218,6 +222,7 @@ export class ReaderShell {
                         <button class="btn btn-secondary btn-icon" id="btn-library" title="Library" aria-label="Library">${HEADER_ICONS.library}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-new-text" title="New Document" aria-label="New Document">${HEADER_ICONS.newDoc}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-install-app" title="Install App" aria-label="Install App" style="display: none;">${HEADER_ICONS.install}</button>
+                        <button class="btn btn-secondary btn-icon" id="btn-info" title="Info & Help" aria-label="Info & Help">${HEADER_ICONS.info}</button>
                         <button class="btn btn-secondary btn-icon" id="btn-settings" title="Settings" aria-label="Settings">${HEADER_ICONS.settings}</button>
                     </div>
                 </header>
@@ -236,10 +241,10 @@ export class ReaderShell {
                 <div id="fatigue-nudge" class="fatigue-nudge fatigue-nudge-hidden"></div>
                 
                 <div id="settings-mount"></div>
+                <div id="info-mount"></div>
                 <div id="help-mount"></div>
             </div>
         `;
-
         this.viewContainer = this.container.querySelector('#view-container') as HTMLElement;
 
         // New Text
@@ -255,6 +260,11 @@ export class ReaderShell {
         // Settings toggle
         this.container.querySelector('#btn-settings')?.addEventListener('click', () => {
             this.settingsPanel.mount();
+        });
+
+        // Info toggle
+        this.container.querySelector('#btn-info')?.addEventListener('click', () => {
+            this.infoModal.mount();
         });
 
         // Install app
@@ -544,6 +554,10 @@ export class ReaderShell {
             },
             defaultSettings
         );
+
+        // Info Modal
+        const infoMount = this.container.querySelector('#info-mount') as HTMLElement;
+        this.infoModal = new InfoModal(infoMount, () => { });
 
         // Fetch available voices
         this.audioEngine.getAvailableVoices().then(voices => {

@@ -16,6 +16,7 @@ export interface SettingsCallbacks {
 
 import { APP_VERSION } from '../../constants/version';
 
+
 const CLOSE_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.71 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29 10.59 10.6l6.3-6.3z"/></svg>`;
 
 export class SettingsPanel {
@@ -97,6 +98,7 @@ export class SettingsPanel {
             `<option value="${l}" ${l === this.currentSettings.language ? 'selected' : ''}>${getLangName(l)}</option>`
         ).join('');
 
+        // Filter voices by language
         const filteredVoices = this.voices.filter(v => v.lang === this.currentSettings.language);
         const voiceOptions = filteredVoices.map(v =>
             `<option value="${v.id}" ${v.id === this.currentSettings.voiceId ? 'selected' : ''}>${v.name}${v.isInstalled ? '' : ' (Download)'}</option>`
@@ -110,14 +112,19 @@ export class SettingsPanel {
         const selectedVoice = this.voices.find(v => v.id === this.currentSettings.voiceId);
         const needsDownload = selectedVoice && !selectedVoice.isInstalled;
 
+        const currentUrl = window.location.origin + window.location.pathname;
+
+
         this.container.innerHTML = `
             <div class="settings-modal-overlay">
                 <div class="settings-modal">
                     <header class="settings-header">
                         <h2>Settings</h2>
-                        <button class="btn btn-secondary btn-icon" id="close-settings" title="Close" aria-label="Close">${CLOSE_ICON}</button>
+                        <button class="btn btn-secondary btn-icon" id="close-settings" title="Close" aria-label="Close">
+                            ${CLOSE_ICON}
+                        </button>
                     </header>
-                    
+
                     <div class="settings-content">
                         <section class="settings-group">
                             <h3>Language</h3>
@@ -156,17 +163,16 @@ export class SettingsPanel {
                             </div>
                             <div class="radio-group" style="display: flex; gap: 1rem; flex-wrap: wrap;">
                                 <label>
-                                    <input type="radio" name="strategy" value="TOKEN" ${this.currentSettings.strategy === 'TOKEN' ? 'checked' : ''}> 
+                                    <input type="radio" name="strategy" value="TOKEN" ${this.currentSettings.strategy === 'TOKEN' ? 'checked' : ''}>
                                     Word by Word
                                 </label>
                                 <label>
-                                    <input type="radio" name="strategy" value="CHUNK" ${this.currentSettings.strategy === 'CHUNK' ? 'checked' : ''}> 
+                                    <input type="radio" name="strategy" value="CHUNK" ${this.currentSettings.strategy === 'CHUNK' ? 'checked' : ''}>
                                     Chunked (Natural)
                                 </label>
                             </div>
                             <p class="info-text">
-                                <strong>Word by Word:</strong> Highlights each word as it's spoken. Best for focus.
-                                <br>
+                                <strong>Word by Word:</strong> Highlights each word as it's spoken. Best for focus.<br>
                                 <strong>Chunked:</strong> Groups words into phrases. Better for natural speech rhythm.
                             </p>
                         </section>
@@ -261,6 +267,8 @@ export class SettingsPanel {
                                 </select>
                             </div>
                         </section>
+
+
 
                         <div class="settings-footer">
                             Version ${APP_VERSION}
@@ -395,10 +403,10 @@ export class SettingsPanel {
             this.callbacks.onSkipSettingsChange(settings);
 
             // Update labels
-            this.container.querySelector('#skip-seek-value')!.textContent = `${settings.seekSec}s`;
-            this.container.querySelector('#skip-words-value')!.textContent = `${settings.wordCount}`;
-            this.container.querySelector('#skip-sentences-value')!.textContent = `${settings.sentenceCount}`;
-            this.container.querySelector('#skip-paragraphs-value')!.textContent = `${settings.paragraphCount}`;
+            this.container.querySelector('#skip-seek-value')!.textContent = `${settings.seekSec} s`;
+            this.container.querySelector('#skip-words-value')!.textContent = `${settings.wordCount} `;
+            this.container.querySelector('#skip-sentences-value')!.textContent = `${settings.sentenceCount} `;
+            this.container.querySelector('#skip-paragraphs-value')!.textContent = `${settings.paragraphCount} `;
         };
 
         skipSeek?.addEventListener('input', updateSkip);

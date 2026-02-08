@@ -9,8 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Info & Help Modal**: Dedicated modal for keyboard shortcuts, about information, and Web Clipper setup.
+- **Web Clipper**: Dynamically generated bookmarklet for one-click content import from any website.
 - Language flags in the library and localized welcome documents (German/Russian).
 - Voice install warning with download action and clearer messaging.
+
+### Changed
+
+- Moved Web Clipper functionality from Settings panel to the new Info & Help modal to declutter the UI.
+
+### Fixed
+
+- Resolved duplicate imports and event listener scoping issues in `ReaderShell.ts`.
 - **End-to-End Testing**:
   - Implemented Playwright test infrastructure for reliable release verification.
   - Added **Visual Regression Tests** covering Library, Reader (all modes), and Settings UI.

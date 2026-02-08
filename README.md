@@ -16,6 +16,8 @@ An offline-first reader app with exact text-to-speech synchronization supporting
 - 📝 **Study Affordances**: Highlight buffer, sentence notes, and one-click copy/cite with notes sidebar
 - 🌍 **Language Aware**: Library flags, localized welcome docs, and language-based voice selection
 - ⚠️ **Voice Install Alerts**: Clear prompts when a voice needs downloading
+- ✂️ **Web Clipper**: Bookmarklet to import selected text or full pages from any website in one click
+- ℹ️ **Info & Help**: Dedicated modal for keyboard shortcuts, about info, and clipper setup
 
 ## Quick Start
 
@@ -81,7 +83,7 @@ See [spec/00_README.md](./spec/00_README.md) for detailed architecture documenta
 
 ### Project Structure
 
-```
+```text
 spirtz-voice/
 ├── spec/              # Complete specifications
 ├── src/

@@ -112,7 +112,7 @@ export class SettingsPanel {
         const selectedVoice = this.voices.find(v => v.id === this.currentSettings.voiceId);
         const needsDownload = selectedVoice && !selectedVoice.isInstalled;
 
-        const currentUrl = window.location.origin + window.location.pathname;
+
 
 
         this.container.innerHTML = `

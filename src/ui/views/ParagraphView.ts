@@ -403,8 +403,7 @@ export class ParagraphView implements ReaderView {
 		const containerRect = this.contentEl.getBoundingClientRect();
 		const targetTop =
 			targetRect.top - containerRect.top + this.contentEl.scrollTop;
-		const nextScrollTop =
-			targetTop - this.contentEl.clientHeight / 2;
+		const nextScrollTop = targetTop - this.contentEl.clientHeight / 2;
 		this.contentEl.scrollTop = nextScrollTop;
 		return true;
 	}

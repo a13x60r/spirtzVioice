@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Voice install warning with download action and clearer messaging.
 - **Documentation Overhaul**: Comprehensive update to `README.md` with visual badges, Mermaid architecture diagrams, Reading Science section (RSVP/ORP), and expanded roadmap.
 
+### Fixed
+
+- **Test Infrastructure**:
+  - Resolved `ParagraphView` test failures by providing mandatory `ttsText` arguments.
+  - Optimized Vitest configuration to explicitly exclude Playwright E2E tests, avoiding cross-environment conflicts.
+  - Corrected Vitest path aliases to ensure consistent module resolution during tests.
+  - Updated visual regression snapshots for consistent E2E baseline.
+
 ### Changed
 
 - Moved Web Clipper functionality from Settings panel to the new Info & Help modal to declutter the UI.

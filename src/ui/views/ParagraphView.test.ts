@@ -19,7 +19,7 @@ describe('ParagraphView', () => {
     });
 
     it('should render tokens for plain text', () => {
-        view.setDocumentContext('Hello world', 'text');
+        view.setDocumentContext('Hello world', 'text', 'Hello world');
         const tokens: Token[] = [
             { tokenId: '1', index: 0, text: 'Hello', normText: 'hello', type: 'word', sentenceId: 0, startOffset: 0, endOffset: 5 },
             { tokenId: '2', index: 1, text: ' ', normText: '', type: 'space', sentenceId: 0, startOffset: 5, endOffset: 6 },
@@ -33,7 +33,7 @@ describe('ParagraphView', () => {
     });
 
     it('should render markdown using setDocumentContext', () => {
-        view.setDocumentContext('# Header\n**Bold**', 'markdown');
+        view.setDocumentContext('# Header\n**Bold**', 'markdown', 'Header Bold');
         // update triggers render
         view.update(0, []);
 
@@ -46,7 +46,7 @@ describe('ParagraphView', () => {
 
     it('should render HTML using setDocumentContext', () => {
         const html = '<div class="custom">My HTML</div>';
-        view.setDocumentContext(html, 'html');
+        view.setDocumentContext(html, 'html', 'My HTML');
         view.update(0, []);
 
         const content = container.querySelector('#paragraph-content');
@@ -54,11 +54,11 @@ describe('ParagraphView', () => {
     });
 
     it('should clear content when setDocumentContext is called', () => {
-        view.setDocumentContext('First', 'text');
+        view.setDocumentContext('First', 'text', 'First');
         view.update(0, [{ tokenId: '1', index: 0, text: 'First', normText: 'first', type: 'word', sentenceId: 0, startOffset: 0, endOffset: 5 }]);
         expect(container.textContent).toContain('First');
 
-        view.setDocumentContext('Second', 'text');
+        view.setDocumentContext('Second', 'text', 'Second');
         expect(container.querySelector('#paragraph-content')?.innerHTML).toBe('');
     });
 });

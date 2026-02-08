@@ -5,11 +5,13 @@
 - [ ] docs: add documentation for all features (Cost: H, Prio: Low)
 
 # Features (Todo)
+
 - [ ] add import from url
 - [ ] add import from share (Android/iOS intent)
 - [x] replace text UI with icons, where possible (e.g. settings)
 
 # Done
+
 - [x] feature: add language detection, save language for each stored text
 - [x] fix: critical TTS warm-up freeze (Worker path resolution)
 - [x] add multifile upload
@@ -40,6 +42,8 @@
 - [x] Fix `manifest.webmanifest` syntax error
 - [x] feature: add Optimal Recognition Point (ORP) display
 - [x] setup GitHub Pages deployment action
+- [x] fix: correct Mermaid diagram syntax in README.md
 
 # Rejected / Obsolete
+
 - [x] sync settings wpm to main screen wpm (Decided: Strict separation of default vs active WPM)

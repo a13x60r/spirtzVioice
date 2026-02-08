@@ -65,16 +65,16 @@ The **Audio Clock is King**. Everything in Spirtz Voice flows from the high-prec
 
 ```mermaid
 graph TD
-    A[Text Input (.txt, .md, .html)] --> B[TextPipeline]
-    B --> C[PlanEngine]
-    C --> D[TimelineEngine]
-    D --> E[AudioScheduler]
-    E --> F[AudioContext Timeline]
-    F --> G{UI Synchronizer}
-    G --> H[RSVP View]
-    G --> I[Focus View]
-    G --> J[Paragraph View]
-    K[TTSEngine Worker] -- Synth Audio --> E
+    A["Text Input (.txt, .md, .html)"] --> B["TextPipeline"]
+    B --> C["PlanEngine"]
+    C --> D["TimelineEngine"]
+    D --> E["AudioScheduler"]
+    E --> F["AudioContext Timeline"]
+    F --> G{"UI Synchronizer"}
+    G --> H["RSVP View"]
+    G --> I["Focus View"]
+    G --> J["Paragraph View"]
+    K["TTSEngine Worker"] -- "Synth Audio" --> E
 ```
 
 ### Core Engine Layers

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **README**: Corrected Mermaid diagram syntax by quoting node labels and edge text, preventing parsing errors in various Markdown renderers.
 - **Test Infrastructure**:
   - Resolved `ParagraphView` test failures by providing mandatory `ttsText` arguments.
   - Optimized Vitest configuration to explicitly exclude Playwright E2E tests, avoiding cross-environment conflicts.

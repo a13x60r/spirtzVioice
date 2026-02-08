@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Optimized Vitest configuration to explicitly exclude Playwright E2E tests, avoiding cross-environment conflicts.
   - Corrected Vitest path aliases to ensure consistent module resolution during tests.
   - Updated visual regression snapshots for consistent E2E baseline.
+  - Consolidated GitHub Actions workflows: removed redundant `ci.yml`, `coverage.yml`, and `e2e.yml` in favor of a streamlined deployment process.
+  - Enhanced `deploy.yml` with unique artifact naming using `run_id` and `run_attempt` to prevent race conditions and improve traceability.
 
 ### Changed
 

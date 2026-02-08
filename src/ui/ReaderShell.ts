@@ -625,7 +625,7 @@ export class ReaderShell {
             if (msg) this.loadingOverlay.setText(msg);
         });
 
-        this.paragraphView.setDocumentContext(originalText, contentType);
+		this.paragraphView.setDocumentContext(originalText, contentType, ttsText);
         this.paragraphView.setAnnotations([], null);
         this.progress.setDocumentContext({
             title,
@@ -696,10 +696,10 @@ export class ReaderShell {
         if (doc.language) {
             this.settings.language = doc.language;
         }
-        this.paragraphView.setDocumentContext(doc.originalText, doc.contentType || 'text');
-        this.loadingOverlay.show('Loading Document...', () => this.audioEngine.cancelSynthesis());
+		this.loadingOverlay.show('Loading Document...', () => this.audioEngine.cancelSynthesis());
 
-        const textForTts = doc.ttsText || doc.originalText;
+		const textForTts = doc.ttsText || doc.originalText;
+		this.paragraphView.setDocumentContext(doc.originalText, doc.contentType || 'text', textForTts);
         const tokens = TextPipeline.tokenize(textForTts);
         this.currentTokens = tokens;
         this.currentChunks = await this.buildChunksWithCache(doc.id, textForTts, this.currentLanguage);

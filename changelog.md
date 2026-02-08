@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Web Clipper**: Dynamically generated bookmarklet for one-click content import from any website.
 - Language flags in the library and localized welcome documents (German/Russian).
 - Voice install warning with download action and clearer messaging.
+- **Documentation Overhaul**: Comprehensive update to `README.md` with visual badges, Mermaid architecture diagrams, Reading Science section (RSVP/ORP), and expanded roadmap.
 
 ### Changed
 

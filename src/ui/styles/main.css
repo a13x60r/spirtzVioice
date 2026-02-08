@@ -110,8 +110,8 @@ body {
 .shell-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
     height: 100dvh;
+    min-height: 100vh;
     /* Better mobile handling */
     margin: 0 auto;
     width: 100%;
@@ -193,6 +193,46 @@ body {
     overflow: hidden;
     position: relative;
     margin: var(--spacing-md) 0;
+}
+
+.paragraph-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: var(--spacing-lg);
+    width: 100%;
+    height: 100%;
+    align-items: stretch;
+}
+
+.paragraph-container {
+    height: 100%;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--color-bg-secondary) 75%, transparent);
+    font-family: var(--reader-font-family);
+    font-size: var(--reader-font-size);
+    line-height: var(--reader-line-height);
+}
+
+.notes-panel {
+    height: 100%;
+    overflow: hidden;
+}
+
+.notes-panel-list {
+    overflow-y: auto;
+}
+
+@media (max-width: 1024px) {
+    .paragraph-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .notes-panel {
+        height: auto;
+        max-height: 40vh;
+    }
 }
 
 .controls-area {
@@ -492,7 +532,6 @@ body {
 /* Controls */
 .controls-layout {
     display: flex;
-    flex-direction: column;
     flex-direction: column;
     gap: var(--spacing-md);
 }

@@ -43,6 +43,7 @@
 - [x] feature: add Optimal Recognition Point (ORP) display
 - [x] setup GitHub Pages deployment action
 - [x] fix: correct Mermaid diagram syntax in README.md
+- [x] infra: setup comprehensive CI/CD workflows (CI, Coverage, E2E, Tag Build, gh-pages deployment)
 
 # Rejected / Obsolete
 

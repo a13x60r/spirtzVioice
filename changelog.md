@@ -28,6 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Moved Web Clipper functionality from Settings panel to the new Info & Help modal to declutter the UI.
 
+### Infrastructure
+
+- **GitHub Actions**:
+  - Added comprehensive CI workflow for `main`, `master`, and `beta` branches.
+  - Added automated Code Coverage reporting.
+  - Added dedicated E2E testing workflow with Playwright.
+  - Added `Tag Build` workflow for automated release artifact generation on tags.
+  - Refactored GitHub Pages deployment to use `peaceiris/actions-gh-pages` for improved reliability.
+
 ### Fixed
 
 - Resolved duplicate imports and event listener scoping issues in `ReaderShell.ts`.

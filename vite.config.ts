@@ -3,7 +3,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
-    base: '/spirtzVioice/',
+    base: process.env.VITE_BASE ?? '/spirtzVioice/',
 
     resolve: {
         alias: {

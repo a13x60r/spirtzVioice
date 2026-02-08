@@ -2,9 +2,9 @@ name: E2E
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ["main", "master", "beta"]
   pull_request:
-    branches: ["main", "master"]
+    branches: ["main", "master", "beta"]
   workflow_dispatch:
 
 permissions:

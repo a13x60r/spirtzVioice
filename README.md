@@ -65,7 +65,7 @@ The **Audio Clock is King**. Everything in Spirtz Voice flows from the high-prec
 
 ```mermaid
 graph TD
-    A[Text Input (.txt, .md, .html)] --> B[TextPipeline]
+    A["Text Input (.txt, .md, .html)"] --> B[TextPipeline]
     B --> C[PlanEngine]
     C --> D[TimelineEngine]
     D --> E[AudioScheduler]

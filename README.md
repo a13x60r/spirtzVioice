@@ -11,6 +11,8 @@
 
 An offline-first reader app with **exact text-to-speech synchronization**. Supporting RSVP, Focus, and Paragraph display modes, Spirtz Voice turns reading into an immersive, auditory-visual experience.
 
+![Spirtz Voice Preview](tests/e2e/screenshots/slideshow.gif)
+
 > **Why Spirtz Voice?** Most speed readers separate audio from visual. We treat them as one. By using the high-resolution Web Audio clock to drive the UI, we achieve a level of synchronization where the highlight doesn't just "follow" the voice—it *is* the voice.
 
 ---

@@ -45,3 +45,8 @@ public/voices/*.dat
 /blob-report/
 /playwright/.cache/
 
+
+# AI / Tooling
+.sisyphus/
+.codenomad
+opencode.jsonc

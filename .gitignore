@@ -46,7 +46,17 @@ public/voices/*.dat
 /playwright/.cache/
 
 
+
 # AI / Tooling
 .sisyphus/
 .codenomad
 opencode.jsonc
+
+# Large Assets / Models
+public/piper/
+
+# Scripts Output
+scripts/*.txt
+
+# Personal / Documentation
+thoughts/

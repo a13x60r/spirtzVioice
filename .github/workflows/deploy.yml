@@ -1,10 +1,7 @@
 name: Deploy to GitHub Pages
 
 on:
-  workflow_run:
-    workflows: ["E2E"]
-    types:
-      - completed
+  push:
     branches: ["main", "master"]
   workflow_dispatch:
 
@@ -16,9 +13,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  e2e:
+    uses: ./.github/workflows/e2e.yml
   deploy:
+    needs: e2e
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

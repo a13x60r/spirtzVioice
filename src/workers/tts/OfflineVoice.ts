@@ -114,7 +114,7 @@ export class OfflineVoice {
                 this.toAbsoluteUrl(this.currentConfigUrl),
                 null, // speakerId
                 text,
-                (_p) => { /* Silenced internal logs */ },
+                (_p: any) => { /* Silenced internal logs */ },
                 null, // phonemeIds
                 false, // inferEmotion
                 this.toAbsoluteUrl(BASE_URL), // onnxruntimeUrl (folder)

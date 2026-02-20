@@ -117,7 +117,7 @@ export default defineConfig({
                 maximumFileSizeToCacheInBytes: 100000000, // 100MB to support large Voice Models
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,json,wasm,data,onnx}'],
                 navigateFallback: 'index.html',
-                navigateFallbackDenylist: [/^\/assets\//, /\/manifest\.webmanifest$/],
+                navigateFallbackDenylist: [/^\/assets\//, /\/manifest\.webmanifest$/, /^\/spirtzVioice\/beta\//],
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

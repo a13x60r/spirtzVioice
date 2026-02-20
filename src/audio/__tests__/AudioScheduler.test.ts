@@ -81,4 +81,19 @@ describe('AudioScheduler', () => {
         // Since we mock createBufferSource, checking stopAll is tricky without inspecting the source mock instances
         // But we rely on basic coverage here.
     });
+
+    it('should maintain current time correctly when playback rate changes mid-playback', async () => {
+        await scheduler.play(0);
+
+        mockCtx.currentTime = 10;
+        expect(scheduler.getCurrentTime()).toBeCloseTo(10, 0);
+
+        scheduler.setPlaybackRate(2.0);
+
+        expect(scheduler.getCurrentTime()).toBeCloseTo(10, 0);
+
+        mockCtx.currentTime = 15;
+        // 10s previously + (5s * 2.0x) = 20s
+        expect(scheduler.getCurrentTime()).toBeCloseTo(20, 0);
+    });
 });

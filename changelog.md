@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0-beta.0] - 2026-02-20
+
 ### Added
 
 - **Info & Help Modal**: Dedicated modal for keyboard shortcuts, about information, and Web Clipper setup.

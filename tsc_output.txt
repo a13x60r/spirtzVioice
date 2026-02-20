@@ -1,0 +1,18 @@
+src/ui/components/DocumentList.ts(22,13): error TS6133: 'sortBy' is declared but its value is never read.
+src/ui/components/DocumentList.ts(112,23): error TS6133: 'target' is declared but its value is never read.
+src/ui/components/DocumentList.ts(120,15): error TS6133: 'lastRead' is declared but its value is never read.
+src/ui/components/DocumentList.ts(163,13): error TS6133: 'getLanguageFlag' is declared but its value is never read.
+src/ui/components/DocumentList.ts(181,13): error TS6133: 'getLanguageLabel' is declared but its value is never read.
+src/ui/components/DocumentList.ts(200,13): error TS6133: 'confirmDelete' is declared but its value is never read.
+src/ui/components/DocumentList.ts(209,13): error TS6133: 'confirmBulkDelete' is declared but its value is never read.
+src/ui/components/Drawer.ts(24,13): error TS6133: 'currentTextSize' is declared but its value is never read.
+src/ui/ReaderShell.ts(612,17): error TS2322: Type '"dark" | "light"' is not assignable to type '"default" | "calm" | "dark" | undefined'.
+  Type '"light"' is not assignable to type '"default" | "calm" | "dark" | undefined'.
+src/ui/ReaderShell.ts(613,33): error TS2345: Argument of type '"dark" | "light"' is not assignable to parameter of type '"default" | "calm" | "dark"'.
+  Type '"light"' is not assignable to type '"default" | "calm" | "dark"'.
+src/ui/ReaderShell.ts(614,46): error TS2322: Type '"dark" | "light"' is not assignable to type '"default" | "calm" | "dark" | undefined'.
+  Type '"light"' is not assignable to type '"default" | "calm" | "dark" | undefined'.
+src/ui/ReaderShell.ts(622,17): error TS2322: Type 'ReaderMode' is not assignable to type '"RSVP" | "PARAGRAPH" | undefined'.
+  Type '"FOCUS"' is not assignable to type '"RSVP" | "PARAGRAPH" | undefined'.
+src/ui/views/ImportView.ts(99,15): error TS6133: 'fileInput' is declared but its value is never read.
+src/ui/views/ImportView.ts(156,45): error TS6133: 'e' is declared but its value is never read.

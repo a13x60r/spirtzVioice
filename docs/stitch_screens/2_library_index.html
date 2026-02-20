@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Library Index - Tactile Utility Reader</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f24a0d", // Safety Orange
+                        "background-light": "#F2F2F2", // Paper Grey
+                        "background-dark": "#1a1a1a", // Dark Grey
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#262626",
+                        "ink": "#000000",
+                        "ink-dark": "#FFFFFF",
+                        "muted": "#888888",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "mono": ["Space Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px", // Strict Swiss Utility usually means sharp corners
+                        "sm": "0px",
+                        "md": "0px", 
+                        "lg": "0px",
+                    },
+                    borderWidth: {
+                        "1": "1px",
+                        "2": "2px",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Utilities for the Swiss Style */
+        .swiss-grid-lines {
+            background-image: linear-gradient(to right, #e5e5e5 1px, transparent 1px),
+                              linear-gradient(to bottom, #e5e5e5 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Specific text clamp for 2 lines */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen font-body text-ink dark:text-ink-dark flex justify-center">
+<!-- Mobile Container -->
+<div class="w-full max-w-md bg-background-light dark:bg-background-dark min-h-screen flex flex-col relative border-x border-ink/10 dark:border-ink-dark/10 shadow-2xl">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-50 bg-background-light dark:bg-background-dark border-b-2 border-ink dark:border-ink-dark">
+<div class="flex items-end justify-between px-4 py-4 pb-3">
+<div class="flex flex-col">
+<span class="font-mono text-[10px] text-muted tracking-widest uppercase mb-1">Library Manifest</span>
+<h1 class="font-display text-3xl font-bold tracking-tighter leading-none">INDEX</h1>
+</div>
+<button class="group flex items-center justify-center w-12 h-12 border border-ink dark:border-ink-dark hover:bg-ink hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors active:translate-y-[1px]">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<!-- Sub-header / Filter strip -->
+<div class="flex border-t border-ink/20 dark:border-ink-dark/20 divide-x divide-ink/20 dark:divide-ink-dark/20 font-mono text-xs">
+<button class="flex-1 py-2 px-2 text-center bg-ink text-white dark:bg-white dark:text-black uppercase">All Items</button>
+<button class="flex-1 py-2 px-2 text-center hover:bg-ink/5 dark:hover:bg-white/10 uppercase text-muted">Unread</button>
+<button class="flex-1 py-2 px-2 text-center hover:bg-ink/5 dark:hover:bg-white/10 uppercase text-muted">Archived</button>
+</div>
+</header>
+<!-- Main Content: List -->
+<main class="flex-1 flex flex-col">
+<!-- List Item 1: Active Reading -->
+<article class="group relative w-full bg-surface-light dark:bg-surface-dark border-b border-ink dark:border-ink-dark cursor-pointer transition-colors hover:bg-background-light dark:hover:bg-zinc-800">
+<div class="p-4 pb-6 relative z-10 bg-inherit">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-[10px] text-primary dark:text-primary uppercase tracking-wider font-bold">Reading Now</span>
+<span class="font-mono text-[10px] text-muted">PDF • 1.2MB</span>
+</div>
+<h3 class="font-body font-bold text-lg leading-tight mb-3 line-clamp-2 pr-4">The Mechanics of Rapid Serial Visual Presentation in Modern Interfaces</h3>
+<div class="flex items-center gap-2 font-mono text-xs text-muted">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>04:30 LEFT</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-[45%] z-20"></div>
+</article>
+<!-- List Item 2 -->
+<article class="group relative w-full bg-surface-light dark:bg-surface-dark border-b border-ink dark:border-ink-dark cursor-pointer transition-colors hover:bg-background-light dark:hover:bg-zinc-800">
+<div class="p-4 pb-6 relative z-10 bg-inherit">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-[10px] text-muted uppercase tracking-wider">Added Yesterday</span>
+<span class="font-mono text-[10px] text-muted">WEB • WIKIPEDIA</span>
+</div>
+<h3 class="font-body font-bold text-lg leading-tight mb-3 line-clamp-2 pr-4">Industrial Design Principles of 1960: A Retrospective on Braun</h3>
+<div class="flex items-center gap-2 font-mono text-xs text-muted">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>12:00 LEFT</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-[10%] z-20"></div>
+</article>
+<!-- List Item 3 (Swipe State Simulation) -->
+<div class="relative w-full h-auto overflow-hidden">
+<!-- Background Action Layer -->
+<div class="absolute inset-0 bg-red-600 flex items-center justify-end px-6 z-0">
+<span class="font-mono text-white font-bold tracking-widest text-sm flex items-center gap-2">
+                        DELETE <span class="material-symbols-outlined text-sm">close</span>
+</span>
+</div>
+<!-- Foreground Content Layer - Shifted slightly left to imply swipe -->
+<article class="relative z-10 w-full bg-surface-light dark:bg-surface-dark border-b border-ink dark:border-ink-dark cursor-pointer transform -translate-x-16 transition-transform shadow-[-4px_0_10px_rgba(0,0,0,0.1)]">
+<div class="p-4 pb-6">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-[10px] text-muted uppercase tracking-wider">2 days ago</span>
+<span class="font-mono text-[10px] text-muted">TXT • IMPORT</span>
+</div>
+<h3 class="font-body font-bold text-lg leading-tight mb-3 line-clamp-2 pr-4">Cognitive Load Theory and Instructional Design</h3>
+<div class="flex items-center gap-2 font-mono text-xs text-muted">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>COMPLETED</span>
+</div>
+</div>
+<!-- Progress Bar (Full) -->
+<div class="absolute bottom-0 left-0 h-1 bg-ink dark:bg-ink-dark w-full z-20 opacity-20"></div>
+</article>
+</div>
+<!-- List Item 4 -->
+<article class="group relative w-full bg-surface-light dark:bg-surface-dark border-b border-ink dark:border-ink-dark cursor-pointer transition-colors hover:bg-background-light dark:hover:bg-zinc-800">
+<div class="p-4 pb-6 relative z-10 bg-inherit">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-[10px] text-muted uppercase tracking-wider">Last Week</span>
+<span class="font-mono text-[10px] text-muted">EPUB • 4.5MB</span>
+</div>
+<h3 class="font-body font-bold text-lg leading-tight mb-3 line-clamp-2 pr-4">Grid Systems in Graphic Design: A Visual Communication Manual for Graphic Designers</h3>
+<div class="flex items-center gap-2 font-mono text-xs text-muted">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>3h 45m LEFT</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-[2%] z-20"></div>
+</article>
+<!-- List Item 5 -->
+<article class="group relative w-full bg-surface-light dark:bg-surface-dark border-b border-ink dark:border-ink-dark cursor-pointer transition-colors hover:bg-background-light dark:hover:bg-zinc-800">
+<div class="p-4 pb-6 relative z-10 bg-inherit">
+<div class="flex justify-between items-start mb-2">
+<span class="font-mono text-[10px] text-muted uppercase tracking-wider">Archived</span>
+<span class="font-mono text-[10px] text-muted">WEB • MEDIUM</span>
+</div>
+<h3 class="font-body font-bold text-lg leading-tight mb-3 line-clamp-2 pr-4">The Death of the Interface</h3>
+<div class="flex items-center gap-2 font-mono text-xs text-muted">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>08:15 LEFT</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-[0%] z-20"></div>
+</article>
+<!-- End of list spacer -->
+<div class="h-20 bg-background-light dark:bg-background-dark swiss-grid-lines opacity-20"></div>
+</main>
+<!-- Fixed Footer Status Bar -->
+<footer class="sticky bottom-0 z-50 bg-background-light dark:bg-background-dark border-t-2 border-ink dark:border-ink-dark px-4 py-3 flex items-center justify-between font-mono text-xs uppercase tracking-tight">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+<span>System Ready</span>
+</div>
+<div class="text-ink dark:text-ink-dark font-bold">
+                Total Items: [05]
+            </div>
+</footer>
+<!-- Bottom Navigation (As requested in context, though strictly PRD asked for specific screen only, context implies navigation exists. Adding a minimal specific nav for this "App") -->
+<nav class="bg-surface-light dark:bg-surface-dark border-t border-ink dark:border-ink-dark pb-6 pt-3 px-6 flex justify-between items-center">
+<a class="flex flex-col items-center gap-1 text-ink dark:text-ink-dark group" href="#">
+<div class="w-12 h-8 flex items-center justify-center rounded-sm bg-ink text-white dark:bg-white dark:text-black">
+<span class="material-symbols-outlined text-[20px]">list</span>
+</div>
+</a>
+<a class="flex flex-col items-center gap-1 text-muted hover:text-ink dark:hover:text-ink-dark transition-colors" href="#">
+<div class="w-12 h-8 flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">import_contacts</span>
+</div>
+</a>
+<a class="flex flex-col items-center gap-1 text-muted hover:text-ink dark:hover:text-ink-dark transition-colors" href="#">
+<div class="w-12 h-8 flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">settings</span>
+</div>
+</a>
+</nav>
+</div>
+</body></html>

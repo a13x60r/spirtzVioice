@@ -24,7 +24,9 @@ test.describe('Visual Regression Testing', () => {
         const firstDoc = page.locator('.document-item').first();
         await firstDoc.locator('button[title="Start"], button[title="Resume"]').click();
         await page.waitForSelector('.main-view');
-        await page.click('button[data-view="PARAGRAPH"]');
+        await page.click('#drawer-handle');
+        await page.click('label:has(input[data-view="PARAGRAPH"])');
+        await page.click('#drawer-close');
 
         // Mask the progress bar if it's too jittery, but for static seeds it should be fine
         await expect(page).toHaveScreenshot('reader-paragraph.png', {

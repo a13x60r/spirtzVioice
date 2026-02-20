@@ -1,7 +1,10 @@
 name: Deploy Beta to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["E2E"]
+    types:
+      - completed
     branches: ["beta"]
   workflow_dispatch:
 
@@ -15,6 +18,7 @@ concurrency:
 jobs:
   deploy-beta:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

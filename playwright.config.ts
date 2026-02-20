@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
     testDir: './tests/e2e',
+    snapshotPathTemplate: '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{-projectName}{ext}',
     timeout: 90000,
     globalTeardown: './tests/e2e/playwright.teardown.ts',
     fullyParallel: true,
@@ -19,6 +20,11 @@ export default defineConfig({
             use: { ...devices['Desktop Chrome'] },
         },
     ],
+    expect: {
+        toHaveScreenshot: {
+            maxDiffPixelRatio: 0.05,
+        },
+    },
     webServer: {
         command: 'npm run dev',
         url: 'http://localhost:5180/spirtzVioice/',

@@ -31,13 +31,12 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_BASE: "/spirtzVioice-beta/"
+          VITE_BASE: "/spirtzVioice/beta/"
 
       - name: Deploy to GitHub Pages (beta)
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.BETA_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-          external_repository: a13x60r/spirtzVioice-beta
-          publish_branch: main
-          keep_files: false
+          destination_dir: beta
+          keep_files: true

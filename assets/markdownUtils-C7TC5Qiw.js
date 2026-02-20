@@ -1,0 +1,3 @@
+function p(r){if(!r)return"";let e=r;return e=e.replace(/```[\s\S]*?```/g,""),e=e.replace(/`([^`]+)`/g,"$1"),e=e.replace(/!\[([^\]]*)\]\([^)]+\)/g,""),e=e.replace(/\[([^\]]+)\]\([^)]+\)/g,"$1"),e=e.replace(/\[([^\]]+)\]\[[^\]]*\]/g,"$1"),e=e.replace(/^\s*\[[^\]]+\]:\s*.*$/gm,""),e=e.replace(/^#{1,6}\s+(.*)$/gm,"$1"),e=e.replace(/(\*\*|__)(.*?)\1/g,"$2"),e=e.replace(/(\*|_)(.*?)\1/g,"$2"),e=e.replace(/~~(.*?)~~/g,"$1"),e=e.replace(/^[-*_]{3,}\s*$/gm,""),e=e.replace(/^>\s*/gm,""),e=e.replace(/^[\s]*[-*+]\s+/gm,""),e=e.replace(/^[\s]*\d+\.\s+/gm,""),e=e.replace(/<[^>]+>/g,""),e=e.replace(/\n{3,}/g,`
+
+`),e=e.replace(/[ \t]+/g," "),e.trim()}export{p as stripMarkdown};

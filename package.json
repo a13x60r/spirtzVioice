@@ -11,7 +11,7 @@
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
-    "verify-bookmarklet": "npx ts-node scripts/verify-bookmarklet.ts"
+    "verify-bookmarklet": "npx tsx scripts/verify-bookmarklet.ts"
   },
   "dependencies": {
     "@types/dompurify": "^3.0.5",

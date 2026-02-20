@@ -19,6 +19,7 @@ test.describe('Spritz Voice UI', () => {
 
         // Wait for the reader view to mount
         await page.waitForSelector('.main-view');
+        await page.waitForSelector('.loading-overlay.visible', { state: 'hidden' });
 
         // Ensure we are in Paragraph view first for a good screenshot
         await page.click('#drawer-handle');

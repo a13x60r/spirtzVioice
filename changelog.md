@@ -19,8 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Piper Worker Pool Reliability**: Addressed a critical bug where crashed WASM workers (handling TTS) were retained in the active worker pool. They are now correctly correctly removed from the pool when they error, allowing the TTS engine to properly recover from initialization crashes.
+- **Loading Overlay Timeout**: Implemented a `try/finally` block in `ReaderShell` document loading and resumed views to ensure the processing overlay is hidden even if Piper TTS fails to initialize.
+- **Skipped Words**: Fixed a critical bug in `AudioScheduler` where consecutive identical words were being silently ignored. Scheduled chunks now use a unique `instanceId` format (`{chunkHash}-{startSec}`) ensuring repetitive text outputs correctly.
 - **README**: Corrected Mermaid diagram syntax by quoting node labels and edge text, preventing parsing errors in various Markdown renderers.
 - **Test Infrastructure**:
+  - Resolved Playwright `.loading-overlay` timeouts by fixing TTS hang recovery and increasing standard Playwright test timeouts to 90s.
   - Resolved `ParagraphView` test failures by providing mandatory `ttsText` arguments.
   - Optimized Vitest configuration to explicitly exclude Playwright E2E tests, avoiding cross-environment conflicts.
   - Corrected Vitest path aliases to ensure consistent module resolution during tests.

@@ -593,55 +593,60 @@ export class ReaderShell {
     private async handleNewDocument(title: string, originalText: string, ttsText: string, contentType: 'text' | 'html' | 'markdown', language?: string) {
         this.loadingOverlay.show('Processing Document...', () => this.audioEngine.cancelSynthesis());
 
-        const tokens = TextPipeline.tokenize(ttsText);
-        this.currentTokens = tokens;
-        this.currentDocTitle = title;
-        this.currentTtsText = ttsText;
-        this.currentLanguage = language || this.settings.language;
-        if (language) {
-            this.settings.language = language;
-        }
-
-        const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length, language);
-        this.currentChunks = await this.buildChunksWithCache(doc.id, ttsText, this.currentLanguage);
-        this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
-        this.currentDocId = doc.id;
-        this.currentAnnotations = [];
-
-        await documentStore.updateSettings(doc.id, this.settings.voiceId, this.settings.speedWpm);
-
-        // Auto-select voice for language
-        if (language) {
-            const voiceId = await this.selectVoiceForLanguage(language);
-            if (voiceId) {
-                this.settings.voiceId = voiceId;
-                await documentStore.updateSettings(doc.id, voiceId, this.settings.speedWpm);
+        try {
+            const tokens = TextPipeline.tokenize(ttsText);
+            this.currentTokens = tokens;
+            this.currentDocTitle = title;
+            this.currentTtsText = ttsText;
+            this.currentLanguage = language || this.settings.language;
+            if (language) {
+                this.settings.language = language;
             }
-            await this.warnIfVoiceMissing(language, voiceId ?? null);
+
+            const doc = await documentStore.createDocument(title, originalText, ttsText, contentType, tokens.length, language);
+            this.currentChunks = await this.buildChunksWithCache(doc.id, ttsText, this.currentLanguage);
+            this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
+            this.currentDocId = doc.id;
+            this.currentAnnotations = [];
+
+            await documentStore.updateSettings(doc.id, this.settings.voiceId, this.settings.speedWpm);
+
+            // Auto-select voice for language
+            if (language) {
+                const voiceId = await this.selectVoiceForLanguage(language);
+                if (voiceId) {
+                    this.settings.voiceId = voiceId;
+                    await documentStore.updateSettings(doc.id, voiceId, this.settings.speedWpm);
+                }
+                await this.warnIfVoiceMissing(language, voiceId ?? null);
+            }
+
+            await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p, msg) => {
+                this.loadingOverlay.setProgress(p);
+                if (msg) this.loadingOverlay.setText(msg);
+            });
+
+            this.paragraphView.setDocumentContext(originalText, contentType, ttsText);
+            this.paragraphView.setAnnotations([], null);
+            this.progress.setDocumentContext({
+                title,
+                originalText,
+                ttsText,
+                contentType
+            });
+            this.progress.setVisible(true);
+            this.resetFatigueNudge();
+
+        } catch (err) {
+            console.error('[ReaderShell] handleNewDocument failed:', err);
+        } finally {
+            this.loadingOverlay.hide();
         }
 
-        await this.audioEngine.loadDocument(doc.id, tokens, this.settings, 0, (p, msg) => {
-            this.loadingOverlay.setProgress(p);
-            if (msg) this.loadingOverlay.setText(msg);
-        });
-
-		this.paragraphView.setDocumentContext(originalText, contentType, ttsText);
-        this.paragraphView.setAnnotations([], null);
-        this.progress.setDocumentContext({
-            title,
-            originalText,
-            ttsText,
-            contentType
-        });
-        this.progress.setVisible(true);
-        this.resetFatigueNudge();
-
-        this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
 
-
         if (this.currentView) {
-            this.currentView.update(0, tokens);
+            this.currentView.update(0, this.currentTokens);
         }
 
         this.setupPlaybackListeners();
@@ -698,56 +703,62 @@ export class ReaderShell {
         }
 		this.loadingOverlay.show('Loading Document...', () => this.audioEngine.cancelSynthesis());
 
-		const textForTts = doc.ttsText || doc.originalText;
-		this.paragraphView.setDocumentContext(doc.originalText, doc.contentType || 'text', textForTts);
-        const tokens = TextPipeline.tokenize(textForTts);
-        this.currentTokens = tokens;
-        this.currentChunks = await this.buildChunksWithCache(doc.id, textForTts, this.currentLanguage);
-        this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
+		try {
+            const textForTts = doc.ttsText || doc.originalText;
+            this.paragraphView.setDocumentContext(doc.originalText, doc.contentType || 'text', textForTts);
+            const tokens = TextPipeline.tokenize(textForTts);
+            this.currentTokens = tokens;
+            this.currentChunks = await this.buildChunksWithCache(doc.id, textForTts, this.currentLanguage);
+            this.tokenChunkMap = mapTokensToChunks(tokens, this.currentChunks);
 
-        if (doc.language) {
-            const preferredVoice = await this.selectVoiceForLanguage(doc.language);
-            const voiceMatches = doc.voiceId ? await this.voiceMatchesLanguage(doc.voiceId, doc.language) : false;
-            if (preferredVoice && (!doc.voiceId || doc.voiceId === 'default' || !voiceMatches)) {
-                this.settings.voiceId = preferredVoice;
-                await documentStore.updateSettings(doc.id, preferredVoice, this.settings.speedWpm);
+            if (doc.language) {
+                const preferredVoice = await this.selectVoiceForLanguage(doc.language);
+                const voiceMatches = doc.voiceId ? await this.voiceMatchesLanguage(doc.voiceId, doc.language) : false;
+                if (preferredVoice && (!doc.voiceId || doc.voiceId === 'default' || !voiceMatches)) {
+                    this.settings.voiceId = preferredVoice;
+                    await documentStore.updateSettings(doc.id, preferredVoice, this.settings.speedWpm);
+                } else if (doc.voiceId && doc.voiceId !== 'default') {
+                    this.settings.voiceId = doc.voiceId;
+                }
+                await this.warnIfVoiceMissing(doc.language, preferredVoice ?? doc.voiceId ?? null);
             } else if (doc.voiceId && doc.voiceId !== 'default') {
                 this.settings.voiceId = doc.voiceId;
             }
-            await this.warnIfVoiceMissing(doc.language, preferredVoice ?? doc.voiceId ?? null);
-        } else if (doc.voiceId && doc.voiceId !== 'default') {
-            this.settings.voiceId = doc.voiceId;
+
+            if (doc.speedWpm) {
+                this.settings.speedWpm = doc.speedWpm;
+                this.controls.setWpm(doc.speedWpm);
+            }
+
+            if (doc.mode) {
+                this.settings.mode = doc.mode;
+            }
+
+            const fallbackIndex = doc.progressTokenIndex ?? 0;
+            const resumeIndex = doc.progressOffset !== undefined
+                ? this.findTokenIndexForOffset(doc.progressOffset, fallbackIndex)
+                : fallbackIndex;
+
+            await this.audioEngine.loadDocument(doc.id, tokens, this.settings, resumeIndex, (p, msg) => {
+                this.loadingOverlay.setProgress(p);
+                if (msg) this.loadingOverlay.setText(msg);
+            });
+
+            this.progress.setDocumentContext({
+                title: doc.title,
+                originalText: doc.originalText,
+                ttsText: textForTts,
+                contentType: doc.contentType || 'text'
+            });
+            this.progress.setVisible(true);
+            this.resetFatigueNudge();
+        } catch (err) {
+            console.error('[ReaderShell] resumeDocument failed:', err);
+            // Optionally clear docId if resuming totally fails
+        } finally {
+            this.loadingOverlay.hide();
         }
 
-        if (doc.speedWpm) {
-            this.settings.speedWpm = doc.speedWpm;
-            this.controls.setWpm(doc.speedWpm);
-        }
-
-        if (doc.mode) {
-            this.settings.mode = doc.mode;
-        }
-
-        const fallbackIndex = doc.progressTokenIndex ?? 0;
-        const resumeIndex = doc.progressOffset !== undefined
-            ? this.findTokenIndexForOffset(doc.progressOffset, fallbackIndex)
-            : fallbackIndex;
-
-        await this.audioEngine.loadDocument(doc.id, tokens, this.settings, resumeIndex, (p, msg) => {
-            this.loadingOverlay.setProgress(p);
-            if (msg) this.loadingOverlay.setText(msg);
-        });
-
-        this.progress.setDocumentContext({
-            title: doc.title,
-            originalText: doc.originalText,
-            ttsText: textForTts,
-            contentType: doc.contentType || 'text'
-        });
-        this.progress.setVisible(true);
-        this.resetFatigueNudge();
-
-        this.loadingOverlay.hide();
         this.switchView(this.settings.mode);
         this.setupPlaybackListeners();
         this.updateMediaMetadata(doc.title);

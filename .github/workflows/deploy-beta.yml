@@ -1,0 +1,40 @@
+name: Deploy Beta to GitHub Pages
+
+on:
+    push:
+        branches: ["beta"]
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+concurrency:
+    group: "beta-pages"
+    cancel-in-progress: true
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build with Beta Path
+              run: npm run build -- --base=/spirtzVioice/beta/
+
+            - name: Deploy to GitHub Pages (beta subdir)
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./dist
+                  destination_dir: beta
+                  keep_files: true

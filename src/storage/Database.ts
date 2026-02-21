@@ -151,6 +151,13 @@ export class AppDatabase extends Dexie {
             annotations: 'id, docId, startOffset, paraId'
         });
     }
+
+    async resetDatabase() {
+        await this.transaction('rw', this.tables, async () => {
+            await Promise.all(this.tables.map(table => table.clear()));
+        });
+        window.location.reload();
+    }
 }
 
 export const db = new AppDatabase();

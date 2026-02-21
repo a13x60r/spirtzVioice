@@ -550,6 +550,10 @@ export class ReaderShell {
                 onSkipSettingsChange: async (skipSettings) => {
                     this.settings.skipSettings = skipSettings;
                     await settingsStore.saveSettings({ skipSettings });
+                },
+                onResetApp: async () => {
+                    const { db } = await import('../storage/Database');
+                    await db.resetDatabase();
                 }
             },
             defaultSettings

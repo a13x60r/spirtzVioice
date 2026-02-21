@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
     base: process.env.VITE_BASE ?? '/spirtzVioice/',
@@ -49,6 +50,34 @@ export default defineConfig({
         format: 'es',
     },
     plugins: [
+        viteStaticCopy({
+            targets: [
+                {
+                    src: 'node_modules/piper-wasm/build/piper_phonemize.wasm',
+                    dest: 'piper'
+                },
+                {
+                    src: 'node_modules/piper-wasm/build/piper_phonemize.data',
+                    dest: 'piper'
+                },
+                {
+                    src: 'node_modules/piper-wasm/build/piper_phonemize.js',
+                    dest: 'piper'
+                },
+                {
+                    src: 'src/workers/tts/piper-engine/piper_worker.js',
+                    dest: 'piper'
+                },
+                {
+                    src: 'node_modules/piper-wasm/build/worker/dist/*.wasm',
+                    dest: 'piper'
+                },
+                {
+                    src: 'node_modules/piper-wasm/build/worker/dist/*.js',
+                    dest: 'piper'
+                }
+            ]
+        }),
         {
             name: 'add-corp-headers',
             enforce: 'pre',

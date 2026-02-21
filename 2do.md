@@ -44,6 +44,7 @@
 - [x] setup GitHub Pages deployment action
 - [x] fix: correct Mermaid diagram syntax in README.md
 - [x] infra: setup comprehensive CI/CD workflows (CI, Coverage, E2E, Tag Build, gh-pages deployment)
+- [x] fix: resolve Piper TTS 404, ESM errors, and BigInt TypeErrors in dev mode
 
 # Rejected / Obsolete
 

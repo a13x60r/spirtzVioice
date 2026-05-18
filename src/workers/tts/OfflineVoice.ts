@@ -133,7 +133,7 @@ export class OfflineVoice {
                 (_p: any) => { /* Silenced internal logs */ },
                 null, // phonemeIds
                 false, // inferEmotion
-                this.toAbsoluteUrl(BASE_URL + 'dist/'), // onnxruntimeUrl (folder containing ort.min.js)
+                this.toAbsoluteUrl(BASE_URL + 'dist/piper-dist/'), // newer ONNX runtime bundle from piper-wasm
                 lengthScale,
                 useWebGPU,
                 gpuPreference

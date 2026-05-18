@@ -154,11 +154,15 @@ var cachedSession = {};
 self.addEventListener("message", (event) => {
   const data = event.data;
   if (data.kind === "init")
-    init(data);
+    init(data).catch((error) => {
+      self.postMessage({ kind: "stderr", message: error.message });
+    });
   if (data.kind === "isAlive")
     isAlive(data.modelUrl);
   if (data.kind === "phonemize")
-    init(data, true);
+    init(data, true).catch((error) => {
+      self.postMessage({ kind: "stderr", message: error.message });
+    });
 });
 var isAlive = (modelUrl) => {
   self.postMessage({

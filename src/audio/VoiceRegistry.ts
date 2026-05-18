@@ -15,8 +15,8 @@ export const VOICE_REGISTRY: VoiceDefinition[] = [
         id: 'en_US-amy-medium.onnx',
         name: 'Amy (Medium)',
         lang: 'en-US',
-        modelUrl: '/piper/en_US-amy-medium.onnx',
-        configUrl: '/piper/en_US-amy-medium.onnx.json',
+        modelUrl: 'piper/en_US-amy-medium.onnx',
+        configUrl: 'piper/en_US-amy-medium.onnx.json',
         sizeBytes: 63201294,
         isBuiltIn: true
     },

@@ -4,6 +4,9 @@
   "description": "Offline-first reader with exact text-to-speech synchronization",
   "type": "module",
   "scripts": {
+    "prepare:piper": "node scripts/download-piper-models.js",
+    "predev": "npm run prepare:piper",
+    "prebuild": "npm run prepare:piper",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",

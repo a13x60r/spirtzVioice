@@ -30,6 +30,10 @@ var getBlob = async (url, blobs) => new Promise((resolve) => {
 // piper_worker.js
 async function phonemize(data, modelConfig) {
   const { input, blobs } = data;
+  const espeakVoice = modelConfig?.espeak?.voice;
+  if (!espeakVoice) {
+    throw new Error("Missing espeak.voice in Piper model config");
+  }
   const piperPhonemizeJs = URL.createObjectURL(await getBlob(data.piperPhonemizeJsUrl, blobs));
   const piperPhonemizeWasm = URL.createObjectURL(await getBlob(data.piperPhonemizeWasmUrl, blobs));
   const piperPhonemizeData = URL.createObjectURL(await getBlob(data.piperPhonemizeDataUrl, blobs));
@@ -49,15 +53,16 @@ async function phonemize(data, modelConfig) {
           return piperPhonemizeData;
         return url;
       }
+    }).then((piperModule) => {
+      piperModule.callMain([
+        "-l",
+        espeakVoice,
+        "--input",
+        JSON.stringify([{ text: input }]),
+        "--espeak_data",
+        "/espeak-ng-data"
+      ]);
     });
-    module.callMain([
-      "-l",
-      modelConfig.espeak.voice,
-      "--input",
-      JSON.stringify([{ text: input }]),
-      "--espeak_data",
-      "/espeak-ng-data"
-    ]);
   });
   return phonemeIds;
 }
@@ -67,7 +72,7 @@ async function init(data, phonemizeOnly = false) {
   const modelConfig = JSON.parse(await modelConfigBlob.text());
   const onnxruntimeBase = onnxruntimeUrl;
   const providedPhonemeIds = data.phonemeIds;
-  const phonemeIds = providedPhonemeIds ?? await phonemize(data, onnxruntimeBase, modelConfig);
+  const phonemeIds = providedPhonemeIds ?? await phonemize(data, modelConfig);
   const phonemeIdMap = Object.entries(modelConfig.phoneme_id_map);
   const idPhonemeMap = Object.fromEntries(phonemeIdMap.map(([k, v]) => [v[0], k]));
   const phonemes = phonemeIds.map((id) => idPhonemeMap[id]);

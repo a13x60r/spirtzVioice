@@ -42,8 +42,9 @@ describe('OfflineVoice (Piper)', () => {
 
     it('should list available voices', async () => {
         const voices = await voice.getVoices();
-        expect(voices).toHaveLength(1);
-        expect(voices[0].id).toContain('amy');
+        expect(voices.length).toBeGreaterThan(0);
+        expect(voices.some((entry) => entry.id === 'en_US-amy-medium.onnx')).toBe(true);
+        expect(voices.some((entry) => entry.id === 'ru_RU-dmitri-medium.onnx')).toBe(true);
     });
 
     it('should synthesize text and return audio data', async () => {

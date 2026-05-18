@@ -68,7 +68,13 @@ export class AudioEngine {
         this.worker.onmessage = this.handleWorkerMessage.bind(this);
 
         // Init worker with origin URL for proper resource resolution
-        this.worker.postMessage({ type: 'INIT', payload: { originUrl: window.location.origin } });
+        this.worker.postMessage({
+            type: 'INIT',
+            payload: {
+                originUrl: window.location.origin,
+                appBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+            }
+        });
 
         // JIT Buffering Hook
         this.controller.onBufferingRequest = (time) => {

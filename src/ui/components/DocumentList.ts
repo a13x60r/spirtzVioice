@@ -35,7 +35,12 @@ export class DocumentList {
         if (this.documents.length === 0) {
             this.container.innerHTML = `
                 <div class="document-list-container">
-                    <h2>Your Library</h2>
+                    <div class="library-header">
+                        <div class="library-title">
+                            <span class="library-eyebrow">Library</span>
+                            <h2>Your Library</h2>
+                        </div>
+                    </div>
                     <div class="empty-state" style="text-align: center; padding: 60px 20px; color: #666;">
                         <p style="font-size: 1.2rem; margin-bottom: 20px;">No documents yet</p>
                         <button class="btn" id="btn-new-from-empty">Create Your First Document</button>
@@ -69,7 +74,10 @@ export class DocumentList {
         this.container.innerHTML = `
             <div class="document-list-container">
                 <div class="library-header">
-                    <h2>Your Library</h2>
+                    <div class="library-title">
+                        <span class="library-eyebrow">Library</span>
+                        <h2>Your Library</h2>
+                    </div>
                     <div class="library-controls">
                         <div class="search-box">
                             <input type="text" id="doc-search" class="input" placeholder="Search documents..." value="${this.escapeHtml(this.filterText)}">
@@ -135,9 +143,18 @@ export class DocumentList {
         });
 
         this.documents.forEach(doc => {
+            const docItem = this.container.querySelector(`.document-item[data-id="${doc.id}"]`);
             const resumeBtn = this.container.querySelector(`#resume-${doc.id}`);
             const deleteBtn = this.container.querySelector(`#delete-${doc.id}`);
             const checkbox = this.container.querySelector(`#select-${doc.id}`) as HTMLInputElement;
+
+            docItem?.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest('button') || target.closest('input[type="checkbox"]')) {
+                    return;
+                }
+                this.callbacks.onResume(doc.id);
+            });
 
             resumeBtn?.addEventListener('click', () => this.callbacks.onResume(doc.id));
             deleteBtn?.addEventListener('click', () => this.confirmDelete(doc));
@@ -175,9 +192,9 @@ export class DocumentList {
                     </h3>
                     <div class="document-meta">
                         <span>${wordCount.toLocaleString()} tokens</span>
-                        <span>•</span>
+                        <span>ΓÇó</span>
                         <span>Last read ${lastRead}</span>
-                        ${progress > 0 ? `<span>•</span><span>${progress}% complete</span>` : ''}
+                        ${progress > 0 ? `<span>ΓÇó</span><span>${progress}% complete</span>` : ''}
                     </div>
                     ${progress > 0 ? `
                         <div class="progress-bar-container">
@@ -201,17 +218,17 @@ export class DocumentList {
         const base = language.split('-')[0].toLowerCase();
         switch (base) {
             case 'en':
-                return '🇺🇸';
+                return '≡ƒç║≡ƒç╕';
             case 'de':
-                return '🇩🇪';
+                return '≡ƒç⌐≡ƒç¬';
             case 'ru':
-                return '🇷🇺';
+                return '≡ƒç╖≡ƒç║';
             case 'es':
-                return '🇪🇸';
+                return '≡ƒç¬≡ƒç╕';
             case 'fr':
-                return '🇫🇷';
+                return '≡ƒç½≡ƒç╖';
             default:
-                return '🌐';
+                return '≡ƒîÉ';
         }
     }
 

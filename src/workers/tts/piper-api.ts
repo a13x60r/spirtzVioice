@@ -47,6 +47,12 @@ class WorkerPool {
             worker.terminate();
         }
     }
+
+    removeWorker(worker: Worker) {
+        this.activeWorkers.delete(worker);
+        this.workers = this.workers.filter(w => w !== worker);
+        worker.terminate();
+    }
 }
 
 const pool = new WorkerPool();
@@ -121,7 +127,8 @@ export const piperGenerate = async (
         worker.addEventListener("message", messageHandler);
         worker.addEventListener("error", (e) => {
             console.error("Piper worker error:", e);
-            cleanup();
+            worker.removeEventListener("message", messageHandler);
+            pool.removeWorker(worker);
             reject(new Error(`Worker error: ${e.message}`));
         });
 

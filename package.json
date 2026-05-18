@@ -1,6 +1,6 @@
 {
   "name": "spritz-voice",
-  "version": "0.1.0",
+  "version": "0.2.0-beta.0",
   "description": "Offline-first reader with exact text-to-speech synchronization",
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
-    "verify-bookmarklet": "npx ts-node scripts/verify-bookmarklet.ts"
+    "verify-bookmarklet": "npx tsx scripts/verify-bookmarklet.ts"
   },
   "dependencies": {
     "@types/dompurify": "^3.0.5",
@@ -39,6 +39,7 @@
     "typescript": "^5.3.3",
     "vite": "^5.0.12",
     "vite-plugin-pwa": "^0.17.5",
+    "vite-plugin-static-copy": "^3.2.0",
     "vitest": "^1.2.1",
     "workbox-window": "^7.0.0"
   },

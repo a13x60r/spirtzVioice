@@ -1,6 +1,7 @@
 
 
 import { piperGenerate } from './piper-api';
+import { VOICE_REGISTRY } from '../../audio/VoiceRegistry';
 
 const BASE_URL = (import.meta.env.BASE_URL || '/') + 'piper/';
 
@@ -8,24 +9,35 @@ export class OfflineVoice {
     private currentModelUrl: string = BASE_URL + 'en_US-amy-medium.onnx';
     private currentConfigUrl: string = BASE_URL + 'en_US-amy-medium.onnx.json';
     private originUrl: string;
+    private appBaseUrl: string;
     private currentVoiceId: string | null = null;
     private isWarm: boolean = false;
 
-    constructor(originUrl: string = '') {
+    constructor(originUrl: string = '', appBaseUrl: string = '') {
         this.originUrl = originUrl || '';
+        this.appBaseUrl = appBaseUrl || (this.originUrl ? `${this.originUrl.replace(/\/$/, '')}/` : '');
     }
 
     // Helper to convert relative path to absolute URL
     private toAbsoluteUrl(relativePath: string): string {
-        // If we are in a worker, sometimes relative paths work better if they are base-absolute (starting with /)
-        // But if originUrl is provided, we use it to ensure it's fully qualified for multi-worker contexts.
-        if (this.originUrl && !relativePath.startsWith('http') && !relativePath.startsWith('blob:')) {
-            // Ensure no double slashes if originUrl ends with / and relativePath starts with /
-            const origin = this.originUrl.replace(/\/$/, '');
-            const path = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
-            return origin + path;
+        if (relativePath.startsWith('http') || relativePath.startsWith('blob:')) {
+            return relativePath;
         }
-        return relativePath;
+
+        if (!this.appBaseUrl) {
+            return relativePath;
+        }
+
+        if (relativePath.startsWith('/')) {
+            const basePath = new URL(this.appBaseUrl).pathname.replace(/\/?$/, '/');
+            if (relativePath.startsWith(basePath)) {
+                return new URL(relativePath, this.originUrl || this.appBaseUrl).toString();
+            }
+
+            return new URL(relativePath.slice(1), this.appBaseUrl).toString();
+        }
+
+        return new URL(relativePath, this.appBaseUrl).toString();
     }
 
     async init(): Promise<void> {
@@ -34,10 +46,10 @@ export class OfflineVoice {
     }
 
     async getVoices(): Promise<{ id: string, name: string }[]> {
-        // Hardcoded for now, as we only download Amy
-        return [
-            { id: 'en_US-amy-medium.onnx', name: 'Amy (Medium) - English US' }
-        ];
+        return VOICE_REGISTRY.map((voice) => ({
+            id: voice.id,
+            name: voice.name
+        }));
     }
 
     async loadVoice(voiceId: string, assets?: { model: ArrayBuffer | Blob, config: ArrayBuffer | Blob }): Promise<void> {
@@ -54,18 +66,22 @@ export class OfflineVoice {
             this.currentModelUrl = URL.createObjectURL(assets.model instanceof Blob ? assets.model : new Blob([assets.model]));
             this.currentConfigUrl = URL.createObjectURL(assets.config instanceof Blob ? assets.config : new Blob([assets.config]));
         } else {
-            // Map voice IDs to actual model filenames
-            const voiceMap: Record<string, string> = {
+            const voiceAliases: Record<string, string> = {
                 'default': 'en_US-amy-medium.onnx',
                 'en-us': 'en_US-amy-medium.onnx',
-                'amy': 'en_US-amy-medium.onnx',
-                'en_US-amy-medium.onnx': 'en_US-amy-medium.onnx'
+                'amy': 'en_US-amy-medium.onnx'
             };
+            const resolvedVoiceId = voiceAliases[voiceId] || voiceId;
+            const voiceDef = VOICE_REGISTRY.find((voice) => voice.id === resolvedVoiceId)
+                || VOICE_REGISTRY.find((voice) => voice.id === 'en_US-amy-medium.onnx');
 
-            const actualVoiceFile = voiceMap[voiceId] || 'en_US-amy-medium.onnx';
-            this.currentModelUrl = BASE_URL + actualVoiceFile;
-            this.currentConfigUrl = BASE_URL + actualVoiceFile + '.json';
-            console.log(`Configured voice: ${voiceId} -> ${actualVoiceFile}`);
+            if (!voiceDef) {
+                throw new Error(`Voice ${voiceId} not found in registry`);
+            }
+
+            this.currentModelUrl = voiceDef.modelUrl;
+            this.currentConfigUrl = voiceDef.configUrl;
+            console.log(`Configured voice: ${voiceId} -> ${voiceDef.id}`);
         }
 
         this.currentVoiceId = voiceId;
@@ -114,7 +130,7 @@ export class OfflineVoice {
                 this.toAbsoluteUrl(this.currentConfigUrl),
                 null, // speakerId
                 text,
-                (_p) => { /* Silenced internal logs */ },
+                (_p: any) => { /* Silenced internal logs */ },
                 null, // phonemeIds
                 false, // inferEmotion
                 this.toAbsoluteUrl(BASE_URL + 'dist/'), // onnxruntimeUrl (folder containing ort.min.js)

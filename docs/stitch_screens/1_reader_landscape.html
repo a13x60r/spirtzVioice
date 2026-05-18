@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RSVP Reader - Swiss Design Minimalist</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f24a0d",
+                        "background-light": "#f8f6f5",
+                        "background-dark": "#221510",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .swiss-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(242, 74, 13, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(242, 74, 13, 0.05) 1px, transparent 1px);
+        }
+        .optimal-point-line {
+            position: absolute;
+            left: 35%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #f24a0d;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#181311] selection:bg-primary selection:text-white">
+<!-- Subtle Background Grid Layer -->
+<div class="fixed inset-0 swiss-grid pointer-events-none"></div>
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- Top Navigation Bar & Progress -->
+<header class="z-10 border-b border-[#181311]/10 bg-background-light/80 backdrop-blur-sm px-8 py-4">
+<div class="flex items-center justify-between max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2 group cursor-pointer">
+<span class="material-symbols-outlined text-primary text-2xl font-bold">arrow_back</span>
+<h2 class="text-sm font-bold uppercase tracking-widest">Library</h2>
+</div>
+<div class="h-4 w-px bg-[#181311]/20"></div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-[0.2em] text-[#181311]/50 font-bold">Current Document</span>
+<h1 class="text-sm font-bold">The Architecture of Minimalism.pdf</h1>
+</div>
+</div>
+<div class="flex items-center gap-12">
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-[0.2em] text-[#181311]/50 font-bold">Time Remaining</span>
+<span class="text-sm font-bold">08:42</span>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded border border-[#181311]/10 bg-white p-2 text-[#181311] hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="flex items-center justify-center rounded border border-[#181311]/10 bg-white p-2 text-[#181311] hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="info">info</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Global Progress Bar (Top of header) -->
+<div class="absolute bottom-0 left-0 w-full h-[2px] bg-[#181311]/5">
+<div class="h-full bg-primary" style="width: 42%;"></div>
+</div>
+</header>
+<!-- Main RSVP Reader Area -->
+<main class="flex-1 flex flex-col items-center justify-center relative px-8">
+<!-- Focus Box Container -->
+<div class="relative w-full max-w-4xl h-64 flex items-center justify-center bg-white/40 border border-[#181311]/5 rounded shadow-sm">
+<!-- Center Guides -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="optimal-point-line"></div>
+<!-- Horizontal center line subtle -->
+<div class="absolute left-0 right-0 h-px bg-[#181311]/5 top-1/2"></div>
+</div>
+<!-- Word Display -->
+<div class="relative z-10 flex items-center">
+<span class="text-8xl md:text-9xl font-bold tracking-tight text-[#181311]">
+                        EXPERIENCE
+                    </span>
+</div>
+<!-- Focus Markers (corners) -->
+<div class="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-primary/40"></div>
+<div class="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-primary/40"></div>
+<div class="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-primary/40"></div>
+<div class="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-primary/40"></div>
+</div>
+<!-- Reading Telemetry Overlay -->
+<div class="mt-12 flex items-baseline gap-12 text-[#181311]">
+<div class="flex flex-col items-center">
+<span class="text-4xl font-bold">450</span>
+<span class="text-[10px] uppercase tracking-widest font-bold opacity-40">Words Per Minute</span>
+</div>
+<div class="h-12 w-px bg-[#181311]/10 self-center"></div>
+<div class="flex flex-col items-center">
+<span class="text-4xl font-bold">42%</span>
+<span class="text-[10px] uppercase tracking-widest font-bold opacity-40">Progress</span>
+</div>
+<div class="h-12 w-px bg-[#181311]/10 self-center"></div>
+<div class="flex flex-col items-center">
+<span class="text-4xl font-bold">12.8k</span>
+<span class="text-[10px] uppercase tracking-widest font-bold opacity-40">Total Words</span>
+</div>
+</div>
+</main>
+<!-- Control Dock (Bottom) -->
+<footer class="z-10 px-8 py-10 bg-gradient-to-t from-background-light to-transparent">
+<div class="max-w-4xl mx-auto flex items-center justify-between bg-white border border-[#181311]/10 rounded-lg p-4 shadow-xl">
+<!-- Speed Control -->
+<div class="flex items-center gap-4 px-4">
+<button class="text-[#181311]/40 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="remove">remove_circle_outline</span>
+</button>
+<div class="flex flex-col items-center min-w-[80px]">
+<span class="text-xs font-bold uppercase tracking-tighter opacity-40">Speed</span>
+<span class="text-lg font-bold">450 <span class="text-[10px]">WPM</span></span>
+</div>
+<button class="text-[#181311]/40 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="add">add_circle_outline</span>
+</button>
+</div>
+<!-- Main Playback -->
+<div class="flex items-center gap-6">
+<button class="text-[#181311]/60 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-3xl" data-icon="skip_previous">skip_previous</span>
+</button>
+<button class="h-16 w-16 flex items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-4xl" data-icon="play_arrow">play_arrow</span>
+</button>
+<button class="text-[#181311]/60 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-3xl" data-icon="skip_next">skip_next</span>
+</button>
+</div>
+<!-- Text Appearance -->
+<div class="flex items-center gap-4 px-4">
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-xs font-bold uppercase tracking-tighter opacity-40">Font Size</span>
+<span class="text-lg font-bold">72 <span class="text-[10px]">PT</span></span>
+</div>
+<div class="flex gap-1">
+<button class="p-1 rounded bg-[#181311]/5 hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="text_fields">text_fields</span>
+</button>
+<button class="p-1 rounded bg-[#181311]/5 hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="text_fields">text_fields</span>
+</button>
+</div>
+</div>
+</div>
+</footer>
+<!-- Settings Sidebar Overlay (Partial view mockup) -->
+<aside class="fixed right-0 top-0 bottom-0 w-80 bg-white border-l border-[#181311]/10 transform translate-x-full transition-transform z-20 p-8 shadow-2xl">
+<div class="flex flex-col gap-8">
+<div class="flex justify-between items-center">
+<h3 class="font-bold text-xl uppercase tracking-tighter">System</h3>
+<button class="material-symbols-outlined">close</button>
+</div>
+<div class="space-y-6">
+<div class="space-y-3">
+<p class="text-[10px] font-bold uppercase tracking-widest opacity-40">Appearance</p>
+<div class="grid grid-cols-2 gap-2">
+<button class="p-4 border-2 border-primary rounded text-xs font-bold">LIGHT</button>
+<button class="p-4 border border-[#181311]/10 rounded text-xs font-bold opacity-40">DARK</button>
+</div>
+</div>
+<div class="space-y-3">
+<p class="text-[10px] font-bold uppercase tracking-widest opacity-40">Grid Intensity</p>
+<input class="w-full accent-primary" type="range"/>
+</div>
+<div class="space-y-3">
+<p class="text-[10px] font-bold uppercase tracking-widest opacity-40">Typography</p>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between p-3 bg-[#181311]/5 rounded">
+<span class="text-sm font-medium">Space Grotesk</span>
+<span class="material-symbols-outlined text-primary">check</span>
+</div>
+<div class="flex items-center justify-between p-3 border border-[#181311]/10 rounded">
+<span class="text-sm font-medium">Inter</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</body></html>

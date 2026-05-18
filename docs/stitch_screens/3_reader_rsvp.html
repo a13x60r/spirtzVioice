@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Reader (RSVP)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Space+Grotesk:wght@400;500;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#000000",
+                        "signal": "#FF4400", 
+                        "background-light": "#F2F2F2",
+                        "background-dark": "#1a1a1a",
+                        "surface": "#FFFFFF",
+                        "muted": "#888888",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "mono": ["Space Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px",
+                        "sm": "0px",
+                        "lg": "0px", 
+                        "xl": "0px", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom utilities for the specific Swiss design feel */
+        .swiss-grid-bg {
+            background-image: 
+                linear-gradient(to right, #e5e5e5 1px, transparent 1px),
+                linear-gradient(to bottom, #e5e5e5 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        /* Optical Alignment Helpers */
+        .orp-center {
+            position: relative;
+            display: inline-block;
+        }
+        .orp-highlight {
+            color: #FF4400;
+        }
+        
+        /* Hide scrollbar for clean look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex flex-col font-display overflow-hidden selection:bg-signal selection:text-white swiss-grid-bg">
+<!-- Top Bar: Progress & Navigation -->
+<header class="w-full bg-background-light dark:bg-background-dark z-50">
+<!-- Signal Progress Line -->
+<div class="h-[2px] w-full bg-[#e5e5e5]">
+<div class="h-full bg-signal w-[12%]"></div>
+</div>
+<div class="flex items-center justify-between px-6 py-5 border-b border-primary/10">
+<!-- Back Action -->
+<button class="flex items-center gap-2 group">
+<span class="material-symbols-outlined text-primary dark:text-white text-[20px]">arrow_back</span>
+<span class="text-primary dark:text-white font-mono text-xs tracking-wider font-bold group-hover:text-signal transition-colors">INDEX</span>
+</button>
+<!-- Meta Info -->
+<div class="flex items-center gap-6">
+<span class="text-primary dark:text-white font-mono text-xs tracking-wider">12% COMPLETE</span>
+</div>
+</div>
+</header>
+<!-- Main Reader Area -->
+<main class="flex-1 flex flex-col items-center justify-center relative w-full h-full">
+<!-- Faded Context: Previous Word -->
+<div class="h-12 flex items-end justify-center pb-2 opacity-30 select-none pointer-events-none">
+<span class="text-muted font-display text-xl">The</span>
+</div>
+<!-- The RSVP Focus Box -->
+<!-- Fixed dimensions as per PRD: 340px x 120px -->
+<div class="relative w-[340px] h-[120px] bg-surface border-[2px] border-primary shadow-lg flex items-center justify-center z-10 group cursor-pointer transition-transform active:scale-[0.99]">
+<!-- ORP Guide Ticks -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-[2px] h-[8px] bg-primary/20"></div>
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[2px] h-[8px] bg-primary/20"></div>
+<!-- The Active Word -->
+<!-- Using tabular nums or fixed widths can help stability, but centering is key here -->
+<h1 class="text-primary text-[48px] leading-none font-bold tracking-tight whitespace-nowrap select-none">
+<span class="text-primary">ARCHITE</span><span class="text-signal">C</span><span class="text-primary">TURE</span>
+</h1>
+<!-- Subtle Texture/Noise overlay for paper feel inside box (Optional, keeping clean for now) -->
+</div>
+<!-- Faded Context: Next Word -->
+<div class="h-12 flex items-start justify-center pt-2 opacity-30 select-none pointer-events-none">
+<span class="text-muted font-display text-xl">is</span>
+</div>
+<!-- Speed Indicator / Status -->
+<div class="absolute bottom-32 flex flex-col items-center gap-2">
+<div class="flex items-center gap-2 px-3 py-1 bg-primary/5 rounded border border-primary/10">
+<span class="material-symbols-outlined text-signal text-[14px]">bolt</span>
+<span class="text-primary dark:text-white font-mono text-xs font-bold">450 WPM</span>
+</div>
+<p class="text-muted text-[10px] font-mono uppercase tracking-widest mt-4">Tap to Play</p>
+</div>
+</main>
+<!-- Bottom Drawer Handle -->
+<footer class="w-full bg-surface border-t-2 border-primary z-50 cursor-ns-resize hover:bg-gray-50 transition-colors">
+<div class="w-full h-12 flex flex-col items-center justify-center gap-1">
+<span class="material-symbols-outlined text-primary text-[16px] -mb-1 animate-bounce">expand_less</span>
+<span class="text-primary font-mono text-[10px] tracking-[0.2em] font-bold">CONTROLS</span>
+</div>
+<!-- Safety space for mobile home bar -->
+<div class="h-6 w-full bg-surface"></div>
+</footer>
+<!-- Overlay Gradients (Subtle Vignette for focus) -->
+<div class="pointer-events-none fixed inset-0 bg-gradient-to-b from-background-light/80 via-transparent to-background-light/80 z-0 h-full w-full opacity-50"></div>
+</body></html>

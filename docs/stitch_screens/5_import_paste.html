@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Import Text - Tactile Utility Reader</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Space+Grotesk:wght@400;500;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FF4400", // Overriding to match PRD's Safety Orange
+                        "background-light": "#F2F2F2", // PRD "Paper" grey
+                        "background-dark": "#221510", 
+                        "surface": "#FFFFFF",
+                        "muted": "#888888",
+                        "ink": "#000000",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "mono": ["Space Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px", // Strict Swiss Utility rule
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "0px",
+                    },
+                    animation: {
+                        'cursor-blink': 'blink 1s step-end infinite',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom blinking cursor effect for the textarea placeholder look */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .cursor-block {
+            display: inline-block;
+            width: 0.6em;
+            height: 1.2em;
+            background-color: #FF4400;
+            vertical-align: text-bottom;
+            animation: blink 1s step-end infinite;
+        }
+        
+        /* Removing default textarea styles to make it look raw */
+        textarea:focus {
+            box-shadow: none !important;
+            border: none !important;
+            outline: none !important;
+        }
+
+        /* Swiss Grid Lines */
+        .swiss-grid {
+            background-image: 
+                linear-gradient(to right, #E5E5E5 1px, transparent 1px),
+                linear-gradient(to bottom, #E5E5E5 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light min-h-screen flex flex-col font-display antialiased text-ink selection:bg-primary selection:text-white">
+<!-- Header / Sticky Top Bar -->
+<header class="sticky top-0 z-50 bg-background-light border-b-2 border-ink h-14 shrink-0 flex items-center justify-between px-4">
+<!-- Left Action -->
+<button class="group flex items-center gap-1 text-ink hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined text-[20px] font-bold">close</span>
+<span class="text-sm font-bold tracking-tight uppercase">Cancel</span>
+</button>
+<!-- Title -->
+<h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-bold tracking-tight uppercase">
+            Input
+        </h1>
+<!-- Right Action: Process Button -->
+<!-- State: Disabled (Gray) by default, Active (Orange) when text exists. 
+             Simulated here as Active for demonstration of the "Signal" color usage. -->
+<button class="group flex items-center gap-1 text-primary hover:text-ink transition-colors duration-200">
+<span class="text-sm font-bold tracking-tight uppercase">Process</span>
+<span class="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
+</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col relative bg-background-light">
+<!-- Optional Subtle Grid Background for that "Drafting Table" feel -->
+<div aria-hidden="true" class="absolute inset-0 opacity-20 pointer-events-none swiss-grid"></div>
+<!-- Input Container -->
+<div class="relative flex-1 flex flex-col p-0">
+<!-- Label/Meta Bar -->
+<div class="h-8 border-b border-ink/10 flex items-center px-4 bg-surface/50 backdrop-blur-sm">
+<span class="font-mono text-[10px] text-muted uppercase tracking-wider">Source: Raw Text</span>
+<div class="flex-1"></div>
+<span class="font-mono text-[10px] text-muted uppercase tracking-wider">Mode: Plain</span>
+</div>
+<!-- The Raw Input Field -->
+<label class="sr-only" for="raw-text-input">Raw Text Input</label>
+<div class="relative flex-1 flex">
+<!-- We use a container to manage the "fake" cursor if needed, but here we style the textarea itself -->
+<textarea autofocus="" class="w-full h-full resize-none bg-transparent border-none p-4 font-mono text-sm leading-relaxed text-ink placeholder-muted focus:ring-0" id="raw-text-input" placeholder="PASTE TEXT DATA HERE_" spellcheck="false"></textarea>
+<!-- Visual flourish: The blinking block cursor representation for the empty state description 
+                     This would technically be hidden by the textarea's native cursor, but adds to the design aesthetic 
+                     if JS were to manage a custom caret. For this CSS-only view, we place it in a corner as a status indicator. -->
+<div class="absolute bottom-4 right-4 pointer-events-none flex flex-col items-end gap-1 opacity-50">
+<div class="h-4 w-2.5 bg-primary animate-cursor-blink"></div>
+</div>
+</div>
+</div>
+</main>
+<!-- Keyboard Accessory Bar / Footer Stats -->
+<!-- This bar sits above the keyboard on mobile -->
+<footer class="sticky bottom-0 z-40 bg-background-light border-t border-ink p-2 flex items-center justify-between shrink-0 safe-area-bottom">
+<!-- Char Counter -->
+<div class="flex items-center gap-2 px-2">
+<span class="material-symbols-outlined text-[14px] text-muted">data_object</span>
+<span class="font-mono text-[11px] text-muted">CHARS: <span class="text-ink font-bold">0</span></span>
+</div>
+<!-- Formatting Tools (Disabled/Visual Only) -->
+<div class="flex items-center gap-1">
+<button aria-label="Paste from Clipboard" class="p-2 hover:bg-ink/5 active:bg-ink/10 transition-colors">
+<span class="material-symbols-outlined text-[18px] text-ink">content_paste</span>
+</button>
+<div class="w-px h-4 bg-ink/20 mx-1"></div>
+<button aria-label="Clear Text" class="p-2 hover:bg-ink/5 active:bg-ink/10 transition-colors">
+<span class="material-symbols-outlined text-[18px] text-ink">delete_sweep</span>
+</button>
+</div>
+</footer>
+<!-- Image Requirement: Adding a subtle pattern or texture image as per instructions, though the design is minimal.
+         Using a paper texture background for the main area to enhance "Tactile" feel. -->
+<div class="fixed inset-0 pointer-events-none z-0 opacity-[0.03] mix-blend-multiply" data-alt="Subtle white paper texture grain background pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAcRHjoOVysemwGRUCr9wQdOenca_T5mEF4KJv4-GboA1hnJFqMtV6mUtFs7vJ-cdCz6mpveV0_cV7kycmsFzB_xAWowohT3z9_sMpXSD195kPNr8c_7iXdZiuSdwxw1PcoOACZu48ftQHzNq1KVAO6sqaYJpTqi-ueW3eLM-SmiQ2do3xZZlYOyd7A6aZeyd5Qmu2xMN6nx7GcEQ_mNbFir91MKioI8RZegtuY_vCxhrNP4N_GBI0U9U0L5s8mhzw2ywzq-iuBv6MD'); background-size: cover;">
+</div>
+</body></html>

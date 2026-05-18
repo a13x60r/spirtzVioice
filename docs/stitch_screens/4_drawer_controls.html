@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tactile Utility Reader - Controls Drawer</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Space+Grotesk:wght@300;400;500;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f24a0d", // Signal Orange
+                        "background-light": "#f2f2f2", // Paper Grey
+                        "background-dark": "#1a1a1a", 
+                        "surface": "#ffffff",
+                        "ink": "#000000",
+                        "muted": "#888888",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "mono": ["Space Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px", // Strict Swiss Utility
+                        "sm": "0px",
+                        "md": "0px", 
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px", // Only for circular indicators if needed
+                    },
+                    borderWidth: {
+                        "3": "3px",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom range slider styling for industrial look */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            background: #000000;
+            border: none;
+            border-radius: 0px;
+            cursor: pointer;
+            margin-top: -10px; /* Aligns thumb with track */
+            box-shadow: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #000000;
+            border-radius: 0px;
+        }
+        
+        /* Focus state for accessibility but keeping style strict */
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Hide scrollbar for cleaner look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-ink antialiased h-screen overflow-hidden flex flex-col relative">
+<!-- Background Layer (The Reader View underneath) -->
+<!-- This simulates the app state behind the drawer -->
+<div class="flex-1 flex flex-col items-center justify-center p-6 opacity-30 pointer-events-none select-none">
+<!-- Top Progress -->
+<div class="w-full h-[2px] bg-muted absolute top-0 left-0">
+<div class="h-full bg-primary w-[35%]"></div>
+</div>
+<div class="w-full max-w-md border-2 border-ink bg-surface h-[320px] flex items-center justify-center relative">
+<!-- ORP Guides -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1px] h-3 bg-ink"></div>
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1px] h-3 bg-ink"></div>
+<h1 class="text-6xl font-bold text-center tracking-tight">
+                DES<span class="text-primary">I</span>GN
+            </h1>
+</div>
+</div>
+<!-- The Drawer (Controls) -->
+<!-- Positioned absolutely at bottom, taking up ~60% height -->
+<div class="absolute bottom-0 left-0 w-full z-50 flex flex-col justify-end h-full pointer-events-none">
+<!-- Backdrop dimming -->
+<div class="absolute inset-0 bg-ink/10 pointer-events-auto transition-opacity"></div>
+<!-- Drawer Content -->
+<div class="relative w-full bg-surface border-t-2 border-ink pointer-events-auto shadow-[0_-4px_20px_rgba(0,0,0,0.05)] flex flex-col max-h-[75vh] animate-slide-up">
+<!-- Handle -->
+<div class="h-12 w-full flex items-center justify-center border-b border-ink/10 cursor-grab active:cursor-grabbing bg-surface group hover:bg-background-light transition-colors">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-ink text-lg group-hover:text-primary transition-colors">keyboard_arrow_down</span>
+<span class="font-mono text-[10px] tracking-widest uppercase text-muted">CONTROLS</span>
+</div>
+</div>
+<!-- Scrollable Settings Area -->
+<div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-10 pb-12 no-scrollbar">
+<!-- Speed Control Section -->
+<section class="space-y-4">
+<div class="flex justify-between items-end border-b border-ink pb-2">
+<label class="text-xl font-bold tracking-tight">SPEED</label>
+<span class="font-mono text-primary text-sm font-bold">[650 WPM]</span>
+</div>
+<div class="pt-2 pb-4">
+<div class="relative w-full h-8 flex items-center">
+<!-- Custom Range Input -->
+<input class="w-full z-10 relative" max="1000" min="100" type="range" value="650"/>
+<!-- Visual Track Background (Simulating the 'filled' part is tricky with pure CSS range, so we use a visual hack or rely on browser default. Here sticking to the minimalist black line) -->
+<div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-ink w-full"></div>
+</div>
+<div class="flex justify-between font-mono text-[10px] text-muted uppercase mt-1">
+<span>100</span>
+<span>Speed</span>
+<span>1000</span>
+</div>
+</div>
+</section>
+<!-- Words Per Flash (Chunk Size) -->
+<section class="space-y-4">
+<div class="flex justify-between items-end border-b border-ink pb-2">
+<label class="text-sm font-bold tracking-tight uppercase">Words Per Flash</label>
+<span class="font-mono text-muted text-[10px]">CHUNK_SIZE</span>
+</div>
+<div class="grid grid-cols-3 border border-ink bg-surface h-12">
+<!-- Option 1 -->
+<label class="cursor-pointer border-r border-ink flex items-center justify-center hover:bg-background-light transition-colors relative group">
+<input class="peer sr-only" name="chunk" type="radio" value="1"/>
+<div class="absolute inset-0 bg-ink hidden peer-checked:block"></div>
+<span class="font-mono text-sm group-hover:font-bold z-10 peer-checked:text-white relative">[1]</span>
+</label>
+<!-- Option 2 (Selected) -->
+<label class="cursor-pointer border-r border-ink flex items-center justify-center hover:bg-background-light transition-colors relative group">
+<input checked="" class="peer sr-only" name="chunk" type="radio" value="2"/>
+<div class="absolute inset-0 bg-ink hidden peer-checked:block"></div>
+<span class="font-mono text-sm group-hover:font-bold z-10 peer-checked:text-white relative">[2]</span>
+</label>
+<!-- Option 3 -->
+<label class="cursor-pointer flex items-center justify-center hover:bg-background-light transition-colors relative group">
+<input class="peer sr-only" name="chunk" type="radio" value="3"/>
+<div class="absolute inset-0 bg-ink hidden peer-checked:block"></div>
+<span class="font-mono text-sm group-hover:font-bold z-10 peer-checked:text-white relative">[3]</span>
+</label>
+</div>
+</section>
+<!-- Grid Layout for Toggles -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Mode Switch -->
+<section class="space-y-4">
+<div class="flex justify-between items-end border-b border-ink pb-2">
+<label class="text-sm font-bold tracking-tight uppercase">Mode</label>
+<span class="font-mono text-muted text-[10px]">ENGINE</span>
+</div>
+<div class="flex items-center justify-between h-12 border border-ink p-1 bg-surface">
+<span class="font-mono text-xs pl-3 text-muted">PARAGRAPH</span>
+<!-- Custom Mechanical Toggle Switch -->
+<label class="relative inline-flex items-center cursor-pointer mx-2">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<!-- Track -->
+<div class="w-14 h-8 bg-background-light border border-ink peer-focus:outline-none peer-checked:bg-background-light"></div>
+<!-- Thumb/Knob -->
+<div class="absolute left-[4px] top-[4px] bg-ink border border-ink h-6 w-6 transition-all peer-checked:translate-x-full peer-checked:bg-primary peer-checked:border-primary"></div>
+</label>
+<span class="font-mono text-xs pr-3 font-bold text-ink">RSVP</span>
+</div>
+</section>
+<!-- Font Size Stepper -->
+<section class="space-y-4">
+<div class="flex justify-between items-end border-b border-ink pb-2">
+<label class="text-sm font-bold tracking-tight uppercase">Size</label>
+<span class="font-mono text-muted text-[10px]">TYPOGRAPHY</span>
+</div>
+<div class="flex border border-ink h-12">
+<button class="w-12 flex items-center justify-center border-r border-ink hover:bg-background-light active:bg-ink active:text-white transition-colors">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<div class="flex-1 flex items-center justify-center font-mono text-sm bg-surface">
+                                48px
+                            </div>
+<button class="w-12 flex items-center justify-center border-l border-ink hover:bg-background-light active:bg-ink active:text-white transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</section>
+</div>
+<!-- Theme Toggle (Full Width) -->
+<section class="space-y-4">
+<div class="flex justify-between items-end border-b border-ink pb-2">
+<label class="text-sm font-bold tracking-tight uppercase">Theme</label>
+<span class="font-mono text-muted text-[10px]">APPEARANCE</span>
+</div>
+<div class="grid grid-cols-2 border border-ink bg-surface h-12">
+<label class="cursor-pointer border-r border-ink flex items-center justify-center hover:bg-background-light transition-colors relative group">
+<input checked="" class="peer sr-only" name="theme" type="radio" value="light"/>
+<div class="absolute inset-0 bg-ink hidden peer-checked:block"></div>
+<span class="font-mono text-sm uppercase group-hover:font-bold z-10 peer-checked:text-white relative flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">light_mode</span> Light
+                            </span>
+</label>
+<label class="cursor-pointer flex items-center justify-center hover:bg-background-light transition-colors relative group">
+<input class="peer sr-only" name="theme" type="radio" value="dark"/>
+<div class="absolute inset-0 bg-ink hidden peer-checked:block"></div>
+<span class="font-mono text-sm uppercase group-hover:font-bold z-10 peer-checked:text-white relative flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">dark_mode</span> Dark
+                            </span>
+</label>
+</div>
+</section>
+<!-- Footer Metadata -->
+<div class="pt-6 border-t border-dashed border-ink/30 flex justify-between items-center text-[10px] font-mono text-muted uppercase">
+<span>Build v2.0.4</span>
+<span>Swiss Utility System</span>
+</div>
+</div>
+</div>
+</div>
+</body></html>

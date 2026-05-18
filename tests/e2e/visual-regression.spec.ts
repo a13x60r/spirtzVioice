@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Visual Regression Testing', () => {
     test.beforeEach(async ({ page }) => {
         // Navigate to the app
+        page.on('console', msg => console.log('BROWSER CONSOLE:', msg.text()));
+        page.on('pageerror', err => console.log('BROWSER ERROR:', err.message));
         await page.goto('./');
         // Wait for the app to initialize
         await page.waitForSelector('.document-list-container');
@@ -24,7 +26,10 @@ test.describe('Visual Regression Testing', () => {
         const firstDoc = page.locator('.document-item').first();
         await firstDoc.locator('button[title="Start"], button[title="Resume"]').click();
         await page.waitForSelector('.main-view');
-        await page.click('button[data-view="PARAGRAPH"]');
+        await page.waitForSelector('.loading-overlay.visible', { state: 'hidden' });
+        await page.click('#drawer-handle');
+        await page.click('label:has(input[data-view="PARAGRAPH"])');
+        await page.click('#drawer-close');
 
         // Mask the progress bar if it's too jittery, but for static seeds it should be fine
         await expect(page).toHaveScreenshot('reader-paragraph.png', {

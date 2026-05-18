@@ -68,7 +68,13 @@ export class AudioEngine {
         this.worker.onmessage = this.handleWorkerMessage.bind(this);
 
         // Init worker with origin URL for proper resource resolution
-        this.worker.postMessage({ type: 'INIT', payload: { originUrl: window.location.origin } });
+        this.worker.postMessage({
+            type: 'INIT',
+            payload: {
+                originUrl: window.location.origin,
+                appBaseUrl: new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+            }
+        });
 
         // JIT Buffering Hook
         this.controller.onBufferingRequest = (time) => {
@@ -205,14 +211,16 @@ export class AudioEngine {
             if (item.endSec < startTime) continue;
             if (item.startSec > endTime) break;
 
+            const instanceId = `${item.chunkHash}-${item.startSec}`;
+
             // Skip if already in buffer tracking OR already in scheduler queue
-            if (this.bufferedChunks.has(item.chunkHash)) continue;
-            if (this.scheduler.hasChunk(item.chunkHash)) {
-                this.bufferedChunks.add(item.chunkHash);
+            if (this.bufferedChunks.has(instanceId)) continue;
+            if (this.scheduler.hasChunk(instanceId)) {
+                this.bufferedChunks.add(instanceId);
                 continue;
             }
 
-            this.bufferedChunks.add(item.chunkHash);
+            this.bufferedChunks.add(instanceId);
             toBuffer.push(item);
         }
 
@@ -221,11 +229,12 @@ export class AudioEngine {
         for (let i = 0; i < toBuffer.length; i += BATCH_SIZE) {
             const batch = toBuffer.slice(i, i + BATCH_SIZE);
             await Promise.all(batch.map(async (item) => {
+                const instanceId = `${item.chunkHash}-${item.startSec}`;
                 try {
-                    await this.scheduleChunkFromStore(item.chunkHash, item.startSec);
+                    await this.scheduleChunkFromStore(item.chunkHash, item.startSec, instanceId);
                 } catch (e) {
                     console.warn("Buffer failed for", item.chunkHash, e);
-                    this.bufferedChunks.delete(item.chunkHash);
+                    this.bufferedChunks.delete(instanceId);
                 }
             }));
         }
@@ -233,14 +242,14 @@ export class AudioEngine {
         // Clean up old entries from tracking set
         for (const item of this.chunkTimeline) {
             if (item.endSec < startTime - 20) {
-                this.bufferedChunks.delete(item.chunkHash);
+                this.bufferedChunks.delete(`${item.chunkHash}-${item.startSec}`);
             }
             if (item.startSec > startTime) break;
         }
     }
 
     // Fetches from DB, Decodes, Schedules
-    private async scheduleChunkFromStore(chunkHash: string, startTime: number) {
+    private async scheduleChunkFromStore(chunkHash: string, startTime: number, instanceId: string) {
         const chunkEntity = await audioStore.getChunk(chunkHash);
         if (!chunkEntity) {
             console.warn(`[JIT] Chunk ${chunkHash} not in DB!`);
@@ -258,7 +267,7 @@ export class AudioEngine {
 
             // Decode
             const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-            this.scheduler.scheduleChunk(chunkHash, audioBuffer, startTime);
+            this.scheduler.scheduleChunk(instanceId, audioBuffer, startTime);
         } catch (e) {
             console.warn(`Failed to decode chunk ${chunkHash}`, e);
         }

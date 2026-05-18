@@ -88,11 +88,18 @@ export class AudioScheduler {
 
     setPlaybackRate(rate: number) {
         if (rate <= 0) return;
+
+        let currentTime = 0;
+        if (this.isPlaying) {
+            currentTime = this.getCurrentTime(); // Get current Time using old rate
+        }
+
         this.playbackRate = rate;
 
         if (this.isPlaying) {
-            const currentTime = this.getCurrentTime(); // Get current Timeline time
-            this.play(currentTime); // Re-schedule everything
+            // Update startTime synchronously so immediate calls to getCurrentTime() don't spike
+            this.startTime = this.ctx.currentTime - (currentTime / rate);
+            void this.play(currentTime); // Re-schedule everything
         }
     }
 
@@ -100,17 +107,17 @@ export class AudioScheduler {
      * Queue a chunk to be played
      */
     scheduleChunk(
-        chunkHash: string,
+        instanceId: string,
         audioBuffer: AudioBuffer,
         startTimeSec: number // Relative to timeline 0
     ) {
         // Check if already in queue to prevent duplicates
-        if (this.playbackQueue.some(q => q.id === chunkHash)) {
+        if (this.playbackQueue.some(q => q.id === instanceId)) {
             return;
         }
 
         const item = {
-            id: chunkHash,
+            id: instanceId,
             buffer: audioBuffer,
             startTimeSec
         };

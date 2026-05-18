@@ -19,19 +19,26 @@ test.describe('Spritz Voice UI', () => {
 
         // Wait for the reader view to mount
         await page.waitForSelector('.main-view');
+        await page.waitForSelector('.loading-overlay.visible', { state: 'hidden' });
 
         // Ensure we are in Paragraph view first for a good screenshot
-        await page.click('button[data-view="PARAGRAPH"]');
+        await page.click('#drawer-handle');
+        await page.click('label:has(input[data-view="PARAGRAPH"])');
+        await page.click('#drawer-close');
         await page.waitForTimeout(500);
         await page.screenshot({ path: 'tests/e2e/screenshots/02-reader-paragraph.png', fullPage: true });
 
         // 4. RSVP View
-        await page.click('button[data-view="RSVP"]');
+        await page.click('#drawer-handle');
+        await page.click('label:has(input[data-view="RSVP"])');
+        await page.click('#drawer-close');
         await page.waitForTimeout(500);
         await page.screenshot({ path: 'tests/e2e/screenshots/03-reader-rsvp.png', fullPage: true });
 
         // 5. Focus View
-        await page.click('button[data-view="FOCUS"]');
+        await page.click('#drawer-handle');
+        await page.click('label:has(input[data-view="FOCUS"])');
+        await page.click('#drawer-close');
         await page.waitForTimeout(500);
         await page.screenshot({ path: 'tests/e2e/screenshots/04-reader-focus.png', fullPage: true });
 

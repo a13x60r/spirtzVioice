@@ -5,6 +5,7 @@ import type { WorkerMessage, WorkerResponse, SynthesizeRequest, ChunkCompleteRes
 const ctx: Worker = self as any;
 let ttsEngine: OfflineVoice;
 let originUrl: string = '';
+let appBaseUrl: string = '';
 let currentVoiceId: string | null = null;
 let voiceReady: boolean = false;
 
@@ -15,7 +16,8 @@ ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
         switch (type) {
             case 'INIT':
                 originUrl = payload?.originUrl || '';
-                ttsEngine = new OfflineVoice(originUrl);
+                appBaseUrl = payload?.appBaseUrl || '';
+                ttsEngine = new OfflineVoice(originUrl, appBaseUrl);
                 await ttsEngine.init();
                 sendResponse('INIT_COMPLETE');
                 break;

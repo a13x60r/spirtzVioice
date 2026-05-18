@@ -69,12 +69,8 @@ export default defineConfig({
                     dest: 'piper'
                 },
                 {
-                    src: 'node_modules/piper-wasm/build/worker/dist/*.wasm',
-                    dest: 'piper'
-                },
-                {
-                    src: 'node_modules/piper-wasm/build/worker/dist/*.js',
-                    dest: 'piper'
+                    src: 'node_modules/piper-wasm/build/worker/dist/piper-dist/*',
+                    dest: 'piper/dist/piper-dist'
                 }
             ]
         }),

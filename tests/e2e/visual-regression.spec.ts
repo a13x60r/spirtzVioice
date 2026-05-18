@@ -23,8 +23,12 @@ test.describe('Visual Regression Testing', () => {
     });
 
     test('Reader Paragraph View should match baseline', async ({ page }) => {
-        const firstDoc = page.locator('.document-item').first();
-        await firstDoc.locator('button[title="Start"], button[title="Resume"]').click();
+        const englishWelcomeDoc = page.locator('.document-item').filter({
+            has: page.locator('.document-title', { hasText: 'Welcome to Spirtz Voice' }),
+        }).filter({
+            hasNot: page.locator('.document-title', { hasText: '(' }),
+        });
+        await englishWelcomeDoc.locator('button[title="Start"], button[title="Resume"]').click();
         await page.waitForSelector('.main-view');
         await page.waitForSelector('.loading-overlay.visible', { state: 'hidden' });
         await page.click('#drawer-handle');

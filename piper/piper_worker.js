@@ -3,7 +3,7 @@ var getBlob = async (url, blobs) => new Promise((resolve) => {
   const cached = blobs[url];
   if (cached)
     return resolve(cached);
-  const id = new Date().getTime();
+  const id = Date.now();
   let xContentLength;
   self.postMessage({ kind: "fetch", id, url });
   const xhr = new XMLHttpRequest;
@@ -28,14 +28,18 @@ var getBlob = async (url, blobs) => new Promise((resolve) => {
 });
 
 // piper_worker.js
-async function phonemize(data, onnxruntimeBase, modelConfig) {
-  const { input, speakerId, blobs, modelUrl, modelConfigUrl } = data;
+async function phonemize(data, modelConfig) {
+  const { input, blobs } = data;
+  const espeakVoice = modelConfig?.espeak?.voice;
+  if (!espeakVoice) {
+    throw new Error("Missing espeak.voice in Piper model config");
+  }
   const piperPhonemizeJs = URL.createObjectURL(await getBlob(data.piperPhonemizeJsUrl, blobs));
   const piperPhonemizeWasm = URL.createObjectURL(await getBlob(data.piperPhonemizeWasmUrl, blobs));
   const piperPhonemizeData = URL.createObjectURL(await getBlob(data.piperPhonemizeDataUrl, blobs));
   importScripts(piperPhonemizeJs);
-  const phonemeIds = await new Promise(async (resolve) => {
-    const module = await createPiperPhonemize({
+  const phonemeIds = await new Promise((resolve) => {
+    createPiperPhonemize({
       print: (data2) => {
         resolve(JSON.parse(data2).phoneme_ids);
       },
@@ -49,15 +53,16 @@ async function phonemize(data, onnxruntimeBase, modelConfig) {
           return piperPhonemizeData;
         return url;
       }
+    }).then((piperModule) => {
+      piperModule.callMain([
+        "-l",
+        espeakVoice,
+        "--input",
+        JSON.stringify([{ text: input }]),
+        "--espeak_data",
+        "/espeak-ng-data"
+      ]);
     });
-    module.callMain([
-      "-l",
-      modelConfig.espeak.voice,
-      "--input",
-      JSON.stringify([{ text: input }]),
-      "--espeak_data",
-      "/espeak-ng-data"
-    ]);
   });
   return phonemeIds;
 }
@@ -67,7 +72,7 @@ async function init(data, phonemizeOnly = false) {
   const modelConfig = JSON.parse(await modelConfigBlob.text());
   const onnxruntimeBase = onnxruntimeUrl;
   const providedPhonemeIds = data.phonemeIds;
-  const phonemeIds = providedPhonemeIds ?? await phonemize(data, onnxruntimeBase, modelConfig);
+  const phonemeIds = providedPhonemeIds ?? await phonemize(data, modelConfig);
   const phonemeIdMap = Object.entries(modelConfig.phoneme_id_map);
   const idPhonemeMap = Object.fromEntries(phonemeIdMap.map(([k, v]) => [v[0], k]));
   const phonemes = phonemeIds.map((id) => idPhonemeMap[id]);
@@ -91,12 +96,12 @@ async function init(data, phonemizeOnly = false) {
     cachedSession = {};
   cachedSession[modelUrl] = session;
   const feeds = {
-    input: new ort.Tensor("int64", phonemeIds, [1, phonemeIds.length]),
-    input_lengths: new ort.Tensor("int64", [phonemeIds.length]),
+    input: new ort.Tensor("int64", BigInt64Array.from(phonemeIds.map(BigInt)), [1, phonemeIds.length]),
+    input_lengths: new ort.Tensor("int64", BigInt64Array.from([BigInt(phonemeIds.length)]), [1]),
     scales: new ort.Tensor("float32", [noiseScale, lengthScale, noiseW])
   };
   if (Object.keys(modelConfig.speaker_id_map).length)
-    feeds.sid = new ort.Tensor("int64", [speakerId]);
+    feeds.sid = new ort.Tensor("int64", BigInt64Array.from([BigInt(speakerId)]));
   const {
     output: { data: pcm }
   } = await session.run(feeds);

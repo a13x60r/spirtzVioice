@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OfflineVoice } from '../OfflineVoice';
+import { piperGenerate } from '../piper-api';
 
 // Mock piper-wasm
 vi.mock('../piper-api', () => ({
@@ -34,6 +35,13 @@ describe('OfflineVoice (Piper)', () => {
 
     beforeEach(() => {
         voice = new OfflineVoice();
+        vi.clearAllMocks();
+        vi.mocked(piperGenerate).mockResolvedValue({
+            file: new Blob([new ArrayBuffer(44)], { type: 'audio/wav' }),
+            duration: 1000,
+            phonemes: ['t', 'e', 's', 't'],
+            phonemeIds: [1, 2, 3, 4]
+        });
     });
 
     it('should initialize successfully', async () => {
@@ -55,5 +63,12 @@ describe('OfflineVoice (Piper)', () => {
         expect(result.wavBuffer).toBeDefined();
         expect(result.wavBuffer?.byteLength).toBe(44);
         expect(result.durationSec).toBe(1);
+    });
+
+    it('passes the dist runtime folder to Piper worker', async () => {
+        await voice.synthesize('Hello world', 150);
+
+        expect(piperGenerate).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(piperGenerate).mock.calls[0][11]).toBe('/piper/dist/');
     });
 });

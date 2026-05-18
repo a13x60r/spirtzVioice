@@ -12,6 +12,7 @@ export interface SettingsCallbacks {
     onOrpToggle: (enabled: boolean) => void;
     onOrpIntensityChange: (intensity: number) => void;
     onSkipSettingsChange: (settings: { seekSec: number, wordCount: number, sentenceCount: number, paragraphCount: number, mediaSkipBackUnit: 'word' | 'sentence' | 'paragraph' | 'seek', mediaSkipFwdUnit: 'word' | 'sentence' | 'paragraph' | 'seek' }) => void;
+    onResetApp: () => void;
 }
 
 import { APP_VERSION } from '../../constants/version';
@@ -270,6 +271,14 @@ export class SettingsPanel {
 
 
 
+                        <section class="settings-group" style="border-top: 1px solid var(--color-border); padding-top: 1.5rem; margin-top: 2rem;">
+                            <h3 style="color: var(--color-error, #ef4444);">Danger Zone</h3>
+                            <p class="info-text" style="margin-bottom: 1rem;">Resetting the app will clear ALL your documents, progress, and settings. This cannot be undone.</p>
+                            <button class="btn btn-secondary" id="reset-app-btn" style="color: var(--color-error, #ef4444); border-color: var(--color-error, #ef4444); width: 100%;">
+                                Reset App & Restart Onboarding
+                            </button>
+                        </section>
+
                         <div class="settings-footer">
                             Version ${APP_VERSION}
                         </div>
@@ -415,6 +424,13 @@ export class SettingsPanel {
         skipParagraphs?.addEventListener('input', updateSkip);
         mediaSkipBackUnit?.addEventListener('change', updateSkip);
         mediaSkipFwdUnit?.addEventListener('change', updateSkip);
+
+        const resetBtn = this.container.querySelector('#reset-app-btn');
+        resetBtn?.addEventListener('click', () => {
+            if (confirm('Are you absolutely sure you want to reset the app? This will delete all your documents and progress.')) {
+                this.callbacks.onResetApp();
+            }
+        });
     }
 
     unmount() {

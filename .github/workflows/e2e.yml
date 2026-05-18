@@ -28,5 +28,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
+      - name: Prepare Piper assets
+        run: npm run prepare:piper
+
       - name: Run Playwright tests
         run: npx playwright test

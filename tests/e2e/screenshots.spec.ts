@@ -13,8 +13,12 @@ test.describe('Spritz Voice UI', () => {
         await page.screenshot({ path: 'tests/e2e/screenshots/01-library.png', fullPage: true });
 
         // 3. Reader View (Open first document)
-        const firstDoc = page.locator('.document-item').first();
-        const resumeBtn = firstDoc.locator('button[title="Start"], button[title="Resume"]');
+        const englishWelcomeDoc = page.locator('.document-item').filter({
+            has: page.locator('.document-title', { hasText: 'Welcome to Spirtz Voice' }),
+        }).filter({
+            hasNot: page.locator('.document-title', { hasText: '(' }),
+        });
+        const resumeBtn = englishWelcomeDoc.locator('button[title="Start"], button[title="Resume"]');
         await resumeBtn.click();
 
         // Wait for the reader view to mount

@@ -117,7 +117,7 @@ export class OfflineVoice {
                 (_p) => { /* Silenced internal logs */ },
                 null, // phonemeIds
                 false, // inferEmotion
-                this.toAbsoluteUrl(BASE_URL), // onnxruntimeUrl (folder)
+                this.toAbsoluteUrl(BASE_URL + 'dist/'), // onnxruntimeUrl (folder containing ort.min.js)
                 lengthScale,
                 useWebGPU,
                 gpuPreference

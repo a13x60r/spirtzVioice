@@ -9,6 +9,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const publicPiperDir = path.join(projectRoot, 'public', 'piper');
 const piperBuildDir = path.join(projectRoot, 'node_modules', 'piper-wasm', 'build');
 const piperWorkerDir = path.join(piperBuildDir, 'worker');
+const customWorkerPath = path.join(projectRoot, 'src', 'workers', 'tts', 'piper-engine', 'piper_worker.js');
 
 const FILES_TO_DOWNLOAD = [
   {
@@ -24,8 +25,7 @@ const FILES_TO_DOWNLOAD = [
 const RUNTIME_FILES = [
   ['piper_phonemize.js', 'piper_phonemize.js'],
   ['piper_phonemize.wasm', 'piper_phonemize.wasm'],
-  ['piper_phonemize.data', 'piper_phonemize.data'],
-  [path.join('worker', 'piper_worker.js'), 'piper_worker.js']
+  ['piper_phonemize.data', 'piper_phonemize.data']
 ];
 
 function ensureDir(dir) {
@@ -109,6 +109,8 @@ async function syncRuntimeAssets() {
     }
     copyFileIfNeeded(source, destination);
   }
+
+  copyFileIfNeeded(customWorkerPath, path.join(publicPiperDir, 'piper_worker.js'));
 
   const sourceDist = path.join(piperWorkerDir, 'dist');
   const destinationDist = path.join(publicPiperDir, 'dist');

@@ -26,7 +26,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
 
       - name: Prepare Piper assets
         run: npm run prepare:piper

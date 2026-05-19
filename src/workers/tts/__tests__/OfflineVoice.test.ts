@@ -69,6 +69,6 @@ describe('OfflineVoice (Piper)', () => {
         await voice.synthesize('Hello world', 150);
 
         expect(piperGenerate).toHaveBeenCalledTimes(1);
-        expect(vi.mocked(piperGenerate).mock.calls[0][11]).toBe('/piper/dist/');
+        expect(vi.mocked(piperGenerate).mock.calls[0][11]).toBe('/piper/dist/piper-dist/');
     });
 });
